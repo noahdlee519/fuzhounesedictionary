@@ -50,12 +50,20 @@ export default function AboutPage() {
             className="h-40 w-40 shrink-0 border border-rule object-cover"
           />
           <div className="space-y-2">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-lacquer">Creator &amp; maintainer</p>
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-lacquer">Creator</p>
             <h2 className="font-display text-2xl font-bold tracking-tight">Noah Lee</h2>
             <p className="max-w-[46ch] text-inkSoft">
               Noah started this dictionary a few years ago to document the Fuzhounese his mother&apos;s
               family speaks. He builds and maintains the site, reviews the words people contribute, and
               keeps the project growing.
+            </p>
+            <p>
+              <a
+                href="mailto:noahlee519@gmail.com"
+                className="inline-block font-mono text-xs uppercase tracking-wide text-lacquer hover:underline"
+              >
+                noahlee519@gmail.com
+              </a>
             </p>
           </div>
         </div>
