@@ -12,7 +12,7 @@ export default async function Header() {
       <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="font-display text-2xl font-extrabold leading-none tracking-tight text-lacquer">福州話</span>
-          <span className="font-display text-base font-semibold uppercase tracking-tight text-ink">Fuzhounese Dictionary</span>
+          <span className="font-display text-base font-semibold lowercase tracking-tight text-ink">fuzhounese.org</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-wider">
           <Link href="/" className={navLink}>Search</Link>
