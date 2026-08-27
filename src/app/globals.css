@@ -2,15 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light dark; }
+:root {
+  color-scheme: light dark;
+
+  --paper:        #E7E8E1;
+  --surface:      #F4F5EE;
+  --ink:          #16150F;
+  --ink-soft:     #4C4A40;
+  --ink-faint:    #86847A;
+  --rule:         #CFD0C4;
+  --rule-strong:  #16150F;
+  --lacquer:      #C22E1B;
+  --lacquer-soft: #EFE1DB;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:        #14180F;
+    --surface:      #1C2018;
+    --ink:          #ECEBE0;
+    --ink-soft:     #A6A594;
+    --ink-faint:    #71705F;
+    --rule:         #2E322A;
+    --rule-strong:  #ECEBE0;
+    --lacquer:      #E4614F;
+    --lacquer-soft: #2A1712;
+  }
+}
 
 body {
-  background-color: theme("colors.paper");
-  color: theme("colors.ink");
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif), Georgia, "Songti SC", serif;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
 }
 
 .romanization { font-variant-ligatures: none; }
 
-@media (prefers-color-scheme: dark) {
-  body { background-color: #1a1714; color: #ece7df; }
-}
+::selection { background: var(--lacquer); color: var(--paper); }
+
+/* tighten the display face wherever it is used for big headings */
+.font-display { letter-spacing: -0.015em; }

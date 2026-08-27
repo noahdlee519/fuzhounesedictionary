@@ -22,7 +22,8 @@ const emptySense = (): SenseDraft => ({
 });
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accentSoft dark:bg-stone-900 dark:border-stone-700";
+  "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
+const labelCls = "block font-mono text-xs uppercase tracking-wide text-inkFaint";
 
 export default function SubmitForm({
   userId,
@@ -71,7 +72,6 @@ export default function SubmitForm({
 
     setSubmitting(true);
     try {
-      // 1) Upload audio if a file was chosen.
       let finalAudio = audioUrl.trim();
       if (audioFile) {
         if (audioFile.size > MAX_AUDIO_BYTES) {
@@ -87,7 +87,6 @@ export default function SubmitForm({
         finalAudio = pub.publicUrl;
       }
 
-      // 2) Insert entry + senses atomically via RPC (RLS enforced).
       const { error: rpcErr } = await supabase.rpc("submit_entry", {
         p_hanzi: hanzi,
         p_romanization: romanization,
@@ -110,43 +109,41 @@ export default function SubmitForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="border-l-2 border-lacquer bg-surface p-3 text-sm text-inkSoft">{error}</div>
       )}
 
-      {/* Word forms */}
       <fieldset className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-medium">Chinese characters (漢字)</span>
+            <span className={labelCls}>Chinese characters (漢字)</span>
             <input value={hanzi} onChange={(e) => setHanzi(e.target.value)} placeholder="福州" className={inputCls} />
-            <span className="mt-1 block text-xs text-stone-400">Leave blank if there are none.</span>
+            <span className="mt-1 block text-xs text-inkFaint">Leave blank if there are none.</span>
           </label>
           <label className="block">
-            <span className="text-sm font-medium">Romanization</span>
+            <span className={labelCls}>Romanization</span>
             <input
               value={romanization}
               onChange={(e) => setRomanization(e.target.value)}
               placeholder="Hók-ciŭ"
               className={`${inputCls} romanization`}
             />
-            <span className="mt-1 block text-xs text-stone-400">Any system you know — no fixed standard.</span>
+            <span className="mt-1 block text-xs text-inkFaint">Any system you know — no fixed standard.</span>
           </label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-medium">IPA / pronunciation</span>
+            <span className={labelCls}>IPA / pronunciation</span>
             <input value={ipa} onChange={(e) => setIpa(e.target.value)} placeholder="houʔ tsiu" className={inputCls} />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">Variety / region</span>
+            <span className={labelCls}>Variety / region</span>
             <input value={variety} onChange={(e) => setVariety(e.target.value)} placeholder="e.g. Fuzhou city, Changle…" className={inputCls} />
           </label>
         </div>
       </fieldset>
 
-      {/* Audio */}
-      <fieldset className="space-y-3 rounded-lg border border-stone-200 p-4 dark:border-stone-700">
-        <legend className="px-1 text-sm font-medium">Pronunciation audio (optional)</legend>
+      <fieldset className="space-y-3 border border-rule p-4">
+        <legend className="px-1 font-mono text-xs uppercase tracking-wide text-inkFaint">Pronunciation audio (optional)</legend>
         <label className="block text-sm">
           Upload a recording (max 5 MB)
           <input
@@ -156,22 +153,21 @@ export default function SubmitForm({
             className="mt-1 block w-full text-sm"
           />
         </label>
-        <div className="text-center text-xs text-stone-400">— or —</div>
+        <div className="text-center font-mono text-xs uppercase tracking-wide text-inkFaint">— or —</div>
         <label className="block text-sm">
           Paste a link to a recording
           <input value={audioUrl} onChange={(e) => setAudioUrl(e.target.value)} placeholder="https://…" className={inputCls} />
         </label>
       </fieldset>
 
-      {/* Senses */}
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold">Meanings</legend>
+        <legend className="font-mono text-xs uppercase tracking-wide text-inkFaint">Meanings</legend>
         {senses.map((s, i) => (
-          <div key={i} className="space-y-3 rounded-lg border border-stone-200 p-4 dark:border-stone-700">
+          <div key={i} className="space-y-3 border border-rule p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-stone-500">Meaning {i + 1}</span>
+              <span className="font-mono text-xs uppercase tracking-wide text-inkFaint">Meaning {i + 1}</span>
               {senses.length > 1 && (
-                <button type="button" onClick={() => removeSense(i)} className="text-xs text-stone-400 hover:text-red-600">
+                <button type="button" onClick={() => removeSense(i)} className="font-mono text-xs uppercase tracking-wide text-inkFaint hover:text-lacquer">
                   Remove
                 </button>
               )}
@@ -185,7 +181,7 @@ export default function SubmitForm({
                 </select>
               </label>
               <label className="block">
-                <span className="text-sm">English definition <span className="text-accent">*</span></span>
+                <span className="text-sm">English definition <span className="text-lacquer">*</span></span>
                 <input value={s.definition_en} onChange={(e) => updateSense(i, { definition_en: e.target.value })} placeholder="Fuzhou (the city)" className={inputCls} />
               </label>
             </div>
@@ -205,21 +201,20 @@ export default function SubmitForm({
             </div>
           </div>
         ))}
-        <button type="button" onClick={addSense} className="text-sm font-medium text-accent hover:underline">
+        <button type="button" onClick={addSense} className="font-mono text-xs uppercase tracking-wide text-lacquer hover:underline">
           + Add another meaning
         </button>
       </fieldset>
 
-      {/* Notes */}
       <label className="block">
-        <span className="text-sm font-medium">Notes (optional)</span>
+        <span className={labelCls}>Notes (optional)</span>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Etymology, regional variation, register…" className={inputCls} />
       </label>
 
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-full bg-accent px-8 py-3 font-medium text-white hover:opacity-90 disabled:opacity-50"
+        className="border border-lacquer bg-lacquer px-8 py-3 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {submitting ? "Submitting…" : "Submit for review"}
       </button>

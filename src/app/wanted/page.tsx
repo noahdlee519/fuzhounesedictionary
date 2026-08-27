@@ -37,73 +37,66 @@ export default async function WantedPage() {
   let votedIds = new Set<string>();
   if (user) {
     const { data: myVotes } = await supabase
-      .from("word_request_votes")
-      .select("request_id")
-      .eq("user_id", user.id);
+      .from("word_request_votes").select("request_id").eq("user_id", user.id);
     votedIds = new Set((myVotes ?? []).map((v: any) => v.request_id));
   }
 
+  const inputCls =
+    "w-full border border-rule bg-surface px-3 py-2 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint";
+
   return (
-    <div className="space-y-8">
-      <section className="space-y-2">
-        <h1 className="font-serif text-3xl font-bold">Words wanted</h1>
-        <p className="max-w-2xl text-stone-600 dark:text-stone-400">
-          Words the community is hoping to add — and words waiting for a real voice. Upvote the
-          ones you want most, or ask for a word you know is missing. A native speaker can then
-          record it or write the entry.
+    <div className="space-y-9">
+      <section className="border-b border-rule pb-6">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-lacquer">討教 · Words wanted</p>
+        <h1 className="mt-3 font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">
+          Words wanted
+        </h1>
+        <p className="mt-4 max-w-2xl text-inkSoft">
+          Words the community is hoping to add — and words waiting for a real voice. Upvote the ones
+          you want most, or ask for a word you know is missing. A native speaker can then record it or
+          write the entry.
         </p>
       </section>
 
-      {/* Ask for a word */}
-      <section className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900">
+      <section className="border border-rule bg-surface p-5">
         {user ? (
           <form action={requestWord} className="space-y-3">
             <input type="hidden" name="back" value="/wanted" />
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
               <label className="block">
-                <span className="mb-1 block text-sm font-medium">Word or phrase</span>
-                <input
-                  name="term"
-                  required
-                  placeholder="e.g. 鼎邊糊 or “dĭng-biĕng-gū”"
-                  className="w-full rounded-lg border border-stone-300 bg-paper px-3 py-2 text-sm dark:border-stone-600 dark:bg-stone-800"
-                />
+                <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-inkFaint">Word or phrase</span>
+                <input name="term" required placeholder="e.g. 鼎邊糊 or “dĭng-biĕng-gū”" className={inputCls} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium">Note <span className="font-normal text-stone-400">(optional)</span></span>
-                <input
-                  name="note"
-                  placeholder="What it means, where you heard it…"
-                  className="w-full rounded-lg border border-stone-300 bg-paper px-3 py-2 text-sm dark:border-stone-600 dark:bg-stone-800"
-                />
+                <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-inkFaint">Note (optional)</span>
+                <input name="note" placeholder="What it means, where you heard it…" className={inputCls} />
               </label>
             </div>
-            <button className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+            <button className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer">
               Request this word
             </button>
           </form>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-stone-600 dark:text-stone-300">Sign in to request a word or upvote.</p>
-            <SignInButton next="/wanted" label="Sign in" className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium hover:border-accent" />
+            <p className="text-sm text-inkSoft">Sign in to request a word or upvote.</p>
+            <SignInButton next="/wanted" label="Sign in" className="border border-rule px-4 py-2 font-mono text-xs uppercase tracking-wide text-inkSoft hover:border-lacquer hover:text-lacquer" />
           </div>
         )}
       </section>
 
-      {/* The list */}
       {error && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-          Couldn&apos;t load requests. Make sure you&apos;ve run <code>supabase/word_requests.sql</code>.
+        <div className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+          Couldn&apos;t load requests. Make sure you&apos;ve run <code className="font-mono">supabase/word_requests.sql</code>.
         </div>
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-400">
+        <h2 className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-inkFaint">
           {requests.length} open request{requests.length === 1 ? "" : "s"}
         </h2>
 
         {requests.length === 0 && !error && (
-          <p className="text-stone-500">Nothing requested yet — be the first to ask for a word.</p>
+          <p className="text-inkSoft">Nothing requested yet — be the first to ask for a word.</p>
         )}
 
         <ul className="grid gap-3">
@@ -113,55 +106,51 @@ export default async function WantedPage() {
             const needsVoice = Boolean(r.entry_id);
             const audioLanded = needsVoice && Boolean(r.entry_audio_url);
             return (
-              <li key={r.id} className="flex items-stretch gap-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
-                {/* Vote control */}
+              <li key={r.id} className="flex items-stretch gap-4 border border-rule bg-surface p-4">
                 <form action={voteRequest} className="flex flex-col items-center justify-center">
                   <input type="hidden" name="id" value={r.id} />
                   <button
                     title={user ? (voted ? "You upvoted this" : "Upvote") : "Sign in to vote"}
                     disabled={!user}
                     className={
-                      "flex w-14 flex-col items-center rounded-lg border px-2 py-1 leading-tight transition " +
-                      (voted
-                        ? "border-accent bg-accentSoft text-accent"
-                        : "border-stone-200 text-stone-500 hover:border-accent hover:text-accent dark:border-stone-700") +
+                      "flex w-14 flex-col items-center border px-2 py-1 leading-tight transition-colors " +
+                      (voted ? "border-lacquer bg-accentSoft text-lacquer" : "border-rule text-inkFaint hover:border-lacquer hover:text-lacquer") +
                       (user ? "" : " cursor-not-allowed opacity-60")
                     }
                   >
-                    <span aria-hidden className="text-base">▲</span>
-                    <span className="text-sm font-semibold tabular-nums">{r.votes}</span>
+                    <span aria-hidden className="text-base leading-none">▲</span>
+                    <span className="font-mono text-sm font-medium tabular-nums">{r.votes}</span>
                   </button>
                 </form>
 
-                {/* Body */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline gap-2">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     {r.entry_id ? (
-                      <Link href={`/entry/${r.entry_id}`} className="romanization text-lg font-semibold text-accent hover:underline">
+                      <Link href={`/entry/${r.entry_id}`} className="romanization font-display text-lg font-semibold text-lacquer hover:underline">
                         {display}
                       </Link>
                     ) : (
-                      <span className="romanization text-lg font-semibold text-ink dark:text-stone-100">{display}</span>
+                      <span className="romanization font-display text-lg font-semibold text-ink">{display}</span>
                     )}
-                    <span className={"rounded px-2 py-0.5 text-xs " + (needsVoice ? "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" : "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300")}>
-                      {needsVoice ? "🔊 needs a voice" : "＋ needs an entry"}
+                    <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint ring-1 ring-rule px-2 py-0.5">
+                      {needsVoice ? "needs a voice" : "needs an entry"}
                     </span>
                     {audioLanded && (
-                      <span className="rounded bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/40 dark:text-green-200">audio added</span>
+                      <span className="font-mono text-[11px] uppercase tracking-wide text-lacquer ring-1 ring-lacquer px-2 py-0.5">audio added</span>
                     )}
                   </div>
-                  {r.note && <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{r.note}</p>}
+                  {r.note && <p className="mt-1 text-sm text-inkSoft">{r.note}</p>}
 
-                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-stone-400">
+                  <div className="mt-2 flex flex-wrap gap-4 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
                     {needsVoice ? (
-                      <Link href={`/entry/${r.entry_id}`} className="hover:text-accent">Open entry to add audio →</Link>
+                      <Link href={`/entry/${r.entry_id}`} className="hover:text-lacquer">Open entry to add audio →</Link>
                     ) : (
-                      <Link href={`/submit?romanization=${encodeURIComponent(r.term)}`} className="hover:text-accent">Add this word →</Link>
+                      <Link href={`/submit?romanization=${encodeURIComponent(r.term)}`} className="hover:text-lacquer">Add this word →</Link>
                     )}
                     {isEd && (
                       <form action={fulfillRequest}>
                         <input type="hidden" name="id" value={r.id} />
-                        <button className="text-stone-400 hover:text-accent">Mark done ✓</button>
+                        <button className="uppercase hover:text-lacquer">Mark done ✓</button>
                       </form>
                     )}
                   </div>

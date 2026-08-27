@@ -18,9 +18,7 @@ export default async function BrowsePage({ searchParams }: { searchParams: { pag
   const supabase = createClient();
   const { data, count } = await supabase
     .from("entries")
-    .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)", {
-      count: "exact",
-    })
+    .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)", { count: "exact" })
     .eq("status", "approved")
     .order("headword", { ascending: true })
     .range(from, to);
@@ -28,13 +26,8 @@ export default async function BrowsePage({ searchParams }: { searchParams: { pag
   const entries: CardProps[] = (data ?? []).map((e: any) => {
     const s = firstSense(e.senses);
     return {
-      id: e.id,
-      hanzi: e.hanzi,
-      romanization: e.romanization,
-      headword: e.headword,
-      pos: s?.part_of_speech ?? null,
-      gloss: s?.definition_en ?? null,
-      hasAudio: Boolean(e.audio_url),
+      id: e.id, hanzi: e.hanzi, romanization: e.romanization, headword: e.headword,
+      pos: s?.part_of_speech ?? null, gloss: s?.definition_en ?? null, hasAudio: Boolean(e.audio_url),
     };
   });
 
@@ -42,26 +35,26 @@ export default async function BrowsePage({ searchParams }: { searchParams: { pag
   const hasNext = to + 1 < total;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-baseline justify-between">
-        <h1 className="font-serif text-2xl font-bold">Browse all words</h1>
-        <span className="text-sm text-stone-500">{total.toLocaleString()} entries</span>
+    <div className="space-y-7">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-4">
+        <h1 className="font-display text-3xl font-extrabold uppercase tracking-tight">Browse all words</h1>
+        <span className="font-mono text-xs uppercase tracking-wider text-inkFaint">{total.toLocaleString()} entries</span>
       </div>
 
       <div className="grid gap-3">
         {entries.map((e) => <EntryCard key={e.id} entry={e} />)}
         {entries.length === 0 && (
-          <p className="text-stone-500">No approved words yet. Be the first to add one!</p>
+          <p className="text-inkSoft">No approved words yet. Be the first to add one!</p>
         )}
       </div>
 
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex items-center justify-between border-t border-rule pt-5 font-mono text-xs uppercase tracking-wider">
         {page > 1 ? (
-          <Link href={`/browse?page=${page - 1}`} className="text-accent hover:underline">← Previous</Link>
+          <Link href={`/browse?page=${page - 1}`} className="text-inkSoft hover:text-lacquer">← Previous</Link>
         ) : <span />}
-        <span className="text-sm text-stone-400">Page {page}</span>
+        <span className="text-inkFaint">Page {page}</span>
         {hasNext ? (
-          <Link href={`/browse?page=${page + 1}`} className="text-accent hover:underline">Next →</Link>
+          <Link href={`/browse?page=${page + 1}`} className="text-inkSoft hover:text-lacquer">Next →</Link>
         ) : <span />}
       </div>
     </div>

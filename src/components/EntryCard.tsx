@@ -14,23 +14,23 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
   return (
     <Link
       href={`/entry/${entry.id}`}
-      className="block rounded-xl border border-stone-200 bg-white p-4 transition hover:border-accent hover:shadow-sm dark:border-stone-700 dark:bg-stone-900"
+      className="group block border border-rule bg-surface px-5 py-4 transition-colors hover:border-lacquer"
     >
       <div className="flex items-baseline gap-3">
         {entry.hanzi && (
-          <span className="font-serif text-2xl leading-none">{entry.hanzi}</span>
+          <span className="font-display text-2xl font-bold leading-none">{entry.hanzi}</span>
         )}
-        <span className="romanization text-lg font-semibold text-accent">
+        <span className="romanization font-display text-lg font-semibold text-lacquer">
           {entry.romanization || entry.headword}
         </span>
-        {entry.hasAudio && <span title="has audio" className="text-sm">🔊</span>}
+        {entry.hasAudio && <span title="has audio" aria-hidden className="text-sm">🔊</span>}
         {entry.pos && (
-          <span className="ml-auto rounded bg-accentSoft px-2 py-0.5 text-xs italic text-accent">
+          <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
             {entry.pos}
           </span>
         )}
       </div>
-      {entry.gloss && <p className="mt-1 text-stone-700 dark:text-stone-300">{entry.gloss}</p>}
+      {entry.gloss && <p className="mt-1 text-inkSoft">{entry.gloss}</p>}
     </Link>
   );
 }

@@ -5,37 +5,36 @@ import SignInButton from "./SignInButton";
 export default async function Header() {
   const { user, profile } = await getSessionUser();
 
+  const navLink = "text-inkSoft transition-colors hover:text-lacquer";
+
   return (
-    <header className="border-b border-stone-200 bg-white/70 backdrop-blur dark:border-stone-700 dark:bg-black/20">
-      <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-        <Link href="/" className="font-serif text-xl font-bold text-accent">
-          福州話 <span className="text-ink dark:text-stone-100">Fuzhounese Dictionary</span>
+    <header className="border-b-2 border-ruleStrong bg-paper">
+      <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
+        <Link href="/" className="flex items-baseline gap-2">
+          <span className="font-display text-2xl font-extrabold leading-none tracking-tight text-lacquer">福州話</span>
+          <span className="font-display text-base font-semibold uppercase tracking-tight text-ink">Fuzhounese Dictionary</span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/" className="hover:text-accent">Search</Link>
-          <Link href="/browse" className="hover:text-accent">Browse</Link>
-          <Link href="/wanted" className="hover:text-accent">Wanted</Link>
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-wider">
+          <Link href="/" className={navLink}>Search</Link>
+          <Link href="/browse" className={navLink}>Browse</Link>
+          <Link href="/wanted" className={navLink}>Wanted</Link>
+          {profile?.is_editor && <Link href="/admin" className={navLink}>Queue</Link>}
           <Link
             href="/submit"
-            className="rounded-full bg-accent px-3 py-1.5 font-medium text-white hover:opacity-90"
+            className="border border-lacquer bg-lacquer px-3 py-1.5 font-medium text-paper transition-colors hover:bg-transparent hover:text-lacquer"
           >
             + Add a word
           </Link>
-          {profile?.is_editor && (
-            <Link href="/admin" className="hover:text-accent">Queue</Link>
-          )}
           {user ? (
-            <div className="flex items-center gap-3">
-              <Link href="/account" className="hover:text-accent">
-                {profile?.display_name || "My words"}
-              </Link>
+            <span className="flex items-center gap-4">
+              <Link href="/account" className={navLink}>{profile?.display_name || "My words"}</Link>
               <form action="/auth/signout" method="post">
-                <button className="text-stone-400 hover:text-accent">Sign out</button>
+                <button className="text-inkFaint transition-colors hover:text-lacquer">Sign out</button>
               </form>
-            </div>
+            </span>
           ) : (
             <SignInButton
-              className="rounded-full border border-stone-300 px-3 py-1.5 font-medium hover:border-accent"
+              className="border border-rule px-3 py-1.5 font-medium text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
               label="Sign in"
             />
           )}
