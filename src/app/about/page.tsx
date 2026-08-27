@@ -64,6 +64,15 @@ export default function AboutPage() {
               >
                 noahlee519@gmail.com
               </a>
+              <span className="mx-2 text-inkFaint">·</span>
+              <a
+                href="https://noahdarwinlee.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block font-mono text-xs uppercase tracking-wide text-lacquer hover:underline"
+              >
+                noahdarwinlee.com
+              </a>
             </p>
           </div>
         </div>
