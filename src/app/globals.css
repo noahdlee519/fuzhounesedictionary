@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+
+body {
+  background-color: theme("colors.paper");
+  color: theme("colors.ink");
+}
+
+.romanization { font-variant-ligatures: none; }
+
+@media (prefers-color-scheme: dark) {
+  body { background-color: #1a1714; color: #ece7df; }
+}
