@@ -11,7 +11,7 @@ export default function SearchBar({ defaultValue = "" }: { defaultValue?: string
         defaultValue={defaultValue}
         autoFocus
         placeholder="Search — characters, romanization, English, or Chinese…"
-        className="w-full bg-transparent px-5 py-4 text-lg outline-none placeholder:text-inkFaint"
+        className="w-full bg-transparent px-5 pt-[18px] pb-[14px] text-lg leading-none outline-none placeholder:text-inkFaint"
       />
       <button
         type="submit"
