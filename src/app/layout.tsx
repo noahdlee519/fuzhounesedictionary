@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bricolage_Grotesque, Newsreader, IBM_Plex_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import PageTransition from "@/components/PageTransition";
+import { Analytics } from "@vercel/analytics/next";
 import { LICENSE } from "@/lib/constants";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display", display: "swap", adjustFontFallback: false });
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/admin" className="hover:text-lacquer">Editors</Link>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
