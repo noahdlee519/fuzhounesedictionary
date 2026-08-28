@@ -16,9 +16,9 @@ export default async function Header() {
         </Link>
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-wider">
           <Link href="/" className={navLink}>Search</Link>
-          <Link href="/browse" className={navLink}>Browse</Link>
-          <Link href="/wanted" className={navLink}>Wanted</Link>
+          <Link href="/learn" className={navLink}>Learn</Link>
           <Link href="/about" className={navLink}>About</Link>
+          <Link href="/request" className={navLink}>Request</Link>
           {profile?.is_editor && <Link href="/admin" className={navLink}>Queue</Link>}
           <Link
             href="/submit"

@@ -66,18 +66,15 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
   return (
     <div className="space-y-10">
       <section className="border-b border-rule pb-8">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-lacquer">
-          福州話 · Foochow · Eastern Min
-        </p>
-        <h1 className="mt-3 font-display text-4xl font-extrabold uppercase leading-[0.95] tracking-tight text-ink sm:text-6xl">
-          A dictionary of<br />Fuzhounese
+        <h1 className="font-display text-4xl font-extrabold uppercase leading-[0.95] tracking-tight text-balance text-ink sm:text-6xl">
+          The Collaborative Fuzhounese-English Dictionary
         </h1>
         <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-1 font-mono text-sm text-inkSoft">
           <span><b className="font-semibold tabular-nums text-lacquer">{count.toLocaleString()}</b> words</span>
           <span aria-hidden className="text-rule">/</span>
           <span><b className="font-semibold tabular-nums text-lacquer">{audioCount.toLocaleString()}</b> voices recorded</span>
           <span aria-hidden className="text-rule">/</span>
-          <Link href="/wanted" className="hover:text-lacquer">
+          <Link href="/request" className="hover:text-lacquer">
             <b className="font-semibold tabular-nums text-lacquer">{openRequests.toLocaleString()}</b> words wanted →
           </Link>
         </div>

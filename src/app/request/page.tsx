@@ -61,7 +61,7 @@ export default async function WantedPage() {
       <section className="border border-rule bg-surface p-5">
         {user ? (
           <form action={requestWord} className="space-y-3">
-            <input type="hidden" name="back" value="/wanted" />
+            <input type="hidden" name="back" value="/request" />
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
               <label className="block">
                 <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-inkFaint">Word or phrase</span>
@@ -79,7 +79,7 @@ export default async function WantedPage() {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-inkSoft">Sign in to request a word or upvote.</p>
-            <SignInButton next="/wanted" label="Sign in" className="border border-rule px-4 py-2 font-mono text-xs uppercase tracking-wide text-inkSoft hover:border-lacquer hover:text-lacquer" />
+            <SignInButton next="/request" label="Sign in" className="border border-rule px-4 py-2 font-mono text-xs uppercase tracking-wide text-inkSoft hover:border-lacquer hover:text-lacquer" />
           </div>
         )}
       </section>

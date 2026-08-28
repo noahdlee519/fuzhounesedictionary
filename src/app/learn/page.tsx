@@ -50,11 +50,11 @@ export default async function BrowsePage({ searchParams }: { searchParams: { pag
 
       <div className="flex items-center justify-between border-t border-rule pt-5 font-mono text-xs uppercase tracking-wider">
         {page > 1 ? (
-          <Link href={`/browse?page=${page - 1}`} className="text-inkSoft hover:text-lacquer">← Previous</Link>
+          <Link href={`/learn?page=${page - 1}`} className="text-inkSoft hover:text-lacquer">← Previous</Link>
         ) : <span />}
         <span className="text-inkFaint">Page {page}</span>
         {hasNext ? (
-          <Link href={`/browse?page=${page + 1}`} className="text-inkSoft hover:text-lacquer">Next →</Link>
+          <Link href={`/learn?page=${page + 1}`} className="text-inkSoft hover:text-lacquer">Next →</Link>
         ) : <span />}
       </div>
     </div>

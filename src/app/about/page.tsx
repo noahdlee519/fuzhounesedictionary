@@ -1,9 +1,10 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About · Fuzhounese Dictionary",
   description:
-    "The story behind the first-ever collaborative digital Fuzhounese dialect dictionary, and the person who built it.",
+    "The story behind the collaborative Fuzhounese-English dictionary, and the person who built it.",
 };
 
 export default function AboutPage() {
@@ -17,26 +18,35 @@ export default function AboutPage() {
       </section>
 
       <section className="max-w-[62ch] space-y-6">
-        <p className="font-display text-2xl font-semibold leading-snug text-ink sm:text-3xl">
-          This is the first-ever collaborative digital Fuzhounese dialect dictionary.
+        <p className="font-display text-2xl font-semibold leading-snug text-balance text-ink sm:text-3xl">
+          As Mandarin grows in use throughout China, the many local dialects of Chinese are fading away.
         </p>
 
         <p className="text-lg leading-relaxed text-inkSoft">
-          As Mandarin grows in use throughout China, the many local dialects of Chinese are quietly
-          being wiped away. Fuzhounese is the language my mother&apos;s side of the family speaks — and
-          fewer and fewer people speak it today.
+          Fuzhounese is the dialect my grandmother speaks, and my goal with this website is to help
+          preserve the language — and to make it a resource for anyone who wants to learn Fuzhounese.
         </p>
 
         <p className="text-lg leading-relaxed text-inkSoft">
-          A few years ago, I built the first online dictionary for the dialect, with English and
-          Mandarin translations, and I continue to maintain it. Since then, people from around the
-          world have contributed, and watching the project grow has been one of the most fulfilling
-          things I&apos;ve been part of.
+          This dictionary has English and Mandarin translations, audio recordings and Chinese characters,
+          romanization (<span className="romanization">Bàng-uâ-cê</span>), and — most importantly — an
+          emphasis on community collaboration. It&apos;s also completely free to use.
         </p>
 
         <p className="text-lg leading-relaxed text-inkSoft">
-          My goal with this website is to help preserve the language — and to make it a resource for
-          anyone who wants to learn Fuzhounese.
+          Since I started this project in 2021, people from around the world have contributed words to
+          the dictionary. Fuzhounese takes on many forms, and some words are pronounced differently by
+          different speakers — so even if a word already has an entry, don&apos;t hesitate to add your
+          variant too.
+        </p>
+
+        <p className="pt-2">
+          <Link
+            href="/submit"
+            className="inline-block border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer"
+          >
+            Add a word →
+          </Link>
         </p>
       </section>
 
@@ -53,9 +63,8 @@ export default function AboutPage() {
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-lacquer">Creator</p>
             <h2 className="font-display text-2xl font-bold tracking-tight">Noah Lee</h2>
             <p className="max-w-[46ch] text-inkSoft">
-              Noah started this dictionary a few years ago to document the Fuzhounese his mother&apos;s
-              family speaks. He builds and maintains the site, reviews the words people contribute, and
-              keeps the project growing.
+              Noah started this dictionary in 2021 to help preserve the Fuzhounese his grandmother
+              speaks. He builds and maintains the site and reviews the words people contribute.
             </p>
             <p>
               <a

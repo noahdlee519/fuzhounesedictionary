@@ -9,7 +9,7 @@ import { adminClient } from "@/lib/supabase/admin";
 // Create a request (or, if one already exists for this word/entry, just upvote it).
 export async function requestWord(formData: FormData) {
   const { user } = await getSessionUser();
-  const back = String(formData.get("back") ?? "/wanted") || "/wanted";
+  const back = String(formData.get("back") ?? "/request") || "/request";
   if (!user) redirect(back);
 
   const term = String(formData.get("term") ?? "").trim();
@@ -47,7 +47,7 @@ export async function requestWord(formData: FormData) {
       .upsert({ request_id: existingId, user_id: user.id }, { onConflict: "request_id,user_id", ignoreDuplicates: true });
   }
 
-  revalidatePath("/wanted");
+  revalidatePath("/request");
   revalidatePath("/");
   redirect(back);
 }
@@ -55,13 +55,13 @@ export async function requestWord(formData: FormData) {
 // Add my vote to an existing request (idempotent).
 export async function voteRequest(formData: FormData) {
   const { user } = await getSessionUser();
-  if (!user) redirect("/wanted");
+  if (!user) redirect("/request");
   const id = String(formData.get("id"));
   const supabase = createClient();
   await supabase
     .from("word_request_votes")
     .upsert({ request_id: id, user_id: user.id }, { onConflict: "request_id,user_id", ignoreDuplicates: true });
-  revalidatePath("/wanted");
+  revalidatePath("/request");
 }
 
 // Editor-only: mark a request fulfilled (a recording / entry now exists).
@@ -73,6 +73,6 @@ export async function fulfillRequest(formData: FormData) {
     .from("word_requests")
     .update({ status: "fulfilled", fulfilled_at: new Date().toISOString(), fulfilled_by: user?.id ?? null })
     .eq("id", id);
-  revalidatePath("/wanted");
+  revalidatePath("/request");
   revalidatePath("/");
 }

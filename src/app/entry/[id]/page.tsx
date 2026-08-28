@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth";
-import { requestWord } from "@/app/wanted/actions";
+import { requestWord } from "@/app/request/actions";
 import type { Sense } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +60,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
               </button>
             </form>
           ) : (
-            <Link href="/wanted" className="mt-2 inline-block text-sm text-lacquer hover:underline">
+            <Link href="/request" className="mt-2 inline-block text-sm text-lacquer hover:underline">
               Sign in to request a recording →
             </Link>
           )}

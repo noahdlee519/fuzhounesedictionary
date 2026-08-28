@@ -18,7 +18,7 @@ export async function approve(formData: FormData) {
     .eq("id", id);
   revalidatePath("/admin");
   revalidatePath("/");
-  revalidatePath("/browse");
+  revalidatePath("/learn");
 }
 
 export async function reject(formData: FormData) {
