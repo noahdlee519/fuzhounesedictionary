@@ -8,7 +8,7 @@ export default async function Header() {
   const navLink = "text-inkSoft transition-colors hover:text-lacquer";
 
   return (
-    <header className="border-b border-rule bg-paper">
+    <header className="relative z-10 border-b border-rule bg-paper">
       <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="font-display text-2xl font-extrabold leading-none tracking-tight text-lacquer">福州話</span>

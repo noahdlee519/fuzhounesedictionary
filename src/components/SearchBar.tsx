@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const FULL = "Search—characters, romanization, English, or Chinese…";
+const FULL = "Search for characters, romanizations, English or Chinese";
 const SHORT = "Search a word…";
 
 export default function SearchBar({ defaultValue = "" }: { defaultValue?: string }) {

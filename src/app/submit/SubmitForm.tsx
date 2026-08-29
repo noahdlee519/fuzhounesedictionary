@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PARTS_OF_SPEECH, AUDIO_BUCKET, MAX_AUDIO_BYTES } from "@/lib/constants";
+import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
 
 interface SenseDraft {
   part_of_speech: string;
@@ -28,9 +29,13 @@ const labelCls = "block font-mono text-xs uppercase tracking-wide text-inkFaint"
 export default function SubmitForm({
   userId,
   initialRomanization,
+  defaultOriginArea = "",
+  defaultOriginLocality = "",
 }: {
   userId: string;
   initialRomanization: string;
+  defaultOriginArea?: string;
+  defaultOriginLocality?: string;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -39,6 +44,8 @@ export default function SubmitForm({
   const [romanization, setRomanization] = useState(initialRomanization);
   const [ipa, setIpa] = useState("");
   const [variety, setVariety] = useState("");
+  const [originArea, setOriginArea] = useState(defaultOriginArea);
+  const [originLocality, setOriginLocality] = useState(defaultOriginLocality);
   const [notes, setNotes] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -95,6 +102,8 @@ export default function SubmitForm({
         p_notes: notes,
         p_variety: variety,
         p_senses: senses.filter((s) => s.definition_en.trim()),
+        p_origin_area: originArea,
+        p_origin_locality: originLocality,
       });
       if (rpcErr) throw new Error(rpcErr.message);
 
@@ -135,10 +144,40 @@ export default function SubmitForm({
             <span className={labelCls}>IPA / pronunciation</span>
             <input value={ipa} onChange={(e) => setIpa(e.target.value)} placeholder="houʔ tsiu" className={inputCls} />
           </label>
-          <label className="block">
-            <span className={labelCls}>Variety / region</span>
-            <input value={variety} onChange={(e) => setVariety(e.target.value)} placeholder="e.g. Fuzhou city, Changle…" className={inputCls} />
-          </label>
+          <div />
+        </div>
+
+        <div className="space-y-3 border-t border-rule pt-4">
+          <p className={labelCls}>Where is this word from?</p>
+          <p className="text-xs text-inkFaint">
+            Prefilled from your profile. Change it if you learned this particular word somewhere else.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-sm">County or district</span>
+              <select value={originArea} onChange={(e) => setOriginArea(e.target.value)} className={inputCls}>
+                <option value="">Not specified</option>
+                {ORIGIN_GROUPS.map((g) => (
+                  <optgroup key={g} label={g}>
+                    {ORIGIN_AREAS.filter((a) => a.group === g).map((a) => (
+                      <option key={a.code} value={a.code}>
+                        {a.label} {a.hanzi}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-sm">Town or village (optional)</span>
+              <input
+                value={originLocality}
+                onChange={(e) => setOriginLocality(e.target.value)}
+                placeholder="e.g. Jinfeng"
+                className={inputCls}
+              />
+            </label>
+          </div>
         </div>
       </fieldset>
 

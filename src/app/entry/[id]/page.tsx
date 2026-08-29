@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth";
 import { requestWord } from "@/app/request/actions";
 import type { Sense } from "@/lib/types";
+import { formatOrigin } from "@/lib/origins";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
   const { user } = await getSessionUser();
   const { data: entry } = await supabase
     .from("entries")
-    .select("*, senses(*), contributor:profiles(display_name)")
+    .select("*, senses(*), contributor:profiles(id, display_name)")
     .eq("id", params.id)
     .eq("status", "approved")
     .maybeSingle();
@@ -22,7 +23,11 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
   const senses: Sense[] = [...(entry.senses ?? [])].sort(
     (a: Sense, b: Sense) => (a.sort ?? 0) - (b.sort ?? 0)
   );
-  const credit = (entry as any).contributor?.display_name as string | undefined;
+  const contributor = (entry as any).contributor as
+    | { id: string; display_name: string | null }
+    | null;
+  const credit = contributor?.display_name ?? undefined;
+  const wordOrigin = formatOrigin((entry as any).origin_area, (entry as any).origin_locality);
 
   return (
     <article className="space-y-7">
@@ -36,9 +41,9 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
           {entry.romanization || entry.headword}
         </span>
         {entry.ipa && <span className="font-mono text-inkFaint">/{entry.ipa}/</span>}
-        {entry.variety && (
+        {(wordOrigin || entry.variety) && (
           <span className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1">
-            {entry.variety}
+            {wordOrigin || entry.variety}
           </span>
         )}
       </header>
@@ -93,9 +98,16 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
         </div>
       )}
 
-      <p className="font-mono text-xs uppercase tracking-wider text-inkFaint">
+      <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
         Added {new Date(entry.created_at).toLocaleDateString()}
-        {credit ? ` · contributed by ${credit}` : ""}
+        {contributor && (
+          <>
+            {" · contributed by "}
+            <Link href={`/contributor/${contributor.id}`} className="hover:text-lacquer">
+              {credit || "a contributor"}
+            </Link>
+          </>
+        )}
       </p>
     </article>
   );

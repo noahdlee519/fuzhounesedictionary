@@ -47,14 +47,13 @@ export default async function WantedPage() {
   return (
     <div className="space-y-9">
       <section className="border-b border-rule pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-lacquer">討教 · Words wanted</p>
-        <h1 className="mt-3 font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">
-          Words wanted
+        <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">討教 · Request a word</p>
+        <h1 className="mt-3 font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
+          Request a word
         </h1>
         <p className="mt-4 max-w-2xl text-inkSoft">
-          Words the community is hoping to add—and words waiting for a real voice. Upvote the ones
-          you want most, or ask for a word you know is missing. A native speaker can then record it or
-          write the entry.
+          Ask for a word that is missing, or for a recording of a word that has no voice yet. Upvote
+          the requests you want filled first. A speaker can then write the entry or record it.
         </p>
       </section>
 
@@ -69,7 +68,7 @@ export default async function WantedPage() {
               </label>
               <label className="block">
                 <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-inkFaint">Note (optional)</span>
-                <input name="note" placeholder="What it means, where you heard it…" className={inputCls} />
+                <input name="note" placeholder="What it means, or where you heard it" className={inputCls} />
               </label>
             </div>
             <button className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer">
@@ -78,7 +77,7 @@ export default async function WantedPage() {
           </form>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-inkSoft">Sign in to request a word or upvote.</p>
+            <p className="text-sm text-inkSoft">Sign in to request a word or to upvote.</p>
             <SignInButton next="/request" label="Sign in" className="border border-rule px-4 py-2 font-mono text-xs uppercase tracking-wide text-inkSoft hover:border-lacquer hover:text-lacquer" />
           </div>
         )}
@@ -96,7 +95,7 @@ export default async function WantedPage() {
         )}
 
         {requests.length === 0 && !error && (
-          <p className="text-inkSoft">Nothing requested yet—be the first to ask for a word.</p>
+          <p className="text-inkSoft">No requests yet. Be the first to ask for a word.</p>
         )}
 
         <ul className="grid gap-3">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
 import SubmitForm from "./SubmitForm";
 
@@ -41,6 +42,15 @@ export default async function SubmitPage({
     );
   }
 
+  const supabase = createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("origin_area, origin_locality")
+    .eq("id", user.id)
+    .maybeSingle();
+  const originArea = profile?.origin_area ?? "";
+  const originLocality = profile?.origin_locality ?? "";
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="border-b border-rule pb-4">
@@ -50,7 +60,12 @@ export default async function SubmitPage({
           are required. Submissions are reviewed before they appear.
         </p>
       </div>
-      <SubmitForm userId={user.id} initialRomanization={searchParams.romanization ?? ""} />
+      <SubmitForm
+        userId={user.id}
+        initialRomanization={searchParams.romanization ?? ""}
+        defaultOriginArea={originArea}
+        defaultOriginLocality={originLocality}
+      />
     </div>
   );
 }

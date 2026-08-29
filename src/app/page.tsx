@@ -46,8 +46,8 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
   return (
     <div className="space-y-8">
       <section className="space-y-4">
-        <h1 className="font-display text-[22px] font-semibold leading-tight tracking-tight text-balance text-ink sm:text-[26px]">
-          The Collaborative Fuzhounese Dictionary
+        <h1 className="font-display text-[22px] font-bold uppercase leading-tight tracking-tight text-balance text-ink sm:text-[28px]">
+          The Collaborative Fuzhounese-English Dictionary
         </h1>
         <SearchBar defaultValue={q} />
       </section>

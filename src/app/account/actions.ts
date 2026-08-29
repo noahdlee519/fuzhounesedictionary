@@ -1,0 +1,37 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { ORIGIN_AREA_CODES, ORIGIN_PRECISIONS } from "@/lib/origins";
+
+export async function saveProfile(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const displayName = String(formData.get("display_name") ?? "").trim().slice(0, 80);
+  const areaRaw = String(formData.get("origin_area") ?? "").trim();
+  const area = ORIGIN_AREA_CODES.includes(areaRaw) ? areaRaw : "";
+  const locality = String(formData.get("origin_locality") ?? "").trim().slice(0, 120);
+
+  const precisionRaw = String(formData.get("origin_precision") ?? "hidden");
+  const precision = (ORIGIN_PRECISIONS as readonly string[]).includes(precisionRaw)
+    ? precisionRaw
+    : "hidden";
+
+  // The database trigger scrubs whatever the chosen precision does not publish.
+  await supabase
+    .from("profiles")
+    .update({
+      display_name: displayName || null,
+      origin_area: area || null,
+      origin_locality: locality || null,
+      origin_precision: precision,
+    })
+    .eq("id", user.id);
+
+  revalidatePath("/account");
+  revalidatePath(`/contributor/${user.id}`);
+}

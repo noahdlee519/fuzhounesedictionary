@@ -20,11 +20,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${serif.variable} ${mono.variable}`}>
       <body className="min-h-screen antialiased">
+        <div aria-hidden className="site-margin site-margin-left" />
+        <div aria-hidden className="site-margin site-margin-right" />
         <Header />
-        <main className="mx-auto max-w-4xl px-5 py-10">
+        <main className="relative z-10 mx-auto max-w-4xl px-5 py-10">
           {children}
         </main>
-        <footer className="mx-auto max-w-4xl px-5 pb-14 pt-8">
+        <footer className="relative z-10 mx-auto max-w-4xl px-5 pb-14 pt-8">
           <div className="border-t border-rule pt-6 text-xs text-inkFaint">
             A community project to document Fuzhounese (福州話 · Fuzhou · Eastern Min).
             Contributions are reviewed before they appear. Dictionary content is licensed{" "}
