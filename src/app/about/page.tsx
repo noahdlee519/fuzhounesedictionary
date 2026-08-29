@@ -25,27 +25,25 @@ export default function AboutPage() {
 
           <p className="text-lg leading-relaxed text-inkSoft">
             Fuzhounese is the dialect my grandmother speaks, and my goal with this website is to help
-            preserve the language — and to make it a resource for anyone who wants to learn Fuzhounese.
+            preserve the language, and to make it a resource for anyone who wants to learn Fuzhounese.
           </p>
 
           <p className="text-lg leading-relaxed text-inkSoft">
-            About ten million people speak Fuzhounese — most in eastern Fujian, around the city of Fuzhou.
+            About ten million people speak Fuzhounese, most in eastern Fujian, around the city of Fuzhou.
             But it has always been a language of migration: over the last century, Fuzhounese speakers have
             built communities far from home, most visibly in New York City and across Malaysia, Singapore,
-            Indonesia, and Japan. These maps trace where those voices are — the home province of Fujian, and the diaspora worldwide.
+            Indonesia, and Japan. These maps trace where those voices are—the home province of Fujian, and the diaspora worldwide.
           </p>
 
           <p className="text-lg leading-relaxed text-inkSoft">
             This dictionary has English and Mandarin translations, audio recordings and Chinese characters,
-            romanization (<span className="romanization">Bàng-uâ-cê</span>), and — most importantly — an
+            romanization (<span className="romanization">Bàng-uâ-cê</span>), and—most importantly—an
             emphasis on community collaboration. It&apos;s also completely free to use.
           </p>
 
           <p className="text-lg leading-relaxed text-inkSoft">
-            Since I started this project in 2021, people from around the world have contributed words to the
-            dictionary. Fuzhounese takes on many forms, and some words are pronounced differently by
-            different speakers — so even if a word already has an entry, don&apos;t hesitate to add your
-            variant too.
+            Fuzhounese takes on many forms, and some words are pronounced differently by different
+            speakers—so even if a word already has an entry, don&apos;t hesitate to add your variant too.
           </p>
 
           <p className="pt-2">
@@ -68,13 +66,13 @@ export default function AboutPage() {
               className="w-full"
             />
             <figcaption className="mt-3 border-t border-rule pt-3 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
-              Fujian province, southeast China — home of the language
+              Fujian province, southeast China—home of the language
             </figcaption>
           </figure>
           <figure>
             <img
               src="/diaspora-map.svg"
-              alt="World map of where Fuzhounese is spoken — eastern Fujian in China, and diaspora communities in New York, Malaysia, Singapore, Indonesia, Japan, the UK, Canada, and Australia."
+              alt="World map of where Fuzhounese is spoken—eastern Fujian in China, and diaspora communities in New York, Malaysia, Singapore, Indonesia, Japan, the UK, Canada, and Australia."
               width={520}
               height={264}
               className="w-full"
@@ -99,7 +97,7 @@ export default function AboutPage() {
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-lacquer">Creator</p>
             <h2 className="font-display text-2xl font-bold tracking-tight">Noah Lee</h2>
             <p className="max-w-[46ch] text-inkSoft">
-              Noah started this dictionary in 2021 to help preserve the Fuzhounese his grandmother speaks.
+              Noah started this dictionary in 2021 to help preserve the dialect his family speaks.
               He builds and maintains the site and reviews the words people contribute.
             </p>
             <p>

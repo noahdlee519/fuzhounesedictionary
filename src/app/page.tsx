@@ -16,21 +16,9 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
   const supabase = createClient();
 
   let results: CardProps[] = [];
-  let count = 0;
-  let audioCount = 0;
-  let openRequests = 0;
   let errored = false;
 
   try {
-    const { count: c } = await supabase
-      .from("entries").select("*", { count: "exact", head: true }).eq("status", "approved");
-    count = c ?? 0;
-
-    const { count: ac } = await supabase
-      .from("entries").select("*", { count: "exact", head: true })
-      .eq("status", "approved").not("audio_url", "is", null);
-    audioCount = ac ?? 0;
-
     if (q) {
       const { data, error } = await supabase.rpc("search_entries", { q });
       if (error) throw error;
@@ -55,43 +43,24 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
     errored = true;
   }
 
-  try {
-    const { count: rc } = await supabase
-      .from("word_requests").select("*", { count: "exact", head: true }).eq("status", "open");
-    openRequests = rc ?? 0;
-  } catch {
-    openRequests = 0;
-  }
-
   return (
-    <div className="space-y-10">
-      <section className="border-b border-rule pb-8">
-        <h1 className="font-display text-4xl font-extrabold uppercase leading-[0.95] tracking-tight text-balance text-ink sm:text-6xl">
-          The Collaborative Fuzhounese-English Dictionary
+    <div className="space-y-8">
+      <section className="space-y-4">
+        <h1 className="font-display text-[22px] font-semibold leading-tight tracking-tight text-balance text-ink sm:text-[26px]">
+          The Collaborative Fuzhounese Dictionary
         </h1>
-        <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-1 font-mono text-sm text-inkSoft">
-          <span><b className="font-semibold tabular-nums text-lacquer">{count.toLocaleString()}</b> words</span>
-          <span aria-hidden className="text-rule">/</span>
-          <span><b className="font-semibold tabular-nums text-lacquer">{audioCount.toLocaleString()}</b> voices recorded</span>
-          <span aria-hidden className="text-rule">/</span>
-          <Link href="/request" className="hover:text-lacquer">
-            <b className="font-semibold tabular-nums text-lacquer">{openRequests.toLocaleString()}</b> words wanted →
-          </Link>
-        </div>
+        <SearchBar defaultValue={q} />
       </section>
-
-      <SearchBar defaultValue={q} />
 
       {errored && (
         <div className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
-          Couldn&apos;t reach the database. Make sure <code className="font-mono">.env.local</code> is set and
-          you&apos;ve run the SQL in <code className="font-mono">supabase/schema.sql</code>. (See the README.)
+          The dictionary is unavailable at the moment. Please check back shortly.
         </div>
       )}
 
       {q ? (
         <section className="space-y-3">
-          <p className="font-mono text-xs uppercase tracking-wider text-inkFaint">
+          <p className="border-t border-rule pt-4 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
             {results.length} result{results.length === 1 ? "" : "s"} for &ldquo;{q}&rdquo;
           </p>
           {results.length === 0 && !errored && (
@@ -108,7 +77,7 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
         </section>
       ) : (
         <section className="space-y-3">
-          <h2 className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-inkFaint">Recently added</h2>
+          <h2 className="border-t border-rule pt-4 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Recently added</h2>
           <div className="grid gap-3">
             {results.map((e) => <EntryCard key={e.id} entry={e} />)}
           </div>

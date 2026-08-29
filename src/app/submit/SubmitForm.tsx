@@ -127,7 +127,7 @@ export default function SubmitForm({
               placeholder="Hók-ciŭ"
               className={`${inputCls} romanization`}
             />
-            <span className="mt-1 block text-xs text-inkFaint">Any system you know — no fixed standard.</span>
+            <span className="mt-1 block text-xs text-inkFaint">Any system you know—no fixed standard.</span>
           </label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

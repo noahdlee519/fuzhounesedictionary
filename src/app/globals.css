@@ -45,12 +45,3 @@ body {
 /* tighten the display face wherever it is used for big headings */
 .font-display { letter-spacing: -0.015em; }
 
-/* Fade-and-rise on every route change (keyed on pathname in PageTransition) */
-@keyframes pageFade {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: none; }
-}
-.page-fade { animation: pageFade 0.3s ease-out both; }
-@media (prefers-reduced-motion: reduce) {
-  .page-fade { animation: none; }
-}

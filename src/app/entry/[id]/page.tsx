@@ -79,7 +79,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
             {s.example && (
               <p className="mt-1 text-sm">
                 <span className="romanization text-inkSoft">{s.example}</span>
-                {s.example_gloss && <span className="text-inkFaint"> — {s.example_gloss}</span>}
+                {s.example_gloss && <span className="text-inkFaint">—{s.example_gloss}</span>}
               </p>
             )}
           </li>

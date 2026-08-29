@@ -77,7 +77,7 @@ export default async function AdminPage() {
                       {s.part_of_speech && <em className="text-accent">{s.part_of_speech} </em>}
                       {s.definition_en}
                       {s.gloss_zh && <span className="text-stone-500"> · {s.gloss_zh}</span>}
-                      {s.example && <span className="romanization text-stone-500"> — {s.example}</span>}
+                      {s.example && <span className="romanization text-stone-500">—{s.example}</span>}
                     </li>
                   ))}
                 </ol>

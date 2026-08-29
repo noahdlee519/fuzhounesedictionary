@@ -52,7 +52,7 @@ export default async function WantedPage() {
           Words wanted
         </h1>
         <p className="mt-4 max-w-2xl text-inkSoft">
-          Words the community is hoping to add — and words waiting for a real voice. Upvote the ones
+          Words the community is hoping to add—and words waiting for a real voice. Upvote the ones
           you want most, or ask for a word you know is missing. A native speaker can then record it or
           write the entry.
         </p>
@@ -84,19 +84,19 @@ export default async function WantedPage() {
         )}
       </section>
 
-      {error && (
-        <div className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
-          Couldn&apos;t load requests. Make sure you&apos;ve run <code className="font-mono">supabase/word_requests.sql</code>.
-        </div>
-      )}
-
       <section className="space-y-3">
-        <h2 className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-inkFaint">
-          {requests.length} open request{requests.length === 1 ? "" : "s"}
+        <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          {error ? "Open requests" : `${requests.length} open request${requests.length === 1 ? "" : "s"}`}
         </h2>
 
+        {error && (
+          <p className="text-inkSoft">
+            The request board is unavailable at the moment. Please check back shortly.
+          </p>
+        )}
+
         {requests.length === 0 && !error && (
-          <p className="text-inkSoft">Nothing requested yet — be the first to ask for a word.</p>
+          <p className="text-inkSoft">Nothing requested yet—be the first to ask for a word.</p>
         )}
 
         <ul className="grid gap-3">

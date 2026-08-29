@@ -46,7 +46,7 @@ export default async function SubmitPage({
       <div className="border-b border-rule pb-4">
         <h1 className="font-display text-3xl font-extrabold uppercase tracking-tight">Add a word</h1>
         <p className="mt-2 text-inkSoft">
-          Fill in whatever you know — only the word (characters or romanization) and at least one English meaning
+          Fill in whatever you know—only the word (characters or romanization) and at least one English meaning
           are required. Submissions are reviewed before they appear.
         </p>
       </div>

@@ -8,13 +8,13 @@ export default async function Header() {
   const navLink = "text-inkSoft transition-colors hover:text-lacquer";
 
   return (
-    <header className="border-b-2 border-ruleStrong bg-paper">
+    <header className="border-b border-rule bg-paper">
       <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="font-display text-2xl font-extrabold leading-none tracking-tight text-lacquer">福州話</span>
           <span className="font-display text-base font-semibold lowercase tracking-tight text-ink">fuzhounese.org</span>
         </Link>
-        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-wider">
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[15px]">
           <Link href="/" className={navLink}>Search</Link>
           <Link href="/learn" className={navLink}>Learn</Link>
           <Link href="/about" className={navLink}>About</Link>
@@ -22,7 +22,7 @@ export default async function Header() {
           {profile?.is_editor && <Link href="/admin" className={navLink}>Queue</Link>}
           <Link
             href="/submit"
-            className="border border-lacquer bg-lacquer px-3 py-1.5 font-medium text-paper transition-colors hover:bg-transparent hover:text-lacquer"
+            className="border border-lacquer bg-lacquer px-3 py-1 text-[15px] text-paper transition-colors hover:bg-transparent hover:text-lacquer"
           >
             + Add a word
           </Link>
@@ -35,7 +35,7 @@ export default async function Header() {
             </span>
           ) : (
             <SignInButton
-              className="border border-rule px-3 py-1.5 font-medium text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
+              className="border border-rule px-3 py-1 text-[15px] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
               label="Sign in"
             />
           )}
