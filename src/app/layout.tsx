@@ -61,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <footer className="relative z-10 mx-auto max-w-4xl px-5 pb-14 pt-8">
           <div className="border-t border-rule pt-6 text-xs text-inkFaint">
-            A community project to document Fuzhounese (福州話 · Fuzhou · Eastern Min).
+            A collaborative project to document, preserve, and teach Fuzhounese online.
             Contributions are reviewed before they appear. Dictionary content is licensed{" "}
             <a href={LICENSE.url} className="underline hover:text-lacquer" target="_blank" rel="noreferrer">
               {LICENSE.name}

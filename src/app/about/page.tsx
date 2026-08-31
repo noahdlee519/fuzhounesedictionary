@@ -11,8 +11,7 @@ export default function AboutPage() {
   return (
     <article className="space-y-12">
       <section className="border-b border-rule pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-lacquer">關於 · About</p>
-        <h1 className="mt-3 font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">
+        <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">
           About this project
         </h1>
       </section>

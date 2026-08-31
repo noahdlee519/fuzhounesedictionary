@@ -71,10 +71,13 @@ export default async function BrowsePage({
           Learn Fuzhounese
         </h1>
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
-          A dictionary tells you what a word means. This page is for the rest: how the sounds work,
-          why a word changes shape depending on what sits next to it, and how the language is put
-          together. Everything here is sourced, and anything not yet checked by a speaker is marked
-          as such.
+          A dictionary can tell you what a word means. It cannot tell you that the word changes shape
+          when you put another one after it, which in Fuzhounese it almost always does. This page is
+          for that. Open whichever section you need.
+        </p>
+        <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
+          Everything here is sourced, and the sources are listed at the bottom. Where something has
+          not been confirmed by a speaker, it says so.
         </p>
       </section>
 
@@ -98,10 +101,10 @@ export default async function BrowsePage({
         </div>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {entries.map((e) => <EntryCard key={e.id} entry={e} />)}
         {entries.length === 0 && (
-          <p className="text-inkSoft">
+          <p className="text-inkSoft sm:col-span-2">
             {pos ? `No ${pos}s yet.` : "No approved words yet. Be the first to add one!"}
           </p>
         )}

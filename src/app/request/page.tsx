@@ -60,8 +60,7 @@ export default async function WantedPage({
   return (
     <div className="space-y-9">
       <section className="border-b border-rule pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">討教 · Request a word</p>
-        <h1 className="mt-3 font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
           Request a word
         </h1>
         <p className="mt-4 max-w-2xl text-inkSoft">

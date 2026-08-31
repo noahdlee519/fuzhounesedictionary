@@ -1,17 +1,24 @@
 import Link from "next/link";
 
 /* ---------------------------------------------------------------------------
-   The teaching half of /learn. Static prose and tables, no client JS.
+   The teaching half of /learn.
 
-   SOURCING RULE FOR THIS FILE: every linguistic claim here is either sourced
-   from the references listed in <Sources/> at the foot of the page, or is a
-   fact about the site's own data. Nothing is written from memory. Anything not
-   yet confirmed is wrapped in <Unverified/> so a reader can see its status —
-   do not quietly promote such an item to plain text.
+   SOURCING RULE: every linguistic claim here comes from one of the references
+   in <Sources/>, or from the site's own entries. Nothing is written from
+   memory. Anything not confirmed by a speaker carries <Unchecked/> — do not
+   quietly promote such an item to plain text.
+
+   VOICE: plain and short. No triads, no "the single most important thing",
+   no paragraph that exists only to summarise the paragraph above it. Match
+   the About page.
+
+   Sections are <details> so the page can be skimmed. The id sits on the
+   <details> element, not the heading, so a link from the contents bar still
+   lands somewhere visible when the section is shut.
    --------------------------------------------------------------------------- */
 
 export const SECTIONS = [
-  { id: "what", label: "What Fuzhounese is" },
+  { id: "what", label: "What it is" },
   { id: "sounds", label: "Sounds" },
   { id: "tones", label: "Tones" },
   { id: "sandhi", label: "Tone sandhi" },
@@ -23,20 +30,6 @@ export const SECTIONS = [
   { id: "phrases", label: "Phrasebook" },
   { id: "words", label: "All words" },
 ];
-
-const H2 = ({ id, kicker, children }: { id: string; kicker?: string; children: React.ReactNode }) => (
-  <div className="border-t border-rule pt-6">
-    {kicker && (
-      <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">{kicker}</p>
-    )}
-    <h2
-      id={id}
-      className="mt-2 scroll-mt-24 font-display text-xl font-bold uppercase tracking-tight sm:text-2xl"
-    >
-      {children}
-    </h2>
-  </div>
-);
 
 const P = ({ children }: { children: React.ReactNode }) => (
   <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">{children}</p>
@@ -54,32 +47,53 @@ const Num = ({ children }: { children: React.ReactNode }) => (
   <span className="font-mono tabular-nums text-ink">{children}</span>
 );
 
-/* Chao tone letters are missing from many system fonts and render as faint
-   ticks, so they sit beside a numeric value rather than carrying the table. */
-const Tone = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-inkFaint" aria-hidden>
-    {children}
-  </span>
-);
-
-/** A claim that has not been checked by a speaker. Visible on purpose. */
-const Unverified = () => (
+/** Not yet confirmed by a speaker. Shown on purpose. */
+const Unchecked = () => (
   <span
-    title="Not yet checked by a native speaker"
+    title="Not yet checked by a speaker"
     className="ml-2 whitespace-nowrap border border-rule px-1.5 py-0.5 align-middle font-mono text-[10px] uppercase tracking-wide text-inkFaint"
   >
     unchecked
   </span>
 );
 
+function Section({
+  id,
+  title,
+  open = false,
+  children,
+}: {
+  id: string;
+  title: string;
+  open?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details id={id} open={open} className="group scroll-mt-24 border-t border-rule">
+      <summary className="flex cursor-pointer list-none items-baseline gap-3 py-4 marker:content-none">
+        <span
+          aria-hidden
+          className="mt-0.5 font-mono text-sm text-inkFaint transition-transform group-open:rotate-90"
+        >
+          &#9656;
+        </span>
+        <h2 className="font-display text-xl font-bold uppercase tracking-tight group-hover:text-lacquer sm:text-2xl">
+          {title}
+        </h2>
+      </summary>
+      <div className="space-y-4 pb-8 pl-0 sm:pl-7">{children}</div>
+    </details>
+  );
+}
+
 const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) => (
   <div className="overflow-x-auto">
-    <table className="w-full min-w-[34rem] border-collapse text-left text-[15px]">
+    <table className="w-full min-w-[32rem] border-collapse text-left text-[15px]">
       <thead>
         <tr>
-          {head.map((h) => (
+          {head.map((h, i) => (
             <th
-              key={h}
+              key={i}
               className="border-b border-ruleStrong pb-2 pr-4 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-inkFaint"
             >
               {h}
@@ -102,11 +116,74 @@ const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) =>
   </div>
 );
 
+/* --------------------------------------------------------- tone contours */
+/* Pitch digits drawn on the five-point scale. Level 5 is the top line.
+   The checked tones are drawn short, because they are short. */
+const TONES: { n: number; name: string; pitch: string; levels: number[]; short?: boolean }[] = [
+  { n: 1, name: "陰平", pitch: "44", levels: [4, 4] },
+  { n: 2, name: "陽平", pitch: "53", levels: [5, 3] },
+  { n: 3, name: "上聲", pitch: "31", levels: [3, 1] },
+  { n: 4, name: "陰去", pitch: "213", levels: [2, 1, 3] },
+  { n: 5, name: "陽去", pitch: "242", levels: [2, 4, 2] },
+  { n: 6, name: "陰入", pitch: "23", levels: [2, 3], short: true },
+  { n: 7, name: "陽入", pitch: "5", levels: [5, 5], short: true },
+];
 
-/* Bi-syllabic tone sandhi. Rows are the first (non-final) syllable, columns the
-   syllable that follows. Each cell is what the FIRST syllable becomes; the final
-   syllable keeps its own tone. Transcribed from the printed source that this
-   dictionary's tone numbering follows — see <Sources/>. */
+function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean }) {
+  const W = 88;
+  const H = 64;
+  const PAD = 6;
+  const span = short ? (W - PAD * 2) * 0.5 : W - PAD * 2;
+  const y = (lvl: number) => PAD + ((5 - lvl) / 4) * (H - PAD * 2);
+  const pts = levels
+    .map((lvl, i) => `${PAD + (levels.length === 1 ? 0 : (i / (levels.length - 1)) * span)},${y(lvl)}`)
+    .join(" ");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-hidden className="block">
+      {[1, 2, 3, 4, 5].map((lvl) => (
+        <line
+          key={lvl}
+          x1={PAD}
+          x2={W - PAD}
+          y1={y(lvl)}
+          y2={y(lvl)}
+          stroke="currentColor"
+          strokeWidth={lvl === 1 || lvl === 5 ? 0.9 : 0.5}
+          className="text-rule"
+        />
+      ))}
+      <polyline
+        points={pts}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-lacquer"
+      />
+    </svg>
+  );
+}
+
+const ToneChart = () => (
+  <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
+    {TONES.map((t) => (
+      <figure key={t.n} className="border border-rule bg-surface p-3">
+        <div className="text-rule">
+          <ToneGlyph levels={t.levels} short={t.short} />
+        </div>
+        <figcaption className="mt-2 flex items-baseline justify-between gap-2 border-t border-rule pt-2">
+          <span className="font-display text-sm font-semibold text-ink">
+            {t.n}. {t.name}
+          </span>
+          <span className="font-mono text-xs tabular-nums text-inkFaint">{t.pitch}</span>
+        </figcaption>
+      </figure>
+    ))}
+  </div>
+);
+
+/* ------------------------------------------------------------ sandhi grid */
 const TONE_ORDER = ["44", "53", "31", "213", "242", "23", "5"];
 const SANDHI: Record<string, string[]> = {
   //          +44        +53        +31     +213       +242       +23        +5
@@ -121,10 +198,7 @@ const SANDHI: Record<string, string[]> = {
 
 const SandhiGrid = () => (
   <div className="overflow-x-auto">
-    <table className="w-full min-w-[36rem] border-collapse text-center text-[15px]">
-      <caption className="pb-3 text-left font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
-        First syllable becomes &darr; &nbsp;·&nbsp; followed by &rarr;
-      </caption>
+    <table className="w-full min-w-[34rem] border-collapse text-center text-[15px]">
       <thead>
         <tr>
           <th className="border-b border-ruleStrong pb-2 pr-3 text-left font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
@@ -135,7 +209,7 @@ const SandhiGrid = () => (
               key={t}
               className="border-b border-ruleStrong pb-2 font-mono text-[11px] font-medium tabular-nums text-inkFaint"
             >
-              {t}
+              +{t}
             </th>
           ))}
         </tr>
@@ -162,7 +236,7 @@ const SandhiGrid = () => (
       </tbody>
     </table>
     <p className="mt-2 text-xs text-inkFaint">
-      Greyed cells are combinations where the first syllable does not change.
+      Grey means the first syllable stays as it was.
     </p>
   </div>
 );
@@ -171,7 +245,7 @@ export function Contents() {
   return (
     <nav
       aria-label="On this page"
-      className="sticky top-0 z-20 -mx-5 mb-2 border-b border-rule bg-paper/95 px-5 py-3 backdrop-blur"
+      className="sticky top-0 z-20 -mx-5 border-b border-rule bg-paper/95 px-5 py-3 backdrop-blur"
     >
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
         {SECTIONS.map((s) => (
@@ -188,349 +262,297 @@ export function Contents() {
 
 export default function Guide() {
   return (
-    <div className="space-y-10">
-      {/* ------------------------------------------------------------ what */}
-      <section className="space-y-4">
-        <H2 id="what" kicker="福州話">
-          What Fuzhounese is
-        </H2>
+    <div>
+      <Section id="what" title="What it is" open>
         <P>
-          Fuzhounese is the Fuzhou variety of <b>Eastern Min</b>, one of the primary branches of
-          Chinese. Within Eastern Min it belongs to the Houguan group, spoken across eleven cities
-          and counties of eastern Fujian and in the Matsu Islands. It is not mutually intelligible
-          with Mandarin, nor with Hokkien or Cantonese, so by the ordinary linguistic test it is a
-          language rather than a dialect, whatever the conventional English name suggests.
+          Fuzhounese is the Fuzhou variety of Eastern Min, which is one of the main branches of
+          Chinese. It is spoken in about eleven cities and counties of eastern Fujian, and in the
+          Matsu Islands.
         </P>
         <P>
-          Most of its everyday vocabulary is old. A large part of it goes back more than twelve
-          hundred years, and words that are archaic or literary in Mandarin are still ordinary here:{" "}
-          <Han>囝</Han> for a child or son is the standard word, not a poeticism.
+          A Mandarin speaker cannot understand it. Neither can a Cantonese or Hokkien speaker. By the
+          usual test that makes it a language, not a dialect, though almost everyone calls it a
+          dialect and this site does too.
         </P>
-      </section>
+        <P>
+          Much of the everyday vocabulary is very old. A good deal of it is more than twelve hundred
+          years old, and words that sound literary in Mandarin are ordinary here. <Han>囝</Han> is
+          just the word for a child.
+        </P>
+      </Section>
 
-      {/* ---------------------------------------------------------- sounds */}
-      <section className="space-y-4">
-        <H2 id="sounds" kicker="聲韻">
-          Sounds
-        </H2>
+      <Section id="sounds" title="Sounds">
         <P>
-          Fifteen initial consonants, including a zero initial realised as a glottal stop. Seven
-          vowel phonemes — /a e ø o i u y/ — which combine with the two possible codas into
-          forty-six rimes.
+          There are fifteen initial consonants and seven vowels. The vowels combine with the two
+          possible endings to make forty-six rimes.
         </P>
         <P>
-          Two features catch a Mandarin speaker out immediately. First, there is <b>no f or v</b>{" "}
-          anywhere in the language; that absence is shared by every branch of Min. Second, the
-          endings have collapsed: the old <Rom>-m</Rom>, <Rom>-n</Rom> and <Rom>-ng</Rom> have all
-          merged into a single <Rom>-ng</Rom>, and the old <Rom>-p</Rom>, <Rom>-t</Rom> and{" "}
-          <Rom>-k</Rom> have all merged into a glottal stop. So a syllable can end in a vowel, in{" "}
-          <Rom>-ng</Rom>, or in a catch in the throat, and nothing else.
+          Two things surprise people who come from Mandarin. There is no <b>f</b> and no <b>v</b>,
+          anywhere; no branch of Min has them. And the endings have collapsed. Old{" "}
+          <Rom>-m</Rom>, <Rom>-n</Rom> and <Rom>-ng</Rom> all became <Rom>-ng</Rom>. Old{" "}
+          <Rom>-p</Rom>, <Rom>-t</Rom> and <Rom>-k</Rom> all became a glottal stop, the catch in
+          the middle of &ldquo;uh-oh&rdquo;. A syllable can end in a vowel, in <Rom>-ng</Rom>, or in
+          that catch. Nothing else.
         </P>
         <P>
-          The two entering-tone codas are worth a note. Historical <Rom>-k</Rom> and historical{" "}
-          <Rom>-ʔ</Rom> sound identical to most speakers today, but they still behave differently
-          when a syllable follows them — see initial assimilation below. The distinction survives in
-          the grammar of the sound system after it has disappeared from the sound itself.
+          One oddity to keep in the back of your mind. The old <Rom>-k</Rom> and the old glottal
+          stop sound the same now, but they still behave differently when another syllable follows.
+          That comes up under initial assimilation.
         </P>
-      </section>
+      </Section>
 
-      {/* ----------------------------------------------------------- tones */}
-      <section className="space-y-4">
-        <H2 id="tones" kicker="聲調">
-          Tones
-        </H2>
+      <Section id="tones" title="Tones">
         <P>
-          Seven tones, plus two more that occur only inside longer words. Pitch is written on the
-          conventional five-point scale, <Num>5</Num> highest and <Num>1</Num> lowest, so{" "}
-          <Num>44</Num> is a high level tone and <Num>53</Num> falls from high to mid.
+          Seven tones, and two more that only show up inside longer words. Pitch is written on a
+          five-point scale where <Num>5</Num> is highest and <Num>1</Num> is lowest, so{" "}
+          <Num>44</Num> sits high and flat and <Num>53</Num> starts high and drops.
         </P>
+        <ToneChart />
         <Table
-          head={["", "Name", "Pitch", "Shape", "Example"]}
+          head={["", "Name", "Pitch", "Example"]}
           rows={[
-            ["1", <>陰平 yīnpíng</>, <Num>44</Num>, "high level", <><Han>伊</Han> <Rom>i44</Rom>{" "}he, she</>],
-            ["2", <>陽平 yángpíng</>, <Num>53</Num>, "high falling", <><Han>姨</Han> <Rom>i53</Rom>{" "}aunt</>],
-            ["3", <>上聲 shǎngshēng</>, <Num>31</Num>, "mid, near level", <><Han>以</Han> <Rom>i31</Rom>{" "}with which</>],
-            ["4", <>陰去 yīnqù</>, <Num>213</Num>, "low falling", <><Han>亿</Han> <Rom>ei213</Rom>{" "}hundred million</>],
-            ["5", <>陽去 yángqù</>, <Num>242</Num>, "rising then falling", <><Han>味</Han> <Rom>ei242</Rom>{" "}smell</>],
-            ["6", <>陰入 yīnrù</>, <Num>23</Num>, "short, abrupt rise", <><Han>一</Han> <Rom>eik23</Rom>{" "}one</>],
-            ["7", <>陽入 yángrù</>, <Num>5</Num>, "high and short", <><Han>译</Han> <Rom>ik5</Rom>{" "}to translate</>],
+            ["1", <>陰平 yīnpíng</>, <Num>44</Num>, <><Han>伊</Han> <Rom>i44</Rom>{" he, she"}</>],
+            ["2", <>陽平 yángpíng</>, <Num>53</Num>, <><Han>姨</Han> <Rom>i53</Rom>{" aunt"}</>],
+            ["3", <>上聲 shǎngshēng</>, <Num>31</Num>, <><Han>以</Han> <Rom>i31</Rom>{" with which"}</>],
+            ["4", <>陰去 yīnqù</>, <Num>213</Num>, <><Han>亿</Han> <Rom>ei213</Rom>{" hundred million"}</>],
+            ["5", <>陽去 yángqù</>, <Num>242</Num>, <><Han>味</Han> <Rom>ei242</Rom>{" smell"}</>],
+            ["6", <>陰入 yīnrù</>, <Num>23</Num>, <><Han>一</Han> <Rom>eik23</Rom>{" one"}</>],
+            ["7", <>陽入 yángrù</>, <Num>5</Num>, <><Han>译</Han> <Rom>ik5</Rom>{" to translate"}</>],
           ]}
         />
         <P>
-          Three of these are worth a warning, because what is written is not quite what you hear.
-          Tone 3 is written <Num>31</Num> as though it fell, but in practice it sits closer to a mid
-          level <Num>33</Num> — two tone-3 syllables in a row come out flat, with no fall audible at
-          all. Tone 4 is written <Num>213</Num> after the Mandarin third tone, but the rising tail is
-          rarely produced; it usually lands as a low fall, <Num>21</Num> or <Num>31</Num>. And tone 1
-          is <Num>44</Num> before a <Num>53</Num> or a <Num>5</Num>, but a run of consecutive{" "}
-          <Num>44</Num> syllables rises to a full <Num>55</Num>.
+          Three of them are not quite what the numbers say. Tone 3 is written <Num>31</Num> as if it
+          fell, but it comes out closer to a flat <Num>33</Num>; two of them in a row are completely
+          level. Tone 4 is written <Num>213</Num>, but the rise at the end is rarely there, so it
+          usually lands as a low fall. Tone 1 is <Num>44</Num> before a <Num>53</Num> or a{" "}
+          <Num>5</Num>, but a run of <Num>44</Num> syllables together climbs to a full{" "}
+          <Num>55</Num>.
         </P>
         <P>
-          Tones 6 and 7 are the checked tones, on syllables that end in a glottal stop. Both are
-          short, which is why tone 7 is written with a single digit.
+          Tones 6 and 7 are the short ones, on syllables that end in the glottal stop. That is why
+          the last two boxes above are drawn half as wide.
         </P>
         <P>
-          The two extra tones are <Num>21</Num> and <Num>24</Num>. They never appear on a word said
-          alone — only on a non-final syllable whose original tone has been altered by the sandhi
-          below.
+          The two extra tones are <Num>21</Num> and <Num>24</Num>. You will never hear them on a
+          word said by itself.
         </P>
-      </section>
+      </Section>
 
-      {/* ---------------------------------------------------------- sandhi */}
-      <section className="space-y-4">
-        <H2 id="sandhi" kicker="連讀變調">
-          Tone sandhi
-        </H2>
+      <Section id="sandhi" title="Tone sandhi">
         <P>
-          The seven tones above are <i>isolation</i> tones: the tone a syllable carries when it
-          stands alone. Put two syllables together into a word and the non-final one changes. This is
-          the part that makes Fuzhounese hard, and the part a word list cannot teach you.
+          The seven tones above are the tones a syllable has when it stands alone. Put two syllables
+          together and the first one changes. If you learn a word from this dictionary and say it
+          syllable by syllable, it will not sound like the language.
         </P>
         <P>
-          <b>The final syllable keeps its own tone. The syllable before it does not.</b> Read the
-          grid by finding your first syllable down the left and the following syllable across the
-          top; the cell gives you what the first syllable actually becomes.
+          The rule is short. <b>The last syllable keeps its tone. The one before it does not.</b>{" "}
+          Find your first syllable down the side, the syllable that follows it along the top, and the
+          cell tells you what the first one turns into.
         </P>
         <SandhiGrid />
         <P>
-          A few things fall out of the grid. Tones 1 and 2 behave identically in first position —
-          the whole top two rows are the same. Tone 3 followed by tone 3 stays put, one of the only
-          combinations that does not move. And a following tone 3 pulls almost everything before it
-          down to <Num>31</Num>.
+          The grid shows a couple of things a list of rules would hide. Tones 1 and 2 behave the same
+          way in first position, so the top two rows are identical. <Num>31</Num> before another{" "}
+          <Num>31</Num> is one of the few combinations that stays put. And a following <Num>31</Num>{" "}
+          drags nearly everything before it down.
         </P>
         <P>
-          Where the grid gives two values, both are heard. The alternatives belong to the checked
-          tones: a syllable in tone 6 or 7 sometimes keeps a firm glottal ending, in which case it
-          stays a checked syllable whatever its sandhi pitch, and sometimes lets that ending soften,
-          in which case it behaves like an unchecked one. Entries in this dictionary use whichever
-          matches the word as actually spoken.
+          Where there are two values, both get said. It depends on the short tones: a syllable in
+          tone 6 or 7 sometimes holds its glottal ending firmly and sometimes lets it go soft, and
+          the tone follows suit. Entries here use whichever matches the word as people say it, which
+          is why two entries can look inconsistent.
         </P>
         <P>
-          Longer words are built from this. A four-syllable compound behaves roughly as two
-          two-syllable units in sequence, so the same table applies twice.
+          Longer words work in pairs. A four-syllable word behaves roughly like two two-syllable
+          words in a row, so the same grid does the job twice.
         </P>
         <div className="border-l-2 border-lacquer bg-surface p-4">
           <p className="max-w-[62ch] text-sm text-inkSoft">
-            Three printed rules alter the <i>final</i> syllable as well, against the general
-            pattern: <Num>44</Num>+<Num>5</Num> is given as &ldquo;44 5 or 44 44&rdquo;,{" "}
-            <Num>23</Num>+<Num>23</Num> as &ldquo;44 242 or 5 242&rdquo;, and one rule is printed
-            with a first tone of <Num>214</Num>, which is not one of the seven. The first may be
-            real; the other two look like typesetting slips. They are recorded here as printed rather
-            than silently corrected.
+            Three of the printed rules change the <i>last</i> syllable as well, which cuts against
+            everything else in the table. One of them cites a tone that does not exist. They are
+            reproduced as printed rather than tidied up, on the grounds that a mistake in a source is
+            better left visible.
           </p>
         </div>
-      </section>
+      </Section>
 
-      {/* ---------------------------------------------------- assimilation */}
-      <section className="space-y-4">
-        <H2 id="assimilation" kicker="聲母類化">
-          Initial assimilation
-        </H2>
+      <Section id="assimilation" title="Initial assimilation">
         <P>
-          Alongside the tone changes, the <i>consonants</i> shift too. When one syllable follows
-          another inside a word, its initial consonant assimilates to the ending of the syllable
-          before it. This is a hallmark of Eastern Min and it is why the same character can look
-          quite different from one entry to the next.
+          Tones are not the only thing that shifts. When one syllable follows another inside a word,
+          its opening consonant changes to suit the ending of the syllable before it. This is very
+          characteristic of Eastern Min, and it is why the same character can look different from one
+          entry to the next.
         </P>
         <Table
-          head={["Initial", "After a vowel or -ʔ", "After -ng", "After -k"]}
+          head={["Initial", "After a vowel or glottal stop", "After -ng", "After -k"]}
           rows={[
-            [<>p, pʰ</>, "β", "m", "unchanged"],
-            [<>t, tʰ, s</>, "l", "n", "unchanged"],
-            [<>k, kʰ, h</>, "dropped", "ŋ", "unchanged"],
-            [<>ts, tsʰ</>, "ʒ", "—", "unchanged"],
-            [<>m, n, ŋ</>, "unchanged", "unchanged", "unchanged"],
-            [<>l</>, "—", "n", "unchanged"],
+            [<>p, pʰ</>, "β", "m", "no change"],
+            [<>t, tʰ, s</>, "l", "n", "no change"],
+            [<>k, kʰ, h</>, "dropped", "ŋ", "no change"],
+            [<>ts, tsʰ</>, "ʒ", "—", "no change"],
+            [<>m, n, ŋ</>, "no change", "no change", "no change"],
+            [<>l</>, "—", "n", "no change"],
           ]}
         />
         <P>
-          You can watch this happening in this dictionary. <Han>八</Han> on its own is{" "}
-          <Rom>baik</Rom>. In <Han>二八天</Han> <Rom>ni21 weik21 tieng44</Rom> it follows a vowel, so
-          the p softens to a w. In <Han>七讲八昕</Han> <Rom>cik21 goung21 meik5 tiang213</Rom> it
-          follows an <Rom>-ng</Rom>, so the same p becomes m. Same character, same word, three
-          different consonants depending on the company it keeps.
+          You can watch it happen in this dictionary. <Han>八</Han> on its own is <Rom>baik</Rom>.
+          In <Han>二八天</Han> <Rom>ni21 weik21 tieng44</Rom> it comes after a vowel, so the p goes
+          soft. In <Han>七讲八昕</Han> <Rom>cik21 goung21 meik5 tiang213</Rom> it comes after an{" "}
+          <Rom>-ng</Rom>, so the same p becomes an m. One character, three consonants, depending on
+          what it is standing next to.
         </P>
         <P>
-          Note the last column. Historical <Rom>-k</Rom> triggers nothing at all, while historical{" "}
-          <Rom>-ʔ</Rom> triggers the whole first column — even though the two are pronounced alike.
-          Assimilation is also somewhat variable between speakers and between set phrases, so
-          expect the dictionary to disagree with itself occasionally.
+          Look at the last column. The old <Rom>-k</Rom> sets off nothing at all, while the old
+          glottal stop sets off the whole first column, even though the two sound alike today.
+          Speakers also vary, and set phrases go their own way, so the dictionary will occasionally
+          disagree with itself.
         </P>
-      </section>
+      </Section>
 
-      {/* ----------------------------------------------------------- rimes */}
-      <section className="space-y-4">
-        <H2 id="rimes" kicker="鬆緊韻">
-          Tight and loose rimes
-        </H2>
+      <Section id="rimes" title="Tight and loose rimes">
         <P>
-          A third alternation, and one that is close to unique to Fuzhou among Chinese varieties: the
-          vowel itself changes with the tone. Each rime has a tight form and a loose form. Dark
-          level, rising, light level and light entering take the tight form; dark departing, dark
-          entering and light departing take the loose one.
+          A third thing changes: the vowel itself. Every rime has a tight form and a loose form, and
+          which one you get depends on the tone. Tones 1, 3, 2 and 7 take the tight form; tones 4, 6
+          and 5 take the loose one.
         </P>
         <P>
-          In sandhi, a loose rime shifts to its tight counterpart. The name of the city shows it:{" "}
-          <Han>福</Han> alone is [hɔuʔ˨˦], but in <Han>福州</Han> it becomes [huʔ˨˩] — the tone
-          changes and the vowel changes with it. Unlike the tone sandhi this is not obligatory, and
-          whether a speaker applies it can carry a difference of meaning or of grammatical function.
+          In sandhi, a loose rime tightens up. The name of the city shows it. <Han>福</Han> by
+          itself is [hɔuʔ], but in <Han>福州</Han> it becomes [huʔ]. The tone changes and the vowel
+          goes with it. This one is optional, unlike the tone sandhi, and whether a speaker does it
+          can carry a difference in meaning.
         </P>
-      </section>
+        <P>Almost no other Chinese variety does this.</P>
+      </Section>
 
-      {/* --------------------------------------------------------- writing */}
-      <section className="space-y-4">
-        <H2 id="writing" kicker="平話字">
-          Writing it down
-        </H2>
+      <Section id="writing" title="Writing it down">
         <P>
-          There is no single standard romanization, which is why this dictionary accepts whatever
-          system a contributor already uses.
+          There is no standard romanization, which is why this dictionary takes whatever system a
+          contributor already uses.
         </P>
         <P>
-          <b>Bàng-uâ-cê</b> is the historic one. American Methodist missionary M. C. White made the
-          first attempt in the 1850s, adapting an existing orthography; Robert S. Maclay, R. W.
-          Stewart and Charles Hartwell refined it into a standard form by the 1890s. It uses{" "}
-          <Rom>b d g c</Rom> for the unaspirated stops and affricate and <Rom>p t k ch</Rom> for
-          their aspirated counterparts — so <Rom>b</Rom> is not a voiced sound — and it marks vowel
-          quality with a diacritic underneath the letter (<Rom>a̤ e̤ o̤ ṳ</Rom>), leaving the space
-          above free for the tone mark. It never spread far beyond the mission churches and their
-          schools, and today it is largely historical.
+          Most entries here write the tone as digits after each syllable: <Rom>seik21 zo213</Rom>.
+          The digits are the pitch values from the tone table. Because they record the tone as
+          spoken, they show you the sandhi that a tone mark on a dictionary headword would hide.{" "}
+          <Rom>seik21</Rom> is tone 7 bent by the syllable after it, not a tone in its own right.
         </P>
         <P>
-          Most entries here use a <b>numeric transcription</b> instead, writing the tone as digits
-          after each syllable: <Rom>seik21 zo213</Rom>. The digits are the pitch values in the tone
-          table above. Because they record the tone as actually spoken, they show the sandhi that a
-          tone mark on a dictionary headword hides — <Rom>seik21</Rom> is tone 7 shifted by the
-          syllable that follows it, not a tone in its own right.
+          <b>Bàng-uâ-cê</b> is the old system. An American missionary, M. C. White, made the first
+          attempt in the 1850s; Robert S. Maclay, R. W. Stewart and Charles Hartwell worked it into a
+          settled form by the 1890s. Two things about it trip people up. <Rom>b</Rom>, <Rom>d</Rom>,{" "}
+          <Rom>g</Rom> and <Rom>c</Rom> are the unaspirated sounds and <Rom>p</Rom>, <Rom>t</Rom>,{" "}
+          <Rom>k</Rom> and <Rom>ch</Rom> the aspirated ones, so <Rom>b</Rom> is not voiced the way an
+          English b is. And vowel quality is marked underneath the letter (<Rom>a̤ e̤ o̤ ṳ</Rom>),
+          leaving the space above it free for the tone. It never travelled much beyond the mission
+          churches.
         </P>
         <div className="border-l-2 border-lacquer bg-surface p-4">
-          <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">To be added</p>
+          <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Missing</p>
           <p className="mt-2 max-w-[62ch] text-sm text-inkSoft">
-            The tone-mark table for Bàng-uâ-cê — which diacritic goes with which of the seven tones.
-            It will be taken from a printed source rather than reconstructed.
+            Which Bàng-uâ-cê mark goes with which tone. It will come from a printed source rather
+            than be reconstructed.
           </p>
         </div>
-      </section>
+      </Section>
 
-      {/* --------------------------------------------------------- grammar */}
-      <section className="space-y-4">
-        <H2 id="grammar" kicker="語法">
-          Grammar
-        </H2>
+      <Section id="grammar" title="Grammar">
         <P>
-          Structurally Fuzhounese is a Sinitic language and will feel familiar to anyone who knows
-          one. It is <b>analytic</b>: words do not inflect. Nouns have no case and no plural ending,
-          verbs do not conjugate for person or number, and there is no grammatical gender. Word
-          order and a set of small particles carry the work that endings do in European languages.
+          If you know any Chinese variety, the shape of this will be familiar. Words do not change
+          form. Nouns have no plural ending and no case. Verbs do not conjugate. There is no
+          grammatical gender. Word order and a handful of small particles do the work that endings do
+          in European languages.
         </P>
         <Table
-          head={["Feature", "Fuzhounese", "Compare"]}
+          head={["", "Fuzhounese", "Compare"]}
           rows={[
-            [
-              "Word order",
-              "Subject–verb–object",
-              "as English; unlike Japanese or Korean",
-            ],
-            [
-              "Alignment",
-              "No morphological case at all — nominative/accusative is carried by position, not form",
-              "unlike Latin or Russian",
-            ],
-            [
-              "Tense",
-              "None marked on the verb. Time is set by adverbs, and completion or duration by aspect particles",
-              "unlike English -ed",
-            ],
-            [
-              "Classifiers",
-              "A measure word stands between a number and its noun",
-              "as Mandarin 個; unlike English",
-            ],
-            [
-              "Possession",
-              "Possessor precedes possessed, joined by a particle",
-              "as Mandarin 的",
-            ],
-            [
-              "Questions",
-              "Formed with a final particle or a negative, not by moving the verb",
-              "unlike English inversion",
-            ],
+            ["Word order", "Subject, verb, object", "like English"],
+            ["Case", "None. Position tells you who did what", "unlike Latin or Russian"],
+            ["Tense", "Not marked on the verb. Adverbs set the time, particles mark completion", "unlike English -ed"],
+            ["Counting", "A measure word goes between the number and the noun", "like Mandarin 個"],
+            ["Possession", "Owner first, joined by a particle", "like Mandarin 的"],
+            ["Questions", "A particle at the end, or a negative. The verb does not move", "unlike English"],
           ]}
         />
         <P>
-          The particles that do this work — the possessive marker, the aspect markers, the
-          question particles — differ from their Mandarin equivalents in both shape and use, and
-          the reference works available to us do not treat them systematically.
-          <Unverified /> They will be filled in here from a printed grammar or from speakers, entry
-          by entry, rather than guessed at from Mandarin.
+          The particles themselves are the interesting part, and the sources available to us do not
+          set them out properly.
+          <Unchecked /> Rather than borrow the Mandarin ones and hope, they will get filled in from a
+          printed grammar or from speakers.
         </P>
-      </section>
+      </Section>
 
-      {/* -------------------------------------------------------- mandarin */}
-      <section className="space-y-4">
-        <H2 id="mandarin" kicker="對比">
-          Against Mandarin
-        </H2>
+      <Section id="mandarin" title="Against Mandarin">
         <P>
-          Written down, a Fuzhounese sentence is often broadly readable to anyone literate in
-          Chinese, because most words have cognates elsewhere. Spoken, it is not intelligible at
-          all. The gap between those two facts is the single most useful thing to know about the
-          language.
+          Written down, a Fuzhounese sentence is often more or less readable to anyone literate in
+          Chinese, because most of the words have relatives elsewhere. Spoken, it is not intelligible
+          at all.
         </P>
         <Table
           head={["", "Fuzhounese", "Mandarin"]}
           rows={[
             ["Tones", "7", "4"],
-            ["f / v sounds", "none", "f present"],
-            ["Syllable endings", "vowel, -ng, or glottal stop", "vowel, -n, -ng"],
-            ["Tone sandhi", "pervasive, and reshapes every non-final syllable", "limited"],
-            ["Consonant mutation", "yes — initials assimilate inside a word", "no"],
-            ["Vowel–tone interaction", "yes — tight and loose rimes", "no"],
+            ["f and v", "none", "f yes"],
+            ["Syllable endings", "vowel, -ng, glottal stop", "vowel, -n, -ng"],
+            ["Tone sandhi", "everywhere, reshaping every non-final syllable", "limited"],
+            ["Consonants shifting inside a word", "yes", "no"],
+            ["Vowels changing with tone", "yes", "no"],
           ]}
         />
         <P>
-          Beware false friends. <Han>莫細膩</Han> means <i>make yourself at home</i>, not
-          &ldquo;don&apos;t be fussy&rdquo; as the characters would suggest to a Mandarin reader.
-          Reading the characters through Mandarin is a reliable way to misunderstand the sentence.
+          Watch out for words that look transparent and are not. <Han>莫細膩</Han> means{" "}
+          <i>make yourself at home</i>. Read through Mandarin it looks like it should mean
+          &ldquo;don&apos;t be fussy&rdquo;.
         </P>
-      </section>
+      </Section>
 
-      {/* --------------------------------------------------------- phrases */}
-      <section className="space-y-4">
-        <H2 id="phrases" kicker="常用語">
-          Phrasebook
-        </H2>
+      <Section id="phrases" title="Phrasebook">
         <div className="border-l-2 border-lacquer bg-surface p-4">
-          <p className="max-w-[62ch] text-sm text-inkSoft">
-            A starting set. Only phrases traceable to a published source are listed, and every one
-            is marked unchecked until a speaker has confirmed it aloud — a phrasebook with the wrong
-            tone teaches the wrong word. If you speak Fuzhounese and can correct or add to this,{" "}
+          <p className="max-w-[64ch] text-sm text-inkSoft">
+            This is the thinnest part of the site and the hardest to fill honestly. A phrase with the
+            wrong tone on it teaches someone a different word, so nothing goes in here on a guess.
+            What is listed is either traceable to a published source or already an entry in this
+            dictionary, and it is all marked unchecked until a speaker confirms it.{" "}
             <Link href="/request" className="text-lacquer hover:underline">
-              please do
+              If you speak Fuzhounese, this is the section that needs you.
             </Link>
-            .
           </p>
         </div>
+
+        <h3 className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          Asking things
+        </h3>
         <Table
-          head={["English", "Characters", "Romanization", ""]}
+          head={["English", "Characters", "Pronunciation", ""]}
           rows={[
-            ["No / it is not", <Han>伓是</Han>, <Rom>ng-sê</Rom>, <Unverified />],
-            ["That&rsquo;s right / not wrong", <Han>無綻</Han>, <Rom>mò̤ dâng</Rom>, <Unverified />],
-            [
-              "Do you speak Fuzhounese?",
-              <Han>汝會講福州話賣？</Han>,
-              <Rom>—</Rom>,
-              <Unverified />,
-            ],
-            ["Make yourself at home", <Han>莫細膩</Han>, <Rom>—</Rom>, <Unverified />],
+            ["what", <Han>乜毛</Han>, <Rom>mie53 nok23</Rom>, <Unchecked />],
+            ["what (also)", <Han>乜毛名</Han>, <Rom>mie21 nok44 miang53</Rom>, <Unchecked />],
+            ["when", <Han>乜候</Han>, <Rom>mieng53 ngau242</Rom>, <Unchecked />],
+            ["why, what for", <Han>干乜势</Han>, <Rom>gang21 me53 lie213</Rom>, <Unchecked />],
+            ["Do you speak Fuzhounese?", <Han>汝會講福州話賣？</Han>, <Rom>—</Rom>, <Unchecked />],
           ]}
         />
+
+        <h3 className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          Yes, no, and getting by
+        </h3>
+        <Table
+          head={["English", "Characters", "Pronunciation", ""]}
+          rows={[
+            ["no, it is not", <Han>伓是</Han>, <Rom>ng-sê</Rom>, <Unchecked />],
+            ["not wrong", <Han>無綻</Han>, <Rom>mò̤ dâng</Rom>, <Unchecked />],
+            ["make yourself at home", <Han>莫細膩</Han>, <Rom>—</Rom>, <Unchecked />],
+            ["to know, to be acquainted with", <Han>八</Han>, <Rom>baik23</Rom>, <Unchecked />],
+          ]}
+        />
+
+        <h3 className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          Still to come
+        </h3>
         <P>
-          This is the thinnest section on the page, and deliberately so. Greetings, numbers, food
-          and directions all belong here and none of them are worth publishing on a guess.
+          Greetings. Numbers. Times of day. Family. Ordering food. Directions. Every one of these is
+          more useful than everything above, and none of them are worth publishing wrong. They will
+          be added from recordings.
         </P>
-      </section>
+      </Section>
     </div>
   );
 }
@@ -541,8 +563,13 @@ export function Sources() {
       <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Sources</h2>
       <ul className="mt-3 max-w-[68ch] space-y-2 text-sm text-inkSoft">
         <li>
-          Phonology, tones, sandhi, initial assimilation, tight and loose rimes, and the
-          Mandarin contrasts:{" "}
+          Tone values and names, the isolation examples, and the whole bi-syllabic sandhi grid come
+          from the printed Fuzhounese&ndash;English dictionary whose transcription this site follows.{" "}
+          <i>Full citation to follow.</i>
+        </li>
+        <li>
+          Consonants, rimes, initial assimilation, tight and loose rimes, and the comparisons with
+          Mandarin:{" "}
           <a
             href="https://en.wikipedia.org/wiki/Fuzhou_dialect"
             target="_blank"
@@ -551,10 +578,7 @@ export function Sources() {
           >
             Fuzhou dialect
           </a>
-          , Wikipedia.
-        </li>
-        <li>
-          History and spelling conventions of Bàng-uâ-cê:{" "}
+          , Wikipedia. The history of Bàng-uâ-cê:{" "}
           <a
             href="https://en.wikipedia.org/wiki/B%C3%A0ng-u%C3%A2-c%C3%AA"
             target="_blank"
@@ -563,18 +587,11 @@ export function Sources() {
           >
             Bàng-uâ-cê
           </a>
-          , Wikipedia.
+          , Wikipedia. Both are CC BY-SA, the same licence as this dictionary.
         </li>
         <li>
-          Tone values, tone names, isolation examples and the complete bi-syllabic sandhi grid: the
-          printed Fuzhounese&ndash;English dictionary whose transcription system the entries here
-          follow. <i>Full citation to be added.</i>
-        </li>
-        <li>
-          The Wikipedia articles are used under CC BY-SA, the same licence as this dictionary.
-          Assimilation examples are drawn from entries in this dictionary. Tone values and sandhi
-          rules are factual data rather than authored prose, but the source deserves crediting and
-          will be named here.
+          The assimilation examples and the question words in the phrasebook are entries from this
+          dictionary.
         </li>
       </ul>
     </section>
