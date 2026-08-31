@@ -4,5 +4,5 @@ export const SITE_URL = (
 
 export const SITE_NAME = "Fuzhounese Dictionary";
 
-export const SITE_DESCRIPTION =
-  "A community dictionary of Fuzhounese (福州話, Fuzhou, Eastern Min). Search words, hear how they are said, and add your own.";
+// Noah's wording, used verbatim as the meta description / search snippet.
+export const SITE_DESCRIPTION = "The Collaborative Fuzhounese-English Dictionary.";

@@ -4,14 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { toCard } from "@/lib/entries";
 import type { Metadata } from "next";
+import Guide, { Contents, Sources } from "./Guide";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
 export const metadata: Metadata = {
-  title: "Browse all words",
+  title: "Learn Fuzhounese",
   description:
-    "Every word in the Fuzhounese Dictionary, A to Z, filterable by part of speech.",
+    "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z.",
   alternates: { canonical: "/learn" },
 };
 
@@ -64,9 +65,25 @@ export default async function BrowsePage({
   );
 
   return (
-    <div className="space-y-7">
-      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-4">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">Browse all words</h1>
+    <div className="space-y-10">
+      <section className="space-y-4">
+        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+          Learn Fuzhounese
+        </h1>
+        <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
+          A dictionary tells you what a word means. This page is for the rest: how the sounds work,
+          why a word changes shape depending on what sits next to it, and how the language is put
+          together. Everything here is sourced, and anything not yet checked by a speaker is marked
+          as such.
+        </p>
+      </section>
+
+      <Contents />
+
+      <Guide />
+
+      <div id="words" className="flex scroll-mt-24 flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-6">
+        <h2 className="font-display text-xl font-bold uppercase tracking-tight sm:text-2xl">All words</h2>
         <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
           {total.toLocaleString()} {pos ? pos : "entr"}
           {pos ? (total === 1 ? "" : "s") : total === 1 ? "y" : "ies"}
@@ -99,6 +116,8 @@ export default async function BrowsePage({
           <Link href={pageHref(page + 1)} className="text-inkSoft hover:text-lacquer">Next →</Link>
         ) : <span />}
       </div>
+
+      <Sources />
     </div>
   );
 }
