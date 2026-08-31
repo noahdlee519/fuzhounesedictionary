@@ -23,7 +23,12 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
         <span className="romanization font-display text-lg font-semibold text-lacquer">
           {entry.romanization || entry.headword}
         </span>
-        {entry.hasAudio && <span title="has audio" aria-hidden className="text-sm">🔊</span>}
+        {entry.hasAudio && (
+          <span className="text-sm">
+            <span aria-hidden>🔊</span>
+            <span className="sr-only">has a recording</span>
+          </span>
+        )}
         {entry.pos && (
           <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
             {entry.pos}

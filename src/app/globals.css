@@ -68,7 +68,11 @@ body {
           mask-repeat: repeat;
 }
 .site-margin-left  { left: 0; }
-.site-margin-right { right: 0; }
+
+/* Mirrored along the vertical axis so the tiling starts from the screen's right
+   edge instead of the content edge — otherwise the two margins run out of phase
+   and the partial tile lands on opposite sides. */
+.site-margin-right { right: 0; transform: scaleX(-1); }
 
 @media (max-width: 1120px) {
   .site-margin { display: none; }

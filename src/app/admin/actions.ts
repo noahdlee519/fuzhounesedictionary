@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isEditor } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
+import { ORIGIN_AREA_CODES } from "@/lib/origins";
 
 async function requireEditor() {
   if (!(await isEditor())) redirect("/");
@@ -19,6 +20,7 @@ export async function approve(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/");
   revalidatePath("/learn");
+  revalidatePath("/sitemap.xml");
 }
 
 export async function reject(formData: FormData) {
@@ -45,7 +47,11 @@ export async function saveEdit(formData: FormData) {
       romanization: (String(formData.get("romanization") ?? "").trim() || null),
       ipa: (String(formData.get("ipa") ?? "").trim() || null),
       audio_url: (String(formData.get("audio_url") ?? "").trim() || null),
-      variety: (String(formData.get("variety") ?? "").trim() || null),
+      origin_area: (() => {
+        const a = String(formData.get("origin_area") ?? "").trim();
+        return ORIGIN_AREA_CODES.includes(a) ? a : null;
+      })(),
+      origin_locality: (String(formData.get("origin_locality") ?? "").trim() || null),
       notes: (String(formData.get("notes") ?? "").trim() || null),
       headword:
         String(formData.get("romanization") ?? "").trim() ||

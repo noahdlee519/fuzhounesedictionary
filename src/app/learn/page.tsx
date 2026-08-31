@@ -2,14 +2,18 @@ import Link from "next/link";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
+import { toCard } from "@/lib/entries";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
-function firstSense(senses: any[] | null | undefined) {
-  if (!senses || senses.length === 0) return null;
-  return [...senses].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))[0];
-}
+export const metadata: Metadata = {
+  title: "Browse all words",
+  description:
+    "Every word in the Fuzhounese Dictionary, A to Z, filterable by part of speech.",
+  alternates: { canonical: "/learn" },
+};
 
 export default async function BrowsePage({
   searchParams,
@@ -37,13 +41,7 @@ export default async function BrowsePage({
 
   const { data, count } = await query.order("headword", { ascending: true }).range(from, to);
 
-  const entries: CardProps[] = (data ?? []).map((e: any) => {
-    const s = firstSense(e.senses);
-    return {
-      id: e.id, hanzi: e.hanzi, romanization: e.romanization, headword: e.headword,
-      pos: s?.part_of_speech ?? null, gloss: s?.definition_en ?? null, hasAudio: Boolean(e.audio_url),
-    };
-  });
+  const entries: CardProps[] = (data ?? []).map(toCard);
 
   const total = count ?? 0;
   const hasNext = to + 1 < total;

@@ -11,6 +11,16 @@ export interface Sense {
   sort: number;
 }
 
+export interface Profile {
+  id: string;
+  display_name: string | null;
+  is_editor: boolean;
+  origin_area: string | null;
+  origin_locality: string | null;
+  origin_precision: "hidden" | "area" | "locality";
+  created_at: string;
+}
+
 export interface Entry {
   id: string;
   headword: string;
@@ -20,6 +30,8 @@ export interface Entry {
   audio_url: string | null;
   notes: string | null;
   variety: string | null;
+  origin_area: string | null;
+  origin_locality: string | null;
   status: EntryStatus;
   contributor_id: string | null;
   review_notes: string | null;
@@ -29,7 +41,7 @@ export interface Entry {
 
 export interface EntryWithSenses extends Entry {
   senses: Sense[];
-  contributor?: { display_name: string | null } | null;
+  contributor?: { id: string; display_name: string | null } | null;
 }
 
 // Shape returned by the search_entries() RPC (one row per entry + a short gloss).
@@ -47,4 +59,6 @@ export interface SearchRow {
   created_at: string;
   short_gloss: string | null;
   pos: string | null;
+  origin_area: string | null;
+  origin_locality: string | null;
 }

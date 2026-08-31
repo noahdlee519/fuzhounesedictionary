@@ -5,10 +5,18 @@ import { adminClient } from "@/lib/supabase/admin";
 import { saveEdit } from "../../actions";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import type { Sense } from "@/lib/types";
+import type { Metadata } from "next";
+import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
 
 export const dynamic = "force-dynamic";
 
-const cls = "mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-accent dark:bg-stone-900 dark:border-stone-700";
+export const metadata: Metadata = {
+  title: "Edit entry",
+  robots: { index: false, follow: false },
+};
+
+const cls =
+  "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
 
 export default async function EditEntryPage({ params }: { params: { id: string } }) {
   const { profile } = await getSessionUser();
@@ -27,8 +35,10 @@ export default async function EditEntryPage({ params }: { params: { id: string }
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-baseline justify-between">
-        <h1 className="font-serif text-2xl font-bold">Edit entry</h1>
-        <Link href="/admin" className="text-sm text-accent hover:underline">← Back to queue</Link>
+        <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Edit entry</h1>
+        <Link href="/admin" className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer hover:underline">
+          ← Back to queue
+        </Link>
       </div>
 
       <form action={saveEdit} className="space-y-5">
@@ -43,18 +53,29 @@ export default async function EditEntryPage({ params }: { params: { id: string }
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block"><span className="text-sm font-medium">IPA</span>
             <input name="ipa" defaultValue={entry.ipa ?? ""} className={cls} /></label>
-          <label className="block"><span className="text-sm font-medium">Variety</span>
-            <input name="variety" defaultValue={entry.variety ?? ""} className={cls} /></label>
+          <label className="block"><span className="text-sm font-medium">Town or village</span>
+            <input name="origin_locality" defaultValue={entry.origin_locality ?? ""} className={cls} /></label>
         </div>
+        <label className="block"><span className="text-sm font-medium">County or district</span>
+          <select name="origin_area" defaultValue={entry.origin_area ?? ""} className={cls}>
+            <option value="">Not specified</option>
+            {ORIGIN_GROUPS.map((g) => (
+              <optgroup key={g} label={g}>
+                {ORIGIN_AREAS.filter((a) => a.group === g).map((a) => (
+                  <option key={a.code} value={a.code}>{a.label} {a.hanzi}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select></label>
         <label className="block"><span className="text-sm font-medium">Audio URL</span>
           <input name="audio_url" defaultValue={entry.audio_url ?? ""} className={cls} /></label>
 
         <fieldset className="space-y-4">
-          <legend className="text-sm font-semibold">Meanings</legend>
+          <legend className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Meanings</legend>
           {senses.map((s, i) => (
-            <div key={s.id} className="space-y-3 rounded-lg border border-stone-200 p-4 dark:border-stone-700">
+            <div key={s.id} className="space-y-3 border border-rule p-4">
               <input type="hidden" name="sense_id" value={s.id} />
-              <span className="text-sm font-semibold text-stone-500">Meaning {i + 1}</span>
+              <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Meaning {i + 1}</span>
               <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
                 <label className="block"><span className="text-sm">Part of speech</span>
                   <select name={`pos_${s.id}`} defaultValue={s.part_of_speech ?? ""} className={cls}>
@@ -79,7 +100,7 @@ export default async function EditEntryPage({ params }: { params: { id: string }
         <label className="block"><span className="text-sm font-medium">Notes</span>
           <textarea name="notes" defaultValue={entry.notes ?? ""} rows={2} className={cls} /></label>
 
-        <button className="rounded-full bg-accent px-8 py-3 font-medium text-white hover:opacity-90">Save changes</button>
+        <button className="border border-lacquer bg-lacquer px-8 py-3 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">Save changes</button>
       </form>
     </div>
   );

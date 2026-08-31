@@ -3,13 +3,9 @@ import SearchBar from "@/components/SearchBar";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import type { SearchRow } from "@/lib/types";
+import { toCard } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
-
-function firstSense(senses: any[] | null | undefined) {
-  if (!senses || senses.length === 0) return null;
-  return [...senses].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))[0];
-}
 
 export default async function Home({ searchParams }: { searchParams: { q?: string } }) {
   const q = (searchParams.q ?? "").trim();
@@ -31,13 +27,7 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
         .from("entries")
         .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)")
         .eq("status", "approved").order("created_at", { ascending: false }).limit(12);
-      results = (data ?? []).map((e: any) => {
-        const s = firstSense(e.senses);
-        return {
-          id: e.id, hanzi: e.hanzi, romanization: e.romanization, headword: e.headword,
-          pos: s?.part_of_speech ?? null, gloss: s?.definition_en ?? null, hasAudio: Boolean(e.audio_url),
-        };
-      });
+      results = (data ?? []).map(toCard);
     }
   } catch {
     errored = true;

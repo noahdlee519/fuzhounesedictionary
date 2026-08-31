@@ -4,8 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
 import { saveProfile } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "My account",
+  robots: { index: false, follow: false },
+};
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "text-amber-700 ring-amber-600/40 dark:text-amber-300",

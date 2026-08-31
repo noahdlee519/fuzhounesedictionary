@@ -5,8 +5,36 @@ import { getSessionUser } from "@/lib/auth";
 import { requestWord } from "@/app/request/actions";
 import type { Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
+import { firstSense, entryTitle } from "@/lib/entries";
+import { SITE_NAME } from "@/lib/site";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("entries")
+    .select("headword, hanzi, romanization, senses(definition_en, part_of_speech, sort)")
+    .eq("id", params.id)
+    .eq("status", "approved")
+    .maybeSingle();
+
+  if (!data) return { title: "Word not found" };
+
+  const name = entryTitle(data as any);
+  const sense = firstSense((data as any).senses);
+  const gloss = sense?.definition_en ? `\u201c${sense.definition_en}\u201d` : "";
+  const description = `${name} in Fuzhounese${gloss ? ` means ${gloss}` : ""}. Definitions, romanization and pronunciation from the ${SITE_NAME}.`;
+
+  return {
+    title: name,
+    description,
+    alternates: { canonical: `/entry/${params.id}` },
+    openGraph: { type: "article", title: `${name} \u00b7 ${SITE_NAME}`, description },
+    twitter: { card: "summary", title: `${name} \u00b7 ${SITE_NAME}`, description },
+  };
+}
 
 export default async function EntryPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -97,6 +125,25 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
           {entry.notes}
         </div>
       )}
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "DefinedTerm",
+            name: entry.hanzi || entry.romanization || entry.headword,
+            alternateName: entry.romanization || undefined,
+            description: senses.map((s) => s.definition_en).join("; "),
+            inDefinedTermSet: {
+              "@type": "DefinedTermSet",
+              name: "Fuzhounese Dictionary",
+              url: "https://fuzhounese.org",
+            },
+            inLanguage: "cdo",
+          }),
+        }}
+      />
 
       <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
         Added {new Date(entry.created_at).toLocaleDateString()}

@@ -31,7 +31,7 @@ export default function SignInButton({
       onClick={signIn}
       className={
         className ??
-        "inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-5 py-2.5 font-medium text-ink shadow-sm hover:border-accent"
+        "inline-flex items-center gap-2 border border-rule bg-surface px-5 py-2.5 text-ink transition-colors hover:border-lacquer hover:text-lacquer"
       }
     >
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">

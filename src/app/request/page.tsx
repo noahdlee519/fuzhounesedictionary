@@ -3,8 +3,16 @@ import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
 import { requestWord, voteRequest, fulfillRequest } from "./actions";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Request a word",
+  description:
+    "Ask for a Fuzhounese word that is missing from the dictionary, or for a recording of one that has no voice yet.",
+  alternates: { canonical: "/request" },
+};
 
 interface RankedRow {
   id: string;
@@ -19,7 +27,12 @@ interface RankedRow {
   entry_audio_url: string | null;
 }
 
-export default async function WantedPage() {
+export default async function WantedPage({
+  searchParams,
+}: {
+  searchParams: { notice?: string };
+}) {
+  const notice = (searchParams.notice ?? "").trim().slice(0, 300);
   const { user, profile } = await getSessionUser();
   const isEd = Boolean(profile?.is_editor);
   const supabase = createClient();
@@ -56,6 +69,10 @@ export default async function WantedPage() {
           the requests you want filled first. A speaker can then write the entry or record it.
         </p>
       </section>
+
+      {notice && (
+        <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">{notice}</p>
+      )}
 
       <section className="border border-rule bg-surface p-5">
         {user ? (

@@ -22,11 +22,15 @@ export default function SearchBar({ defaultValue = "" }: { defaultValue?: string
       method="get"
       className="flex border-2 border-ruleStrong bg-surface focus-within:border-lacquer"
     >
+      <label htmlFor="site-search" className="sr-only">
+        Search the dictionary
+      </label>
       <input
+        id="site-search"
         type="search"
         name="q"
         defaultValue={defaultValue}
-        autoFocus
+        autoFocus={!narrow}
         placeholder={narrow ? SHORT : FULL}
         className="w-full bg-transparent px-5 pt-[18px] pb-[14px] text-lg leading-none outline-none placeholder:text-inkFaint"
       />

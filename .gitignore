@@ -4,6 +4,7 @@ out
 .env.local
 .env*.local
 *.log
+tsconfig.tsbuildinfo
 .DS_Store
 next-env.d.ts
 
@@ -12,3 +13,7 @@ next-env.d.ts
 
 # scratch
 _to_delete/
+
+# source material that must not be published: OCR of a third-party dictionary,
+# kept locally for reference only
+_private/

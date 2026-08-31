@@ -3,12 +3,30 @@ import { notFound } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { formatOrigin } from "@/lib/origins";
+import { toCard } from "@/lib/entries";
+import { SITE_NAME } from "@/lib/site";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-function firstSense(senses: any[] | null | undefined) {
-  if (!senses || senses.length === 0) return null;
-  return [...senses].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))[0];
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name, origin_area, origin_locality")
+    .eq("id", params.id)
+    .maybeSingle();
+
+  if (!data) return { title: "Contributor not found" };
+
+  const name = data.display_name || "A contributor";
+  const origin = formatOrigin(data.origin_area, data.origin_locality);
+  return {
+    title: name,
+    description: `Words contributed to the ${SITE_NAME} by ${name}${origin ? `, whose Fuzhounese is from ${origin}` : ""}.`,
+    alternates: { canonical: `/contributor/${params.id}` },
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function ContributorPage({ params }: { params: { id: string } }) {
@@ -32,13 +50,7 @@ export default async function ContributorPage({ params }: { params: { id: string
     .order("created_at", { ascending: false })
     .limit(60);
 
-  const entries: CardProps[] = (data ?? []).map((e: any) => {
-    const s = firstSense(e.senses);
-    return {
-      id: e.id, hanzi: e.hanzi, romanization: e.romanization, headword: e.headword,
-      pos: s?.part_of_speech ?? null, gloss: s?.definition_en ?? null, hasAudio: Boolean(e.audio_url),
-    };
-  });
+  const entries: CardProps[] = (data ?? []).map(toCard);
 
   const origin = formatOrigin(profile.origin_area, profile.origin_locality);
   const total = count ?? 0;

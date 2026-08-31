@@ -34,10 +34,18 @@ export async function requestWord(formData: FormData) {
   }
 
   if (!existingId) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("word_requests")
       .insert({ term: term || "(pronunciation)", entry_id: entryId, note, requested_by: user.id })
       .select("id").single();
+    if (error) {
+      // Rate limits are raised by a database trigger; the message is written for
+      // the person reading it. Anything else gets a generic line.
+      const message = /limit|short time/i.test(error.message)
+        ? error.message
+        : "That request could not be saved. Please try again.";
+      redirect(`${back}?notice=${encodeURIComponent(message)}`);
+    }
     existingId = data?.id ?? null;
   }
 
