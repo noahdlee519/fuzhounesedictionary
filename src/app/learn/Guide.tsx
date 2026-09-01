@@ -60,7 +60,7 @@ const Unchecked = () => (
 function Section({
   id,
   title,
-  open = false,
+  open = true,
   children,
 }: {
   id: string;
@@ -119,17 +119,26 @@ const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) =>
 /* --------------------------------------------------------- tone contours */
 /* Pitch digits drawn on the five-point scale. Level 5 is the top line.
    The checked tones are drawn short, because they are short. */
-const TONES: { n: number; name: string; pitch: string; levels: number[]; short?: boolean }[] = [
-  { n: 1, name: "陰平", pitch: "44", levels: [4, 4] },
-  { n: 2, name: "陽平", pitch: "53", levels: [5, 3] },
-  { n: 3, name: "上聲", pitch: "31", levels: [3, 1] },
-  { n: 4, name: "陰去", pitch: "213", levels: [2, 1, 3] },
-  { n: 5, name: "陽去", pitch: "242", levels: [2, 4, 2] },
-  { n: 6, name: "陰入", pitch: "23", levels: [2, 3], short: true },
-  { n: 7, name: "陽入", pitch: "5", levels: [5, 5], short: true },
+// han/buc: a Bàng-uâ-cê example word carrying the tone. UNCHECKED — the
+// diacritic-to-tone mapping is reconstructed, not yet confirmed from a printed
+// source (only the breve on 陰平/陽入 is source-confirmed), so the cards flag it.
+const TONES: {
+  name?: string; pitch: string; levels: number[]; short?: boolean; extra?: boolean;
+  han?: string; buc?: string;
+}[] = [
+  { name: "陰平", pitch: "44", levels: [4, 4], han: "天", buc: "tiĕng" },
+  { name: "陽平", pitch: "53", levels: [5, 3], han: "儂", buc: "nè̤ng" },
+  { name: "上聲", pitch: "31", levels: [3, 1], han: "我", buc: "nguāi" },
+  { name: "陰去", pitch: "213", levels: [2, 1, 3], han: "四", buc: "sé" },
+  { name: "陽去", pitch: "242", levels: [2, 4, 2], han: "二", buc: "nê" },
+  { name: "陰入", pitch: "23", levels: [2, 3], short: true, han: "福", buc: "hók" },
+  { name: "陽入", pitch: "5", levels: [5, 5], short: true, han: "日", buc: "nĭk" },
+  // The eighth is a sandhi-only tone, drawn dashed and labelled "in-word":
+  // it is one of the two extra tones (21 / 24) that surface only inside words.
+  { pitch: "21", levels: [2, 1], extra: true },
 ];
 
-function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean }) {
+function ToneGlyph({ levels, short, extra }: { levels: number[]; short?: boolean; extra?: boolean }) {
   const W = 88;
   const H = 64;
   const PAD = 6;
@@ -159,6 +168,7 @@ function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean }) {
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeDasharray={extra ? "4 3" : undefined}
         className="text-lacquer"
       />
     </svg>
@@ -168,16 +178,34 @@ function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean }) {
 const ToneChart = () => (
   <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
     {TONES.map((t) => (
-      <figure key={t.n} className="border border-rule bg-surface p-3">
+      <figure
+        key={t.pitch}
+        className={"border bg-surface p-3 " + (t.extra ? "border-dashed border-ruleStrong" : "border-rule")}
+      >
         <div className="text-rule">
-          <ToneGlyph levels={t.levels} short={t.short} />
+          <ToneGlyph levels={t.levels} short={t.short} extra={t.extra} />
         </div>
         <figcaption className="mt-2 flex items-baseline justify-between gap-2 border-t border-rule pt-2">
-          <span className="font-display text-sm font-semibold text-ink">
-            {t.n}. {t.name}
+          <span className="font-mono text-lg font-semibold leading-none tabular-nums text-ink">
+            {t.pitch}
           </span>
-          <span className="font-mono text-xs tabular-nums text-inkFaint">{t.pitch}</span>
+          {t.name ? (
+            <span className="font-display text-sm text-inkSoft">{t.name}</span>
+          ) : (
+            <span className="font-mono text-[10px] uppercase tracking-wide text-inkFaint">in-word</span>
+          )}
         </figcaption>
+        {t.buc && (
+          <div className="mt-1.5 flex items-baseline gap-1.5 text-[13px]">
+            <span className="font-display font-semibold text-ink">{t.han}</span>
+            <span
+              title="Bàng-uâ-cê — unchecked: the mark-to-tone mapping isn't confirmed yet"
+              className="romanization italic text-inkSoft underline decoration-dotted decoration-inkFaint underline-offset-2"
+            >
+              {t.buc}
+            </span>
+          </div>
+        )}
       </figure>
     ))}
   </div>
@@ -308,6 +336,12 @@ export default function Guide() {
           <Num>44</Num> sits high and flat and <Num>53</Num> starts high and drops.
         </P>
         <ToneChart />
+        <p className="max-w-[68ch] text-sm text-inkFaint">
+          The word under each box is a Bàng-uâ-cê example carrying that tone. Its romanization is
+          dotted because it is <Unchecked /> the mark-to-tone mapping is reconstructed, and only the
+          breve on <Han>陰平</Han> and <Han>陽入</Han> is confirmed from a source; the rest await a
+          printed one.
+        </p>
         <Table
           head={["", "Name", "Pitch", "Example"]}
           rows={[
@@ -330,11 +364,11 @@ export default function Guide() {
         </P>
         <P>
           Tones 6 and 7 are the short ones, on syllables that end in the glottal stop. That is why
-          the last two boxes above are drawn half as wide.
+          the two short boxes above, <Num>23</Num> and <Num>5</Num>, are drawn half as wide.
         </P>
         <P>
           The two extra tones are <Num>21</Num> and <Num>24</Num>. You will never hear them on a
-          word said by itself.
+          word said by itself; the dashed box above, marked <i>in-word</i>, is the <Num>21</Num>.
         </P>
       </Section>
 
@@ -448,8 +482,9 @@ export default function Guide() {
         <div className="border-l-2 border-lacquer bg-surface p-4">
           <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Missing</p>
           <p className="mt-2 max-w-[62ch] text-sm text-inkSoft">
-            Which Bàng-uâ-cê mark goes with which tone. It will come from a printed source rather
-            than be reconstructed.
+            A confirmed Bàng-uâ-cê mark for each tone. The Tones section now shows a reconstructed
+            mapping, flagged unchecked; only the breve on <Han>陰平</Han> and <Han>陽入</Han> is
+            source-backed so far. The rest will be settled from a printed source.
           </p>
         </div>
       </Section>

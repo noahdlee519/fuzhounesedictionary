@@ -73,7 +73,7 @@ export default async function BrowsePage({
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
           A dictionary can tell you what a word means. It cannot tell you that the word changes shape
           when you put another one after it, which in Fuzhounese it almost always does. This page is
-          for that. Open whichever section you need.
+          for that. Jump to whichever section you need.
         </p>
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
           Everything here is sourced, and the sources are listed at the bottom. Where something has
