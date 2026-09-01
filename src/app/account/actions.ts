@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ORIGIN_AREA_CODES, ORIGIN_PRECISIONS } from "@/lib/origins";
 
@@ -34,4 +35,6 @@ export async function saveProfile(formData: FormData) {
 
   revalidatePath("/account");
   revalidatePath(`/contributor/${user.id}`);
+  // Comes back as ?saved=1, which is what puts the confirmation on screen.
+  redirect("/account?saved=1");
 }

@@ -24,8 +24,8 @@ export default function AboutPage() {
 
           <p className="text-lg leading-relaxed text-inkSoft">
             This project started because Fuzhounese is the dialect my grandmother natively speaks.
-            My goal is to help preserve the language, and to make it a resource for anyone who wants
-            to learn Fuzhounese.
+            My goal is to help preserve the language and to make it a resource for anyone who
+            wants to learn Fuzhounese.
           </p>
 
           <p className="text-lg leading-relaxed text-inkSoft">
@@ -77,8 +77,9 @@ export default function AboutPage() {
               height={264}
               className="w-full"
             />
-            <figcaption className="mt-3 border-t border-rule pt-3 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
-              Abroad · diaspora communities · ~10 million speakers
+            <figcaption className="mt-3 border-t border-rule pt-3 text-sm leading-relaxed text-inkFaint">
+              Including diaspora communities abroad, there are about ten million Fuzhounese speakers
+              today.
             </figcaption>
           </figure>
         </div>
@@ -98,7 +99,8 @@ export default function AboutPage() {
             <h2 className="font-display text-2xl font-bold tracking-tight">Noah Lee</h2>
             <p className="max-w-[46ch] text-inkSoft">
               Noah started this dictionary in 2021 to help preserve the dialect his family speaks.
-              He builds and maintains the site and reviews the words people contribute.
+              Interested in collaborating or joining the moderation team? Don&apos;t hesitate to
+              reach out!
             </p>
             <p>
               <a

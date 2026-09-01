@@ -137,3 +137,7 @@ set file_size_limit = 5242880,
       'audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4;codecs=mp4a.40.2'
     ]
 where id = 'audio';
+
+-- The avatars bucket's 2 MB cap and image whitelist are set in avatars.sql,
+-- which creates it. Deliberately not repeated here: two files setting the same
+-- limit is how the two numbers end up disagreeing.

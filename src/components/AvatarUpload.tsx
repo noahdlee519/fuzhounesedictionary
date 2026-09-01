@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AVATAR_BUCKET, MAX_AVATAR_BYTES } from "@/lib/constants";
+import {
+  AVATAR_BUCKET,
+  AVATAR_EXT,
+  AVATAR_MIME_TYPES,
+  MAX_AVATAR_BYTES,
+} from "@/lib/constants";
+
+const MAX_MB = Math.round(MAX_AVATAR_BYTES / (1024 * 1024));
 
 /* Pick an image, upload it to the avatars bucket, and point the profile at it.
    Runs as the signed-in user, so RLS (own-folder upload, own-row update) applies.
@@ -26,18 +33,21 @@ export default function AvatarUpload({
     if (!file) return;
 
     setError(null);
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file (PNG, JPG, GIF or WebP).");
+    if (!(AVATAR_MIME_TYPES as readonly string[]).includes(file.type)) {
+      setError("Please choose a PNG, JPG, WebP or GIF.");
       return;
     }
     if (file.size > MAX_AVATAR_BYTES) {
-      setError("That image is larger than 2 MB. Please pick a smaller one.");
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      setError(`That picture is ${mb} MB. The limit is ${MAX_MB} MB \u2014 please pick a smaller one.`);
       return;
     }
 
     setBusy(true);
     try {
-      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      // The extension comes from the type we just checked, never from the file
+      // name: a name is whatever the uploader chose to call it.
+      const ext = AVATAR_EXT[file.type] ?? "png";
       const path = `${userId}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from(AVATAR_BUCKET)
@@ -53,7 +63,7 @@ export default function AvatarUpload({
 
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Could not upload that image.");
+      setError(err?.message ?? "Could not upload that picture.");
     } finally {
       setBusy(false);
     }
@@ -70,7 +80,7 @@ export default function AvatarUpload({
       if (updErr) throw new Error(updErr.message);
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Could not remove the photo.");
+      setError(err?.message ?? "Could not remove the picture.");
     } finally {
       setBusy(false);
     }
@@ -78,9 +88,9 @@ export default function AvatarUpload({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <label className="cursor-pointer border border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer">
-        {busy ? "Uploading…" : hasAvatar ? "Change photo" : "Upload a photo"}
-        <input type="file" accept="image/*" onChange={onFile} disabled={busy} className="hidden" />
+      <label className="cursor-pointer border border-rule bg-surface px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer">
+        {busy ? "Uploading…" : hasAvatar ? "Change profile picture" : "Upload a profile picture"}
+        <input type="file" accept={AVATAR_MIME_TYPES.join(",")} onChange={onFile} disabled={busy} className="hidden" />
       </label>
       {hasAvatar && (
         <button

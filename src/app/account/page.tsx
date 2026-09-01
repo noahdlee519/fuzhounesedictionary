@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
 import Avatar from "@/components/Avatar";
 import AvatarUpload from "@/components/AvatarUpload";
+import SavedNotice from "@/components/SavedNotice";
 import { saveProfile } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -25,7 +26,11 @@ const labelCls = "block font-mono text-xs uppercase tracking-[0.1em] text-inkFai
 const inputCls =
   "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: { saved?: string };
+}) {
   const { user } = await getSessionUser();
 
   if (!user) {
@@ -67,16 +72,17 @@ export default async function AccountPage() {
             className="ring-1 ring-rule"
           />
           <div className="min-w-0">
-            <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">My account</h1>
-            {profile?.display_name && <p className="text-sm text-inkFaint">{profile.display_name}</p>}
-          </div>
-          <div className="ml-auto flex items-center gap-4">
+            <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+              {profile?.display_name || "My account"}
+            </h1>
             <Link
               href={`/contributor/${user.id}`}
-              className="font-mono text-xs uppercase tracking-[0.1em] text-inkSoft hover:text-lacquer"
+              className="text-sm text-inkFaint transition-colors hover:text-lacquer"
             >
-              Public profile →
+              View profile →
             </Link>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
             <form action="/auth/signout" method="post">
               <button className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer">
                 Sign out
@@ -95,7 +101,7 @@ export default async function AccountPage() {
             Fuzhounese changes from county to county and village to village, so knowing where a word
             comes from is part of the record. Tell us where yours is from and it will be offered as
             the default when you add a word. This is optional, and nothing appears publicly unless you
-            choose it below. We do not keep what you do not publish.
+            choose it below.
           </p>
         </div>
 
@@ -167,9 +173,12 @@ export default async function AccountPage() {
             </p>
           )}
 
-          <button className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">
-            Save
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <button className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">
+              Save
+            </button>
+            {searchParams.saved && <SavedNotice />}
+          </div>
         </form>
       </section>
 
