@@ -3,7 +3,7 @@ import SearchBar from "@/components/SearchBar";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import type { SearchRow } from "@/lib/types";
-import { toCard } from "@/lib/entries";
+import { recordingCounts, toCard } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
@@ -22,16 +22,21 @@ export default async function Home({
     if (q) {
       const { data, error } = await supabase.rpc("search_entries", { q });
       if (error) throw error;
-      results = (data as SearchRow[]).map((r) => ({
+      const rows = data as SearchRow[];
+      const counts = await recordingCounts(supabase, rows.map((r) => r.id));
+      results = rows.map((r) => ({
         id: r.id, hanzi: r.hanzi, romanization: r.romanization, headword: r.headword,
-        pos: r.pos, gloss: r.short_gloss, hasAudio: Boolean(r.audio_url),
+        pos: r.pos, gloss: r.short_gloss,
+        recordings: (r.audio_url ? 1 : 0) + (counts.get(r.id) ?? 0),
       }));
     } else {
       const { data } = await supabase
         .from("entries")
         .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)")
         .eq("status", "approved").order("created_at", { ascending: false }).limit(12);
-      results = (data ?? []).map(toCard);
+      const rows = data ?? [];
+      const counts = await recordingCounts(supabase, rows.map((r: any) => r.id));
+      results = rows.map((r: any) => toCard(r, counts.get(r.id) ?? 0));
     }
   } catch {
     errored = true;

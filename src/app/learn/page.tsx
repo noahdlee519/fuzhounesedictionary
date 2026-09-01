@@ -2,7 +2,7 @@ import Link from "next/link";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
-import { toCard } from "@/lib/entries";
+import { recordingCounts, toCard } from "@/lib/entries";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
@@ -10,9 +10,10 @@ import Guide, { Contents, Sources } from "./Guide";
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
-/* The teaching guide — the contents list, all the sections, and the sources
-   block. Flip to false to hide it and show only the word list below. */
-const SHOW_GUIDE: boolean = true;
+/* Guide temporarily hidden while Noah edits the teaching content — 2026-09-01.
+   Flip this back to true to restore the contents list, all ten sections and the
+   sources block. Nothing was deleted; Guide.tsx is untouched. */
+const SHOW_GUIDE: boolean = false;
 
 /* ---------------------------------------------------------------------------
    Sorting.
@@ -47,7 +48,7 @@ const collator = new Intl.Collator("en", { sensitivity: "base" });
    the particles are 賣, 各, 未; the measure words are 隻 and 本. */
 const POS_NOTES: Record<string, string> = {
   particle:
-    "A short word that carries no meaning on its own but does grammatical work \u2014 turning a statement into a question, marking a plural, or showing that something has already happened.",
+    "A short word that carries no meaning on its own but does grammatical work\u2014turning a statement into a question, marking a plural, or showing that something has already happened.",
   "measure word":
     "A counting word that goes between a number and a noun, like the \u201csheets\u201d in \u201cthree sheets of paper\u201d. Fuzhounese needs one, and which word you use depends on the kind of thing being counted.",
 };
@@ -99,11 +100,13 @@ export default async function BrowsePage({
     const { data, count } = await base()
       .order("headword", { ascending: asc })
       .range(from, to);
-    entries = (data ?? []).map(toCard);
+    const rows = data ?? [];
+    const counts = await recordingCounts(supabase, rows.map((r: any) => r.id));
+    entries = rows.map((r: any) => toCard(r, counts.get(r.id) ?? 0));
     total = count ?? 0;
   } else {
     const { data } = await base().range(0, SORT_CAP - 1);
-    const all = (data ?? []).map(toCard);
+    const all = (data ?? []).map((r: any) => toCard(r));
     // Entries with no gloss sort last in both directions rather than flipping
     // to the top on Z–A, where they would be pure noise.
     const withGloss = all.filter((e) => e.gloss);
@@ -112,7 +115,13 @@ export default async function BrowsePage({
     if (!asc) withGloss.reverse();
     const ordered = [...withGloss, ...without];
     total = ordered.length;
-    entries = ordered.slice(from, from + PAGE_SIZE);
+    const pageRows = ordered.slice(from, from + PAGE_SIZE);
+    // Only the 30 cards on screen need a count, not all 165 sorted rows.
+    const counts = await recordingCounts(supabase, pageRows.map((r) => r.id));
+    entries = pageRows.map((r) => ({
+      ...r,
+      recordings: (r.recordings ?? 0) + (counts.get(r.id) ?? 0),
+    }));
   }
 
   /* What each filter would actually return. Without this, every chip looks
@@ -152,7 +161,6 @@ export default async function BrowsePage({
   };
 
   const hasNext = from + PAGE_SIZE < total;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const chip = (label: string, href: string, active: boolean, empty = false) => {
     const info = POS_NOTES[label];
@@ -290,7 +298,7 @@ export default async function BrowsePage({
         ) : (
           <span />
         )}
-        <span className="text-inkFaint">Page {page}/{totalPages}</span>
+        <span className="text-inkFaint">Page {page}</span>
         {hasNext ? (
           <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
             Next →

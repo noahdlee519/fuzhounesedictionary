@@ -7,10 +7,38 @@ export interface CardProps {
   headword: string;
   pos?: string | null;
   gloss?: string | null;
-  hasAudio?: boolean;
+  /** How many recordings this word has: the legacy audio_url counts as one,
+   *  plus every approved row in the recordings table. */
+  recordings?: number;
+}
+
+/* Capped so one very popular word cannot stretch the card. */
+function countLabel(n: number) {
+  return n > 99 ? "99+ recordings" : `${n} recordings`;
+}
+
+function Speaker() {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <path d="M8.5 2.5 4.5 5.5h-2.5v5h2.5l4 3z" />
+      <path d="M11 5.5a3.5 3.5 0 0 1 0 5" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 export default function EntryCard({ entry }: { entry: CardProps }) {
+  const n = entry.recordings ?? 0;
+
   return (
     <Link
       href={`/entry/${entry.id}`}
@@ -23,15 +51,27 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
         <span className="romanization font-display text-lg font-semibold text-lacquer">
           {entry.romanization || entry.headword}
         </span>
-        {entry.hasAudio && (
-          <span className="text-sm">
-            <span aria-hidden>🔊</span>
-            <span className="sr-only">has a recording</span>
-          </span>
-        )}
-        {entry.pos && (
-          <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
-            {entry.pos}
+
+        {/* Part of speech, with the recording count beneath it. The whole card is
+            already a link, so this needs no handler of its own — clicking it
+            opens the entry like clicking anywhere else. */}
+        {(entry.pos || n > 0) && (
+          <span className="ml-auto flex flex-col items-end gap-1 self-start text-right">
+            {entry.pos && (
+              <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                {entry.pos}
+              </span>
+            )}
+            {n > 0 && (
+              <span className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-wide text-inkFaint transition-colors group-hover:text-lacquer">
+                <Speaker />
+                {n > 1 ? (
+                  countLabel(n)
+                ) : (
+                  <span className="sr-only">1 recording</span>
+                )}
+              </span>
+            )}
           </span>
         )}
       </div>
