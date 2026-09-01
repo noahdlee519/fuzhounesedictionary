@@ -15,6 +15,33 @@ const PAGE_SIZE = 30;
    sources block. Nothing was deleted; Guide.tsx is untouched. */
 const SHOW_GUIDE: boolean = false;
 
+/* ---------------------------------------------------------------------------
+   Sorting.
+
+   Fuzhounese sorts run in the database on entries.headword, so they stay
+   paginated and cheap. English sorts cannot: the gloss lives on senses, a
+   to-many relation, and PostgREST will not order a parent by a child column.
+   Those are sorted in memory instead — fine at this size, but see SORT_CAP.
+   --------------------------------------------------------------------------- */
+const SORTS = {
+  "fz-az": { label: "Fuzhounese A–Z", lang: "fz", asc: true },
+  "fz-za": { label: "Fuzhounese Z–A", lang: "fz", asc: false },
+  "en-az": { label: "English A–Z", lang: "en", asc: true },
+  "en-za": { label: "English Z–A", lang: "en", asc: false },
+} as const;
+
+type SortKey = keyof typeof SORTS;
+const DEFAULT_SORT: SortKey = "fz-az";
+const SORT_KEYS = Object.keys(SORTS) as SortKey[];
+
+/* An English sort has to hold every matching entry in memory at once. Supabase
+   caps a request at 1000 rows anyway, so that is the honest ceiling. Past it,
+   the fix is a database view carrying each entry's primary gloss as a column,
+   which restores server-side ordering. Not worth building at 117 entries. */
+const SORT_CAP = 1000;
+
+const collator = new Intl.Collator("en", { sensitivity: "base" });
+
 export const metadata: Metadata = {
   title: "Learn Fuzhounese",
   description: SHOW_GUIDE
@@ -26,7 +53,7 @@ export const metadata: Metadata = {
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: { page?: string; pos?: string; origin?: string };
+  searchParams: { page?: string; pos?: string; origin?: string; sort?: string };
 }) {
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
@@ -38,48 +65,96 @@ export default async function BrowsePage({
   const originParam = (searchParams.origin ?? "").trim();
   const origin = originArea(originParam) ? originParam : "";
 
+  const sortParam = (searchParams.sort ?? "").trim();
+  const sort: SortKey = SORT_KEYS.includes(sortParam as SortKey)
+    ? (sortParam as SortKey)
+    : DEFAULT_SORT;
+  const { lang, asc } = SORTS[sort];
+
   const supabase = createClient();
   const senseCols = "definition_en, part_of_speech, sort";
-  let query = supabase
+  const cols = `id, hanzi, romanization, headword, audio_url, senses${pos ? "!inner" : ""}(${senseCols})`;
+
+  const base = () => {
+    let q = supabase.from("entries").select(cols, { count: "exact" }).eq("status", "approved");
+    if (pos) q = q.eq("senses.part_of_speech", pos);
+    if (origin) q = q.eq("origin_area", origin);
+    return q;
+  };
+
+  let entries: CardProps[] = [];
+  let total = 0;
+
+  if (lang === "fz") {
+    const { data, count } = await base()
+      .order("headword", { ascending: asc })
+      .range(from, to);
+    entries = (data ?? []).map(toCard);
+    total = count ?? 0;
+  } else {
+    const { data } = await base().range(0, SORT_CAP - 1);
+    const all = (data ?? []).map(toCard);
+    // Entries with no gloss sort last in both directions rather than flipping
+    // to the top on Z–A, where they would be pure noise.
+    const withGloss = all.filter((e) => e.gloss);
+    const without = all.filter((e) => !e.gloss);
+    withGloss.sort((a, b) => collator.compare(a.gloss ?? "", b.gloss ?? ""));
+    if (!asc) withGloss.reverse();
+    const ordered = [...withGloss, ...without];
+    total = ordered.length;
+    entries = ordered.slice(from, from + PAGE_SIZE);
+  }
+
+  /* What each filter would actually return. Without this, every chip looks
+     alike and clicking "adverb" on a dictionary with no adverbs is a dead end
+     with no warning. Same embed direction as the query above, so no new risk;
+     if it comes back empty we simply do not dim anything. */
+  const { data: tally } = await supabase
     .from("entries")
-    .select(
-      `id, hanzi, romanization, headword, audio_url, senses${pos ? "!inner" : ""}(${senseCols})`,
-      { count: "exact" }
-    )
-    .eq("status", "approved");
+    .select("origin_area, senses(part_of_speech)")
+    .eq("status", "approved")
+    .range(0, SORT_CAP - 1);
 
-  if (pos) query = query.eq("senses.part_of_speech", pos);
-  if (origin) query = query.eq("origin_area", origin);
+  const posCounts = new Map<string, number>();
+  const originCounts = new Map<string, number>();
+  for (const row of (tally ?? []) as any[]) {
+    if (row.origin_area) originCounts.set(row.origin_area, (originCounts.get(row.origin_area) ?? 0) + 1);
+    // an entry counts once per part of speech, however many senses carry it
+    const seen = new Set<string>();
+    for (const s of row.senses ?? []) if (s?.part_of_speech) seen.add(s.part_of_speech);
+    for (const p of seen) posCounts.set(p, (posCounts.get(p) ?? 0) + 1);
+  }
+  const countsKnown = (tally?.length ?? 0) > 0;
 
-  const { data, count } = await query.order("headword", { ascending: true }).range(from, to);
+  /* One link builder for every chip and page link, so a sort survives a filter
+     change and a filter survives a sort change. Any change resets to page 1. */
+  const hrefWith = (over: Partial<Record<"pos" | "origin" | "sort" | "page", string>>) => {
+    const next: Record<string, string> = {
+      pos,
+      origin,
+      sort: sort === DEFAULT_SORT ? "" : sort,
+      page: "",
+      ...over,
+    };
+    const qs = new URLSearchParams(Object.entries(next).filter(([, v]) => v));
+    const s = qs.toString();
+    return `/learn${s ? `?${s}` : ""}#words`;
+  };
 
-  const entries: CardProps[] = (data ?? []).map(toCard);
+  const hasNext = from + PAGE_SIZE < total;
 
-  const total = count ?? 0;
-  const hasNext = to + 1 < total;
-  const pageHref = (n: number) =>
-    `/learn?${new URLSearchParams({
-      ...(pos ? { pos } : {}),
-      ...(origin ? { origin } : {}),
-      page: String(n),
-    })}#words`;
-
-  // links that toggle one filter while keeping the other
-  const withPos = (p: string) =>
-    `/learn?${new URLSearchParams({ ...(p ? { pos: p } : {}), ...(origin ? { origin } : {}) })}#words`;
-  const withOrigin = (o: string) =>
-    `/learn?${new URLSearchParams({ ...(pos ? { pos } : {}), ...(o ? { origin: o } : {}) })}#words`;
-
-  const chip = (label: string, href: string, active: boolean) => (
+  const chip = (label: string, href: string, active: boolean, empty = false) => (
     <Link
       key={label}
       href={href}
       aria-current={active ? "true" : undefined}
+      title={empty ? `No ${label} in the dictionary yet` : undefined}
       className={
         "border px-2.5 py-1 text-[13px] transition-colors " +
         (active
           ? "border-lacquer bg-lacquer text-paper"
-          : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer")
+          : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer") +
+        (empty && !active ? " opacity-40" : "")
       }
     >
       {label}
@@ -111,8 +186,13 @@ export default async function BrowsePage({
 
       {SHOW_GUIDE && <Guide />}
 
-      <div id="words" className="flex scroll-mt-24 flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-6">
-        <h2 className="font-display text-xl font-bold uppercase tracking-tight sm:text-2xl">All words</h2>
+      <div
+        id="words"
+        className="flex scroll-mt-24 flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-6"
+      >
+        <h2 className="font-display text-xl font-bold uppercase tracking-tight sm:text-2xl">
+          All words
+        </h2>
         <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
           {total.toLocaleString()} {pos ? pos : "entr"}
           {pos ? (total === 1 ? "" : "s") : total === 1 ? "y" : "ies"}
@@ -123,23 +203,42 @@ export default async function BrowsePage({
       <div className="space-y-2">
         <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Part of speech</p>
         <div className="flex flex-wrap gap-2">
-          {chip("All", withPos(""), !pos)}
-          {PARTS_OF_SPEECH.map((p) => chip(p, withPos(p), pos === p))}
+          {chip("All", hrefWith({ pos: "" }), !pos)}
+          {PARTS_OF_SPEECH.map((p) =>
+            chip(p, hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p))
+          )}
         </div>
 
-        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Where it is from</p>
+        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          Where it is from
+        </p>
         <div className="flex flex-wrap gap-2">
-          {chip("Anywhere", withOrigin(""), !origin)}
+          {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
           {ORIGIN_GROUPS.flatMap((g) =>
             ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
-              chip(`${a.label} ${a.hanzi}`, withOrigin(a.code), origin === a.code)
+              chip(
+                `${a.label} ${a.hanzi}`,
+                hrefWith({ origin: a.code }),
+                origin === a.code,
+                countsKnown && !originCounts.get(a.code)
+              )
             )
           )}
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Sort</p>
+          {SORT_KEYS.map((k) => chip(SORTS[k].label, hrefWith({ sort: k }), sort === k))}
+        </div>
+        <p className="text-sm text-inkFaint">Click any word for the full entry.</p>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
-        {entries.map((e) => <EntryCard key={e.id} entry={e} />)}
+        {entries.map((e) => (
+          <EntryCard key={e.id} entry={e} />
+        ))}
         {entries.length === 0 && (
           <p className="text-inkSoft sm:col-span-2">
             {origin
@@ -153,12 +252,23 @@ export default async function BrowsePage({
 
       <div className="flex items-center justify-between border-t border-rule pt-5 font-mono text-xs uppercase tracking-[0.1em]">
         {page > 1 ? (
-          <Link href={pageHref(page - 1)} className="text-inkSoft hover:text-lacquer">← Previous</Link>
-        ) : <span />}
+          <Link
+            href={hrefWith({ page: page - 1 > 1 ? String(page - 1) : "" })}
+            className="text-inkSoft hover:text-lacquer"
+          >
+            ← Previous
+          </Link>
+        ) : (
+          <span />
+        )}
         <span className="text-inkFaint">Page {page}</span>
         {hasNext ? (
-          <Link href={pageHref(page + 1)} className="text-inkSoft hover:text-lacquer">Next →</Link>
-        ) : <span />}
+          <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
+            Next →
+          </Link>
+        ) : (
+          <span />
+        )}
       </div>
 
       {SHOW_GUIDE && <Sources />}

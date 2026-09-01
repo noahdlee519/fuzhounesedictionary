@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
+import Avatar from "@/components/Avatar";
+import AvatarUpload from "@/components/AvatarUpload";
 import { saveProfile } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -40,7 +42,7 @@ export default async function AccountPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, origin_area, origin_locality, origin_precision")
+    .select("id, display_name, avatar_url, origin_area, origin_locality, origin_precision")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -56,14 +58,33 @@ export default async function AccountPage() {
 
   return (
     <div className="space-y-10">
-      <div className="flex items-baseline justify-between border-b border-rule pb-4">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">My account</h1>
-        <Link
-          href={`/contributor/${user.id}`}
-          className="font-mono text-xs uppercase tracking-[0.1em] text-inkSoft hover:text-lacquer"
-        >
-          View public profile →
-        </Link>
+      <div className="space-y-4 border-b border-rule pb-5">
+        <div className="flex flex-wrap items-center gap-4">
+          <Avatar
+            src={profile?.avatar_url}
+            name={profile?.display_name}
+            size={64}
+            className="ring-1 ring-rule"
+          />
+          <div className="min-w-0">
+            <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">My account</h1>
+            {profile?.display_name && <p className="text-sm text-inkFaint">{profile.display_name}</p>}
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <Link
+              href={`/contributor/${user.id}`}
+              className="font-mono text-xs uppercase tracking-[0.1em] text-inkSoft hover:text-lacquer"
+            >
+              Public profile →
+            </Link>
+            <form action="/auth/signout" method="post">
+              <button className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer">
+                Sign out
+              </button>
+            </form>
+          </div>
+        </div>
+        <AvatarUpload userId={user.id} hasAvatar={!!profile?.avatar_url} />
       </div>
 
       {/* ------------------------------------------------------------------ */}

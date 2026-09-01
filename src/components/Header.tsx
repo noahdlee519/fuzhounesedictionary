@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import SignInButton from "./SignInButton";
+import Avatar from "./Avatar";
 
 export default async function Header() {
   const { user, profile } = await getSessionUser();
@@ -28,12 +29,19 @@ export default async function Header() {
             + Add a word
           </Link>
           {user ? (
-            <span className="flex items-center gap-4">
-              <Link href="/account" className={navLink}>{profile?.display_name || "My words"}</Link>
-              <form action="/auth/signout" method="post">
-                <button className="text-inkFaint transition-colors hover:text-lacquer">Sign out</button>
-              </form>
-            </span>
+            <Link
+              href="/account"
+              aria-label="Your account"
+              title={profile?.display_name || "Your account"}
+              className="ml-1 inline-flex rounded-full"
+            >
+              <Avatar
+                src={profile?.avatar_url}
+                name={profile?.display_name}
+                size={32}
+                className="ring-1 ring-rule transition hover:ring-lacquer"
+              />
+            </Link>
           ) : (
             <SignInButton
               className="border border-rule px-3 py-1 text-[15px] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"

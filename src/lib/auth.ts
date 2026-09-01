@@ -10,7 +10,7 @@ export async function getSessionUser() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, is_editor")
+    .select("id, display_name, is_editor, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 

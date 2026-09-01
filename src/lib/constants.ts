@@ -19,3 +19,6 @@ export const LICENSE = {
 
 export const AUDIO_BUCKET = "audio";
 export const MAX_AUDIO_BYTES = 5 * 1024 * 1024; // 5 MB (FR-12)
+
+export const AVATAR_BUCKET = "avatars";
+export const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
