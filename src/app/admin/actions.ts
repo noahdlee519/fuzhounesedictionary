@@ -80,6 +80,37 @@ export async function saveEdit(formData: FormData) {
   redirect("/admin");
 }
 
+export async function approveSuggestion(formData: FormData) {
+  await requireEditor();
+  const id = String(formData.get("id"));
+  const entryId = String(formData.get("entry_id") ?? "");
+  // Setting the status is all this does. The apply_suggestion() trigger copies
+  // the value onto the entry or sense, and refuses to overwrite one an editor
+  // has already written. See supabase/suggestions.sql.
+  await adminClient()
+    .from("suggestions")
+    .update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: null })
+    .eq("id", id);
+  revalidatePath("/admin");
+  revalidatePath("/improve");
+  revalidatePath("/learn");
+  if (entryId) revalidatePath(`/entry/${entryId}`);
+}
+
+export async function rejectSuggestion(formData: FormData) {
+  await requireEditor();
+  const id = String(formData.get("id"));
+  const entryId = String(formData.get("entry_id") ?? "");
+  const note = String(formData.get("note") ?? "").trim() || null;
+  await adminClient()
+    .from("suggestions")
+    .update({ status: "rejected", reviewed_at: new Date().toISOString(), review_notes: note })
+    .eq("id", id);
+  revalidatePath("/admin");
+  revalidatePath("/improve");
+  if (entryId) revalidatePath(`/entry/${entryId}`);
+}
+
 export async function approveRecording(formData: FormData) {
   await requireEditor();
   const id = String(formData.get("id"));

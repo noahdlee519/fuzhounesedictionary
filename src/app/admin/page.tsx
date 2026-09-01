@@ -3,7 +3,14 @@ import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
-import { approve, reject, approveRecording, rejectRecording } from "./actions";
+import {
+  approve,
+  reject,
+  approveRecording,
+  rejectRecording,
+  approveSuggestion,
+  rejectSuggestion,
+} from "./actions";
 import type { Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
 
@@ -60,6 +67,15 @@ export default async function AdminPage() {
     .order("created_at", { ascending: true });
   const pendingRecs = recData ?? [];
 
+  const { data: sugData } = await supabase
+    .from("suggestions")
+    .select(
+      "id, entry_id, kind, value, value_gloss, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword), sense:senses(definition_en)"
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+  const pendingSugs = sugData ?? [];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-4">
@@ -70,6 +86,75 @@ export default async function AdminPage() {
           {pending.length} waiting
         </span>
       </div>
+
+      {pendingSugs.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">
+            {pendingSugs.length} suggestion{pendingSugs.length === 1 ? "" : "s"} to read
+          </h2>
+          <div className="grid gap-3">
+            {pendingSugs.map((s: any) => {
+              const e = Array.isArray(s.entry) ? s.entry[0] : s.entry;
+              const c = Array.isArray(s.contributor) ? s.contributor[0] : s.contributor;
+              const sense = Array.isArray(s.sense) ? s.sense[0] : s.sense;
+              const origin = formatOrigin(s.origin_area, s.origin_locality);
+              return (
+                <div key={s.id} className="border border-rule bg-surface p-4">
+                  <div className="flex flex-wrap items-baseline gap-3">
+                    {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
+                    <Link
+                      href={`/entry/${s.entry_id}`}
+                      className="romanization font-display font-semibold text-lacquer hover:underline"
+                    >
+                      {e?.romanization || e?.headword}
+                    </Link>
+                    <span className={chip}>{s.kind}</span>
+                    {origin && <span className={chip}>{origin}</span>}
+                    <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                      {new Date(s.created_at).toLocaleString()}
+                      {c?.display_name ? ` · ${c.display_name}` : ""}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 border-l-2 border-lacquer pl-3">
+                    <p className={s.kind === "ipa" ? "font-mono text-lg" : "text-lg"}>{s.value}</p>
+                    {s.value_gloss && <p className="text-sm text-inkSoft">{s.value_gloss}</p>}
+                    {sense?.definition_en && (
+                      <p className="mt-1 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                        for the sense: {sense.definition_en}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
+                    <form action={approveSuggestion}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <input type="hidden" name="entry_id" value={s.entry_id} />
+                      <button className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}>
+                        ✓ Publish
+                      </button>
+                    </form>
+                    <form action={rejectSuggestion} className="flex items-center gap-2">
+                      <input type="hidden" name="id" value={s.id} />
+                      <input type="hidden" name="entry_id" value={s.entry_id} />
+                      <label htmlFor={`snote-${s.id}`} className="sr-only">Reason for rejection</label>
+                      <input
+                        id={`snote-${s.id}`}
+                        name="note"
+                        placeholder="Reason (optional)"
+                        className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+                      />
+                      <button className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+                        ✕ Reject
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {pendingRecs.length > 0 && (
         <section className="space-y-3">
