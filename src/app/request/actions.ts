@@ -9,7 +9,10 @@ import { adminClient } from "@/lib/supabase/admin";
 // Create a request (or, if one already exists for this word/entry, just upvote it).
 export async function requestWord(formData: FormData) {
   const { user } = await getSessionUser();
-  const back = String(formData.get("back") ?? "/request") || "/request";
+  // `back` comes from the form, so only a path on this site is honoured —
+  // the same guard as auth/callback. "//evil.com" and "https://…" fall back.
+  const raw = String(formData.get("back") ?? "/request");
+  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/request";
   if (!user) redirect(back);
 
   const term = String(formData.get("term") ?? "").trim();
@@ -41,9 +44,14 @@ export async function requestWord(formData: FormData) {
     if (error) {
       // Rate limits are raised by a database trigger; the message is written for
       // the person reading it. Anything else gets a generic line.
-      const message = /limit|short time/i.test(error.message)
-        ? error.message
-        : "That request could not be saved. Please try again.";
+      // 23505 = the unique index on open requests: someone (or a double click)
+      // got there first. That is not a failure worth alarming anyone about.
+      const message =
+        error.code === "23505"
+          ? "That word has already been requested — your vote has been added."
+          : /limit|short time/i.test(error.message)
+            ? error.message
+            : "That request could not be saved. Please try again.";
       redirect(`${back}?notice=${encodeURIComponent(message)}`);
     }
     existingId = data?.id ?? null;

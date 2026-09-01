@@ -10,7 +10,8 @@ export async function saveProfile(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  // An expired session used to make Save do nothing, silently.
+  if (!user) redirect("/account");
 
   const displayName = String(formData.get("display_name") ?? "").trim().slice(0, 80);
   const areaRaw = String(formData.get("origin_area") ?? "").trim();

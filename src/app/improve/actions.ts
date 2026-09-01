@@ -27,8 +27,16 @@ export async function suggest(formData: FormData) {
   const value = String(formData.get("value") ?? "").trim().slice(0, MAX);
   const gloss = String(formData.get("value_gloss") ?? "").trim().slice(0, MAX);
 
+  // Where the person was: keep their page and origin filter, so sending a
+  // suggestion from page 5 of Changle does not dump them on page 1 of everything.
+  const page = String(formData.get("page") ?? "").trim();
+  const origin = String(formData.get("origin") ?? "").trim();
   const back = (params: Record<string, string>) => {
-    const qs = new URLSearchParams(params);
+    const qs = new URLSearchParams({
+      ...(origin ? { origin } : {}),
+      ...(page && page !== "1" ? { page } : {}),
+      ...params,
+    });
     redirect(`/improve?${qs}#w-${entryId}`);
   };
 
@@ -52,6 +60,8 @@ export async function suggest(formData: FormData) {
     // The rate-limit and length messages are written to be read by a person,
     // so pass them straight through rather than replacing them with our own.
     const dupe = error.code === "23505";
+    // The database also rejects a sense that belongs to a different word; its
+    // message is written for a person, so it passes straight through.
     back({ problem: dupe ? "You have already suggested that for this word." : error.message });
   }
 

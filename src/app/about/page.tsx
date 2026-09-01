@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About · Fuzhounese Dictionary",
+  title: "About",  // the root layout appends " · Fuzhounese Dictionary"
   description:
     "The story behind the collaborative Fuzhounese-English dictionary, where Fuzhounese is spoken, and the person who built it.",
 };

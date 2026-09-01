@@ -96,7 +96,15 @@ export default function SubmitForm({
         if (audioFile.size > MAX_AUDIO_BYTES) {
           throw new Error("Audio file is larger than 5 MB.");
         }
-        const ext = audioFile.name.split(".").pop() || "webm";
+        // From the type, never from the file name — a name is whatever the
+        // uploader chose, including "/" and "..". Same rule as AvatarUpload.
+        const t = (audioFile.type || "").toLowerCase();
+        const ext = t.includes("mpeg") || t.includes("mp3") ? "mp3"
+          : t.includes("mp4") || t.includes("m4a") || t.includes("aac") ? "m4a"
+          : t.includes("wav") ? "wav"
+          : t.includes("ogg") || t.includes("opus") ? "ogg"
+          : t.includes("flac") ? "flac"
+          : "webm";
         const path = `${userId}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from(AUDIO_BUCKET)

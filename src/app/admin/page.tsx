@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -130,9 +131,9 @@ export default async function AdminPage() {
                     <form action={approveSuggestion}>
                       <input type="hidden" name="id" value={s.id} />
                       <input type="hidden" name="entry_id" value={s.entry_id} />
-                      <button className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}>
+                      <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer disabled:opacity-60`}>
                         ✓ Publish
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={rejectSuggestion} className="flex items-center gap-2">
                       <input type="hidden" name="id" value={s.id} />
@@ -144,9 +145,9 @@ export default async function AdminPage() {
                         placeholder="Reason (optional)"
                         className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
-                      <button className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+                      <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer disabled:opacity-60`}>
                         ✕ Reject
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </div>
@@ -188,9 +189,9 @@ export default async function AdminPage() {
                     <form action={approveRecording}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="entry_id" value={r.entry_id} />
-                      <button className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}>
+                      <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer disabled:opacity-60`}>
                         ✓ Publish
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={rejectRecording} className="flex items-center gap-2">
                       <input type="hidden" name="id" value={r.id} />
@@ -202,9 +203,9 @@ export default async function AdminPage() {
                         placeholder="Reason (optional)"
                         className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
-                      <button className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+                      <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer disabled:opacity-60`}>
                         ✕ Reject
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </div>
@@ -264,9 +265,9 @@ export default async function AdminPage() {
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
                   <form action={approve}>
                     <input type="hidden" name="id" value={e.id} />
-                    <button className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}>
+                    <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer disabled:opacity-60`}>
                       ✓ Approve
-                    </button>
+                    </SubmitButton>
                   </form>
                   <form action={reject} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={e.id} />
@@ -277,9 +278,9 @@ export default async function AdminPage() {
                       placeholder="Reason (optional)"
                       className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                     />
-                    <button className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+                    <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer disabled:opacity-60`}>
                       ✕ Reject
-                    </button>
+                    </SubmitButton>
                   </form>
                   <Link
                     href={`/admin/edit/${e.id}`}

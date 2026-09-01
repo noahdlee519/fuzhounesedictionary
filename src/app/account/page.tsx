@@ -5,6 +5,7 @@ import SignInButton from "@/components/SignInButton";
 import Avatar from "@/components/Avatar";
 import AvatarUpload from "@/components/AvatarUpload";
 import SavedNotice from "@/components/SavedNotice";
+import SubmitButton from "@/components/SubmitButton";
 import { saveProfile } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -51,7 +52,7 @@ export default async function AccountPage({
     .eq("id", user.id)
     .maybeSingle();
 
-  const { data } = await supabase
+  const { data, error: entriesError } = await supabase
     .from("entries")
     .select("id, headword, hanzi, romanization, status, review_notes, created_at, senses(definition_en, sort)")
     .eq("contributor_id", user.id)
@@ -201,9 +202,12 @@ export default async function AccountPage({
           )}
 
           <div className="flex flex-wrap items-center gap-4">
-            <button className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">
+            <SubmitButton
+              pending="Saving…"
+              className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+            >
               Save
-            </button>
+            </SubmitButton>
             {searchParams.saved && <SavedNotice />}
           </div>
         </form>
@@ -215,7 +219,11 @@ export default async function AccountPage({
           My submissions
         </h2>
 
-        {entries.length === 0 ? (
+        {entriesError ? (
+          <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+            Your words could not be loaded just now. Please check back shortly.
+          </p>
+        ) : entries.length === 0 ? (
           <div className="border border-rule bg-surface p-8 text-center">
             <p className="text-inkSoft">You haven&apos;t added any words yet.</p>
             <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word →</Link>

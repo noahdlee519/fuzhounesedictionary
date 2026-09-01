@@ -6,7 +6,12 @@ const FULL = "Search for characters, romanizations, English or Chinese";
 const SHORT = "Search a word…";
 
 export default function SearchBar({ defaultValue = "" }: { defaultValue?: string }) {
-  const [narrow, setNarrow] = useState(false);
+  // Read the media query on first render, not in an effect: autoFocus is
+  // acted on at mount, so a value that only becomes right afterwards is too
+  // late — the phone keyboard had already opened on every visit.
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");

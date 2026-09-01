@@ -72,6 +72,7 @@ export default async function ImprovePage({
   const rows = data ?? [];
   const total = count ?? 0;
   const hasNext = to + 1 < total;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const ids = rows.map((r: any) => r.id);
 
@@ -248,7 +249,7 @@ export default async function ImprovePage({
                 {(r.needs_ipa || r.needs_example) && (
                   <div className="mt-2 flex flex-wrap items-start gap-2">
                     {r.needs_ipa && (
-                      <SuggestBox kind="ipa" entryId={r.id} pending={mine[r.id]?.ipa} />
+                      <SuggestBox kind="ipa" entryId={r.id} pending={mine[r.id]?.ipa} page={page} origin={origin} />
                     )}
                     {r.needs_example && (senses[r.id]?.length ?? 0) > 0 && (
                       <SuggestBox
@@ -256,6 +257,8 @@ export default async function ImprovePage({
                         entryId={r.id}
                         senses={senses[r.id]}
                         pending={mine[r.id]?.example}
+                        page={page}
+                        origin={origin}
                       />
                     )}
                   </div>
@@ -283,7 +286,9 @@ export default async function ImprovePage({
           ) : (
             <span />
           )}
-          <span className="text-inkFaint">Page {page}</span>
+          <span className="text-inkFaint">
+            Page {page} of {totalPages}
+          </span>
           {hasNext ? (
             <Link href={href(origin, page + 1)} className="text-inkSoft hover:text-lacquer">
               Next {PAGE_SIZE} →

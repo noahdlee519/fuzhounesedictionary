@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
@@ -87,9 +88,9 @@ export default async function WantedPage({
                 <input name="note" placeholder="What it means, or where you heard it" className={inputCls} />
               </label>
             </div>
-            <button className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer">
+            <SubmitButton pending="Sending…" className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60">
               Request this word
-            </button>
+            </SubmitButton>
           </form>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">

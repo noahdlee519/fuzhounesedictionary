@@ -1,6 +1,5 @@
 import Link from "next/link";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
-import OriginFilter from "@/components/OriginFilter";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { recordingCounts, toCard } from "@/lib/entries";
@@ -96,17 +95,22 @@ export default async function BrowsePage({
 
   let entries: CardProps[] = [];
   let total = 0;
+  // A failed query must not read as "no words yet" — that is a lie with a
+  // call to action attached. Tracked and rendered as an unavailable panel.
+  let failed = false;
 
   if (lang === "fz") {
-    const { data, count } = await base()
+    const { data, count, error } = await base()
       .order("headword", { ascending: asc })
       .range(from, to);
+    if (error) failed = true;
     const rows = data ?? [];
     const counts = await recordingCounts(supabase, rows.map((r: any) => r.id));
     entries = rows.map((r: any) => toCard(r, counts.get(r.id) ?? 0));
     total = count ?? 0;
   } else {
-    const { data } = await base().range(0, SORT_CAP - 1);
+    const { data, error } = await base().range(0, SORT_CAP - 1);
+    if (error) failed = true;
     const all = (data ?? []).map((r: any) => toCard(r));
     // Entries with no gloss sort last in both directions rather than flipping
     // to the top on Z–A, where they would be pure noise.
@@ -162,6 +166,8 @@ export default async function BrowsePage({
   };
 
   const hasNext = from + PAGE_SIZE < total;
+  // At least 1, so an empty filter never reads "page 1 of 0".
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const chip = (label: string, href: string, active: boolean, empty = false) => {
     const info = POS_NOTES[label];
@@ -247,17 +253,22 @@ export default async function BrowsePage({
           )}
         </div>
 
-        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Origin</p>
-        <OriginFilter
-          value={origin}
-          pos={pos}
-          sort={sort === DEFAULT_SORT ? "" : sort}
-          groups={ORIGIN_GROUPS}
-          areas={ORIGIN_AREAS}
-          emptyCodes={
-            countsKnown ? ORIGIN_AREAS.filter((a) => !originCounts.get(a.code)).map((a) => a.code) : []
-          }
-        />
+        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          Where it is from
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
+          {ORIGIN_GROUPS.flatMap((g) =>
+            ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
+              chip(
+                `${a.label} ${a.hanzi}`,
+                hrefWith({ origin: a.code }),
+                origin === a.code,
+                countsKnown && !originCounts.get(a.code)
+              )
+            )
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
@@ -272,7 +283,12 @@ export default async function BrowsePage({
         {entries.map((e) => (
           <EntryCard key={e.id} entry={e} />
         ))}
-        {entries.length === 0 && (
+        {failed && (
+          <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft sm:col-span-2">
+            The word list is unavailable at the moment. Please check back shortly.
+          </p>
+        )}
+        {!failed && entries.length === 0 && (
           <p className="text-inkSoft sm:col-span-2">
             {origin
               ? `Nothing recorded from ${originArea(origin)!.label} yet.`
@@ -294,7 +310,9 @@ export default async function BrowsePage({
         ) : (
           <span />
         )}
-        <span className="text-inkFaint">Page {page}</span>
+        <span className="text-inkFaint">
+          Page {page} of {totalPages}
+        </span>
         {hasNext ? (
           <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
             Next →

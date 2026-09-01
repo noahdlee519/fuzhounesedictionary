@@ -9,6 +9,7 @@ import { firstSense, entryTitle } from "@/lib/entries";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
+import SignInButton from "@/components/SignInButton";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
 
 export const dynamic = "force-dynamic";
@@ -88,19 +89,20 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
           {entry.romanization || entry.headword}
         </span>
         {entry.ipa && <span className="font-mono text-inkFaint">/{entry.ipa}/</span>}
-        {(wordOrigin || entry.variety) &&
-                    (entry as any).origin_area ? (
-            <Link
-              href={`/learn?origin=${encodeURIComponent((entry as any).origin_area)}`}
-              className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
-            >
-              {wordOrigin}
-            </Link>
-          ) : (
-            <span className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1">
-              {entry.variety}
-            </span>
-          )}
+        {/* && binds tighter than ?: — the old form fell into the else branch
+            and drew an empty bordered pill on every entry with no origin. */}
+        {wordOrigin && (entry as any).origin_area ? (
+          <Link
+            href={`/learn?origin=${encodeURIComponent((entry as any).origin_area)}`}
+            className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
+          >
+            {wordOrigin}
+          </Link>
+        ) : entry.variety ? (
+          <span className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1">
+            {entry.variety}
+          </span>
+        ) : null}
       </header>
 
       <section className="space-y-3">
@@ -139,9 +141,13 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
                   Ask for a recording
                 </button>
               </form>
-              <Link href="/submit" className="mt-3 inline-block text-sm text-lacquer hover:underline">
-                Or sign in and record it yourself →
-              </Link>
+              <div className="mt-3">
+                <SignInButton
+                  next={`/entry/${entry.id}`}
+                  label="Or sign in and record it yourself →"
+                  className="text-sm text-lacquer hover:underline"
+                />
+              </div>
             </div>
           )
         )}
@@ -187,6 +193,9 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
         </div>
       )}
 
+      {/* JSON.stringify does not escape "<", so a definition containing
+          "</script>" would close this element and the rest would run as HTML.
+          \u003c is still valid JSON and the browser never sees a "<". */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -202,7 +211,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
               url: "https://fuzhounese.org",
             },
             inLanguage: "cdo",
-          }),
+          }).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026"),
         }}
       />
 

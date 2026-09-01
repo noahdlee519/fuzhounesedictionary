@@ -1,4 +1,5 @@
 import { suggest } from "@/app/improve/actions";
+import SubmitButton from "./SubmitButton";
 
 /* A gap chip that opens a form in place.
 
@@ -26,11 +27,16 @@ export default function SuggestBox({
   entryId,
   senses = [],
   pending = false,
+  page,
+  origin,
 }: {
   kind: "ipa" | "example";
   entryId: string;
   senses?: SenseOption[];
   pending?: boolean;
+  /** Current list position, echoed back so the redirect lands on the same page. */
+  page?: number;
+  origin?: string;
 }) {
   const isIpa = kind === "ipa";
 
@@ -56,6 +62,8 @@ export default function SuggestBox({
       >
         <input type="hidden" name="kind" value={kind} />
         <input type="hidden" name="entry_id" value={entryId} />
+        {page && page > 1 && <input type="hidden" name="page" value={page} />}
+        {origin && <input type="hidden" name="origin" value={origin} />}
 
         {isIpa ? (
           <label className="block">
@@ -115,9 +123,12 @@ export default function SuggestBox({
           </>
         )}
 
-        <button className="border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">
+        <SubmitButton
+          pending="Sending…"
+          className="border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+        >
           Send for review
-        </button>
+        </SubmitButton>
       </form>
     </details>
   );
