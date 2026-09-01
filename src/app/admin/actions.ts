@@ -89,7 +89,7 @@ export async function approveRecording(formData: FormData) {
     .update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: null })
     .eq("id", id);
   revalidatePath("/admin");
-  revalidatePath("/record");
+  revalidatePath("/improve");
   if (entryId) revalidatePath(`/entry/${entryId}`);
 }
 

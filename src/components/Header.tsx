@@ -9,17 +9,17 @@ export default async function Header() {
 
   return (
     <header className="relative z-10 border-b border-rule bg-paper">
-      <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
+      <div className="mx-auto flex max-w-4xl items-center gap-x-6 px-5 py-4">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="font-display text-2xl font-extrabold leading-none tracking-tight text-lacquer">福州話</span>
           <span className="font-display text-base font-semibold lowercase tracking-tight text-ink">fuzhounese.org</span>
         </Link>
-        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[15px]">
+        <nav className="flex flex-1 flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[15px]">
           <Link href="/" className={navLink}>Search</Link>
           <Link href="/learn" className={navLink}>Learn</Link>
           <Link href="/about" className={navLink}>About</Link>
           <Link href="/request" className={navLink}>Request</Link>
-          {user && <Link href="/record" className={navLink}>Record</Link>}
+          {user && <Link href="/improve" className={navLink}>Improve</Link>}
           {profile?.is_editor && <Link href="/admin" className={navLink}>Queue</Link>}
           <Link
             href="/submit"

@@ -10,10 +10,16 @@ import Guide, { Contents, Sources } from "./Guide";
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
+/* Guide temporarily hidden while Noah edits the teaching content — 2026-09-01.
+   Flip this back to true to restore the contents list, all ten sections and the
+   sources block. Nothing was deleted; Guide.tsx is untouched. */
+const SHOW_GUIDE: boolean = false;
+
 export const metadata: Metadata = {
   title: "Learn Fuzhounese",
-  description:
-    "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z.",
+  description: SHOW_GUIDE
+    ? "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z."
+    : "Every word in the Fuzhounese Dictionary, A to Z, filterable by part of speech and by where in Fujian it is from.",
   alternates: { canonical: "/learn" },
 };
 
@@ -86,20 +92,24 @@ export default async function BrowsePage({
         <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
           Learn Fuzhounese
         </h1>
-        <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
-          A dictionary can tell you what a word means. It cannot tell you that the word changes shape
-          when you put another one after it, which in Fuzhounese it almost always does. This page is
-          for that. Open whichever section you need.
-        </p>
-        <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
-          Everything here is sourced, and the sources are listed at the bottom. Where something has
-          not been confirmed by a speaker, it says so.
-        </p>
+        {SHOW_GUIDE && (
+          <>
+            <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
+              A dictionary can tell you what a word means. It cannot tell you that the word changes
+              shape when you put another one after it, which in Fuzhounese it almost always does.
+              This page is for that. Open whichever section you need.
+            </p>
+            <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
+              Everything here is sourced, and the sources are listed at the bottom. Where something
+              has not been confirmed by a speaker, it says so.
+            </p>
+          </>
+        )}
       </section>
 
-      <Contents />
+      {SHOW_GUIDE && <Contents />}
 
-      <Guide />
+      {SHOW_GUIDE && <Guide />}
 
       <div id="words" className="flex scroll-mt-24 flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-6">
         <h2 className="font-display text-xl font-bold uppercase tracking-tight sm:text-2xl">All words</h2>
@@ -151,7 +161,7 @@ export default async function BrowsePage({
         ) : <span />}
       </div>
 
-      <Sources />
+      {SHOW_GUIDE && <Sources />}
     </div>
   );
 }

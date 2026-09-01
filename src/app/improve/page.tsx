@@ -9,10 +9,10 @@ import { formatOrigin, ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/ori
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Recording session",
+  title: "Improve the dictionary",
   description:
-    "Every word in the Fuzhounese Dictionary that has no recording yet, on one page, so a speaker can work straight down the list.",
-  alternates: { canonical: "/record" },
+    "Every word in the Fuzhounese Dictionary that is still missing a recording, with a note of whatever else it lacks — IPA, an example — so you can work straight down the list.",
+  alternates: { canonical: "/improve" },
 };
 
 const PAGE_SIZE = 25;
@@ -32,14 +32,14 @@ export default async function RecordPage({
     return (
       <div className="mx-auto max-w-lg space-y-4 text-center">
         <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
-          Recording session
+          Improve the dictionary
         </h1>
         <p className="text-inkSoft">
           Sign in and this page becomes a list of every word still waiting for a voice, with a record
-          button beside each one.
+          button beside each one and a note of whatever else it is missing.
         </p>
         <div className="flex justify-center">
-          <SignInButton next="/record" />
+          <SignInButton next="/improve" />
         </div>
       </div>
     );
@@ -69,8 +69,23 @@ export default async function RecordPage({
   const total = count ?? 0;
   const hasNext = to + 1 < total;
 
+  // Every word here already needs a recording. Look up what else each one is
+  // missing — IPA, an example — so we can show it as a little "still needs" note.
+  const ids = rows.map((r: any) => r.id);
+  const gaps: Record<string, { ipa: boolean; example: boolean }> = {};
+  if (ids.length) {
+    const { data: extra } = await supabase
+      .from("entries")
+      .select("id, ipa, senses(example)")
+      .in("id", ids);
+    for (const e of (extra ?? []) as any[]) {
+      const hasExample = (e.senses ?? []).some((s: any) => (s.example ?? "").trim());
+      gaps[e.id] = { ipa: !(e.ipa ?? "").trim(), example: !hasExample };
+    }
+  }
+
   const href = (o: string, p = 1) =>
-    `/record?${new URLSearchParams({ ...(o ? { origin: o } : {}), ...(p > 1 ? { page: String(p) } : {}) })}`;
+    `/improve?${new URLSearchParams({ ...(o ? { origin: o } : {}), ...(p > 1 ? { page: String(p) } : {}) })}`;
 
   const chip = (label: string, to: string, active: boolean) => (
     <Link
@@ -93,16 +108,20 @@ export default async function RecordPage({
       <section className="space-y-3 border-b border-rule pb-5">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
-            Recording session
+            Improve the dictionary
           </h1>
           <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-            {total.toLocaleString()} waiting
+            {total.toLocaleString()} need a voice
           </span>
         </div>
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
           Every word with no recording, the most-requested first. Record, move to the next, do not
           leave the page. Say the word on its own, at a normal speed, in your own variety of
           Fuzhounese. If you are not sure of a word, skip it.
+        </p>
+        <p className="max-w-[68ch] text-sm text-inkSoft">
+          Each word also shows a note of anything else it is still missing — IPA, an example. Adding
+          those from here is coming soon; for now, an editor can fill them in.
         </p>
         <p className="max-w-[68ch] text-sm text-inkSoft">
           Your recordings are labelled with where your Fuzhounese is from, which you can set on{" "}
@@ -178,6 +197,19 @@ export default async function RecordPage({
                   {r.votes > 0 && (
                     <span className="font-mono text-[11px] uppercase tracking-wide text-lacquer ring-1 ring-lacquer px-2 py-0.5">
                       {r.votes} asked
+                    </span>
+                  )}
+                  <span className="font-mono text-[11px] uppercase tracking-wide text-lacquer ring-1 ring-lacquer px-2 py-0.5">
+                    needs recording
+                  </span>
+                  {gaps[r.id]?.ipa && (
+                    <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint ring-1 ring-rule px-2 py-0.5">
+                      needs IPA
+                    </span>
+                  )}
+                  {gaps[r.id]?.example && (
+                    <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint ring-1 ring-rule px-2 py-0.5">
+                      needs example
                     </span>
                   )}
                 </div>

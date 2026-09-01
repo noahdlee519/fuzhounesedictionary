@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PARTS_OF_SPEECH, AUDIO_BUCKET, MAX_AUDIO_BYTES } from "@/lib/constants";
 import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
+import Recorder from "@/components/Recorder";
+
+/** A sense that got saved, so we can wire an example recorder to it. */
+interface SavedSense {
+  id: string;
+  example: string | null;
+}
 
 interface SenseDraft {
   part_of_speech: string;
@@ -54,6 +62,10 @@ export default function SubmitForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // After the word is saved we switch to a recording step wired to the new ids.
+  const [savedEntryId, setSavedEntryId] = useState<string | null>(null);
+  const [savedSenses, setSavedSenses] = useState<SavedSense[]>([]);
+
   function updateSense(i: number, patch: Partial<SenseDraft>) {
     setSenses((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
   }
@@ -94,7 +106,7 @@ export default function SubmitForm({
         finalAudio = pub.publicUrl;
       }
 
-      const { error: rpcErr } = await supabase.rpc("submit_entry", {
+      const { data: newId, error: rpcErr } = await supabase.rpc("submit_entry", {
         p_hanzi: hanzi,
         p_romanization: romanization,
         p_ipa: ipa,
@@ -107,12 +119,68 @@ export default function SubmitForm({
       });
       if (rpcErr) throw new Error(rpcErr.message);
 
-      router.push("/submit?success=1");
+      // Fetch the saved senses so we can offer to record each example sentence.
+      const { data: senseRows } = await supabase
+        .from("senses")
+        .select("id, example")
+        .eq("entry_id", newId as string)
+        .order("sort", { ascending: true });
+
+      setSavedSenses((senseRows ?? []) as SavedSense[]);
+      setSavedEntryId(newId as string);
       router.refresh();
     } catch (err: any) {
       setError(err.message ?? "Something went wrong. Please try again.");
       setSubmitting(false);
     }
+  }
+
+  // ---- Step 2: the word is saved; offer to record it in your own voice. ----
+  if (savedEntryId) {
+    const exampleSenses = savedSenses.filter((s) => (s.example ?? "").trim());
+    return (
+      <div className="space-y-6">
+        <div className="border-l-2 border-lacquer bg-surface p-4">
+          <p className="font-display text-lg font-semibold">Saved — it&apos;s in the review queue.</p>
+          <p className="mt-1 text-sm text-inkSoft">
+            Now the best part: add your own voice. A real recording is the one thing a dictionary
+            can&apos;t fake, and it&apos;s optional — you can finish without it.
+          </p>
+        </div>
+
+        <div className="space-y-3 border border-rule p-4">
+          <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Say the word on its own</p>
+          <p className="romanization text-inkSoft">{romanization || hanzi}</p>
+          <Recorder userId={userId} entryId={savedEntryId} kind="headword" />
+        </div>
+
+        {exampleSenses.length > 0 && (
+          <div className="space-y-4">
+            <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+              Say it inside a sentence
+            </p>
+            {exampleSenses.map((s) => (
+              <div key={s.id} className="space-y-2 border border-rule p-4">
+                <p className="romanization text-inkSoft">{s.example}</p>
+                <Recorder userId={userId} entryId={savedEntryId} kind="example" senseId={s.id} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-4 border-t border-rule pt-4">
+          <Link
+            href="/submit?success=1"
+            className="border border-lacquer bg-lacquer px-6 py-2.5 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90"
+          >
+            Done
+          </Link>
+          <Link href="/account" className="font-mono text-xs uppercase tracking-wide text-inkSoft hover:text-lacquer">
+            View my submissions
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -183,6 +251,10 @@ export default function SubmitForm({
 
       <fieldset className="space-y-3 border border-rule p-4">
         <legend className="px-1 font-mono text-xs uppercase tracking-wide text-inkFaint">Pronunciation audio (optional)</legend>
+        <p className="text-xs text-inkFaint">
+          Want to record straight from your microphone instead? Save the word first — the next step
+          lets you record it on its own and inside your example sentences.
+        </p>
         <label className="block text-sm">
           Upload a recording (max 5 MB)
           <input
