@@ -145,13 +145,9 @@ export default async function ImprovePage({
           </span>
         </div>
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
-          Every word still missing something, the most-requested first. Fix one, move to the next, do
-          not leave the page. Say the word on its own, at a normal speed, in your own variety of
-          Fuzhounese. If you are not sure of a word, skip it.
-        </p>
-        <p className="max-w-[68ch] text-sm text-inkSoft">
-          Each word shows what it is short of. Click a tag to add it. Everything you send —
-          recordings, pronunciations, sentences — waits for an editor before it appears on the site.
+          Each word listed here is missing something. Feel free to fill in the gaps. Everything you
+          upload (recordings, pronunciations, sentences, etc.) will be sent to the editors before it
+          appears on the site.
         </p>
         <p className="max-w-[68ch] text-sm text-inkSoft">
           Your contributions are labelled with where your Fuzhounese is from, which you can set on{" "}
