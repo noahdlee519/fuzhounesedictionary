@@ -7,7 +7,11 @@ import { toCard } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home({ searchParams }: { searchParams: { q?: string } }) {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { q?: string; auth_error?: string };
+}) {
   const q = (searchParams.q ?? "").trim();
   const supabase = createClient();
 
@@ -35,6 +39,17 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
 
   return (
     <div className="space-y-8">
+      {searchParams.auth_error && (
+        <p
+          role="alert"
+          className="border-l-2 border-lacquer bg-surface px-4 py-3 text-sm text-inkSoft"
+        >
+          <span className="font-medium text-ink">Sign-in did not complete.</span>{" "}
+          {searchParams.auth_error} Please try again, and if it keeps happening let Noah know what it
+          says here.
+        </p>
+      )}
+
       <section className="space-y-4">
         <h1 className="font-display text-[22px] font-bold uppercase leading-tight tracking-tight text-balance text-ink sm:text-[28px]">
           The Collaborative Fuzhounese-English Dictionary
