@@ -8,6 +8,8 @@ import { formatOrigin } from "@/lib/origins";
 import { firstSense, entryTitle } from "@/lib/entries";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
+import Recorder from "@/components/Recorder";
+import RecordingList, { type RecordingRow } from "@/components/RecordingList";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +50,23 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
 
   if (!entry) notFound();
 
+  // Recordings the viewer is allowed to hear: approved ones, plus their own
+  // pending ones so they can tell their upload worked. RLS does the filtering.
+  const { data: recRows } = await supabase
+    .from("recordings")
+    .select("id, kind, sense_id, audio_url, status, origin_area, origin_locality, created_at, contributor:profiles(id, display_name)")
+    .eq("entry_id", params.id)
+    .order("created_at", { ascending: true });
+  // supabase-js types a to-one embed as an array; flatten it once here rather
+  // than casting at every use site.
+  const recordings: RecordingRow[] = (recRows ?? []).map((r: any) => ({
+    ...r,
+    contributor: Array.isArray(r.contributor) ? r.contributor[0] ?? null : r.contributor ?? null,
+  }));
+  const headwordRecs = recordings.filter((r: any) => r.kind === "headword");
+  const exampleRecs = (senseId: string) =>
+    recordings.filter((r: any) => r.kind === "example" && r.sense_id === senseId);
+
   const senses: Sense[] = [...(entry.senses ?? [])].sort(
     (a: Sense, b: Sense) => (a.sort ?? 0) - (b.sort ?? 0)
   );
@@ -69,36 +88,64 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
           {entry.romanization || entry.headword}
         </span>
         {entry.ipa && <span className="font-mono text-inkFaint">/{entry.ipa}/</span>}
-        {(wordOrigin || entry.variety) && (
-          <span className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1">
-            {wordOrigin || entry.variety}
-          </span>
-        )}
+        {(wordOrigin || entry.variety) &&
+                    (entry as any).origin_area ? (
+            <Link
+              href={`/learn?origin=${encodeURIComponent((entry as any).origin_area)}`}
+              className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
+            >
+              {wordOrigin}
+            </Link>
+          ) : (
+            <span className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1">
+              {entry.variety}
+            </span>
+          )}
       </header>
 
-      {entry.audio_url ? (
-        <audio controls src={entry.audio_url} className="w-full max-w-sm">
-          Your browser does not support audio playback.
-        </audio>
-      ) : (
-        <div className="border border-dashed border-rule p-4">
-          <p className="text-sm text-inkSoft">No pronunciation yet. Know how this is said?</p>
-          {user ? (
-            <form action={requestWord} className="mt-3">
-              <input type="hidden" name="entry_id" value={entry.id} />
-              <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
-              <input type="hidden" name="back" value={`/entry/${entry.id}`} />
-              <button className="border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer">
-                🔊 Request a pronunciation
-              </button>
-            </form>
-          ) : (
-            <Link href="/request" className="mt-2 inline-block text-sm text-lacquer hover:underline">
-              Sign in to request a recording →
-            </Link>
-          )}
-        </div>
-      )}
+      <section className="space-y-3">
+        {/* the legacy single-file column still plays, if it holds anything */}
+        {entry.audio_url && (
+          <audio controls src={entry.audio_url} className="w-full max-w-sm">
+            Your browser does not support audio playback.
+          </audio>
+        )}
+
+        <RecordingList recordings={headwordRecs} />
+
+        {user ? (
+          <div className="border border-dashed border-rule p-4">
+            <Recorder
+              userId={user.id}
+              entryId={entry.id}
+              kind="headword"
+              label={
+                headwordRecs.length || entry.audio_url
+                  ? "Add your pronunciation of this word"
+                  : "Be the first to say this word"
+              }
+            />
+          </div>
+        ) : (
+          !entry.audio_url &&
+          headwordRecs.length === 0 && (
+            <div className="border border-dashed border-rule p-4">
+              <p className="text-sm text-inkSoft">No pronunciation yet. Know how this is said?</p>
+              <form action={requestWord} className="mt-3">
+                <input type="hidden" name="entry_id" value={entry.id} />
+                <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
+                <input type="hidden" name="back" value={`/entry/${entry.id}`} />
+                <button className="border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">
+                  Ask for a recording
+                </button>
+              </form>
+              <Link href="/submit" className="mt-3 inline-block text-sm text-lacquer hover:underline">
+                Or sign in and record it yourself →
+              </Link>
+            </div>
+          )
+        )}
+      </section>
 
       <ol className="space-y-5">
         {senses.map((s, i) => (
@@ -114,6 +161,20 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
                 <span className="romanization text-inkSoft">{s.example}</span>
                 {s.example_gloss && <span className="text-inkFaint">—{s.example_gloss}</span>}
               </p>
+            )}
+            {s.example && (
+              <div className="mt-2 space-y-2">
+                <RecordingList recordings={exampleRecs(s.id)} compact />
+                {user && (
+                  <Recorder
+                    userId={user.id}
+                    entryId={entry.id}
+                    kind="example"
+                    senseId={s.id}
+                    label="Read this sentence aloud"
+                  />
+                )}
+              </div>
             )}
           </li>
         ))}

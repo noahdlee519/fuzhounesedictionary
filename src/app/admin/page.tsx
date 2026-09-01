@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
-import { approve, reject } from "./actions";
+import { approve, reject, approveRecording, rejectRecording } from "./actions";
 import type { Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
 
@@ -53,6 +53,13 @@ export default async function AdminPage() {
     .order("created_at", { ascending: true });
   const pending = data ?? [];
 
+  const { data: recData } = await supabase
+    .from("recordings")
+    .select("id, entry_id, kind, audio_url, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword)")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+  const pendingRecs = recData ?? [];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-4">
@@ -63,6 +70,64 @@ export default async function AdminPage() {
           {pending.length} waiting
         </span>
       </div>
+
+      {pendingRecs.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">
+            {pendingRecs.length} recording{pendingRecs.length === 1 ? "" : "s"} to listen to
+          </h2>
+          <div className="grid gap-3">
+            {pendingRecs.map((r: any) => {
+              const e = Array.isArray(r.entry) ? r.entry[0] : r.entry;
+              const c = Array.isArray(r.contributor) ? r.contributor[0] : r.contributor;
+              const origin = formatOrigin(r.origin_area, r.origin_locality);
+              return (
+                <div key={r.id} className="border border-rule bg-surface p-4">
+                  <div className="flex flex-wrap items-baseline gap-3">
+                    {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
+                    <Link
+                      href={`/entry/${r.entry_id}`}
+                      className="romanization font-display font-semibold text-lacquer hover:underline"
+                    >
+                      {e?.romanization || e?.headword}
+                    </Link>
+                    <span className={chip}>{r.kind}</span>
+                    {origin && <span className={chip}>{origin}</span>}
+                    <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                      {new Date(r.created_at).toLocaleString()}
+                      {c?.display_name ? ` · ${c.display_name}` : ""}
+                    </span>
+                  </div>
+                  <audio controls src={r.audio_url} className="mt-3 h-9 w-full max-w-sm" />
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
+                    <form action={approveRecording}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="entry_id" value={r.entry_id} />
+                      <button className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}>
+                        ✓ Publish
+                      </button>
+                    </form>
+                    <form action={rejectRecording} className="flex items-center gap-2">
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="entry_id" value={r.entry_id} />
+                      <label htmlFor={`rnote-${r.id}`} className="sr-only">Reason for rejection</label>
+                      <input
+                        id={`rnote-${r.id}`}
+                        name="note"
+                        placeholder="Reason (optional)"
+                        className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+                      />
+                      <button className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+                        ✕ Reject
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {pending.length === 0 ? (
         <div className="border border-rule bg-surface p-8 text-center text-inkSoft">

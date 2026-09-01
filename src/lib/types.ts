@@ -62,3 +62,20 @@ export interface SearchRow {
   origin_area: string | null;
   origin_locality: string | null;
 }
+
+export interface Recording {
+  id: string;
+  entry_id: string;
+  kind: "headword" | "example";
+  sense_id: string | null;
+  audio_url: string;
+  seconds: number | null;
+  note: string | null;
+  contributor_id: string | null;
+  origin_area: string | null;
+  origin_locality: string | null;
+  status: EntryStatus;
+  review_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}

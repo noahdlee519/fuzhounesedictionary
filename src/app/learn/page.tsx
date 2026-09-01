@@ -3,6 +3,7 @@ import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { toCard } from "@/lib/entries";
+import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
 
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: { page?: string; pos?: string };
+  searchParams: { page?: string; pos?: string; origin?: string };
 }) {
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
@@ -27,6 +28,9 @@ export default async function BrowsePage({
 
   const posParam = (searchParams.pos ?? "").trim();
   const pos = (PARTS_OF_SPEECH as readonly string[]).includes(posParam) ? posParam : "";
+
+  const originParam = (searchParams.origin ?? "").trim();
+  const origin = originArea(originParam) ? originParam : "";
 
   const supabase = createClient();
   const senseCols = "definition_en, part_of_speech, sort";
@@ -39,6 +43,7 @@ export default async function BrowsePage({
     .eq("status", "approved");
 
   if (pos) query = query.eq("senses.part_of_speech", pos);
+  if (origin) query = query.eq("origin_area", origin);
 
   const { data, count } = await query.order("headword", { ascending: true }).range(from, to);
 
@@ -46,7 +51,18 @@ export default async function BrowsePage({
 
   const total = count ?? 0;
   const hasNext = to + 1 < total;
-  const pageHref = (n: number) => `/learn?${new URLSearchParams({ ...(pos ? { pos } : {}), page: String(n) })}`;
+  const pageHref = (n: number) =>
+    `/learn?${new URLSearchParams({
+      ...(pos ? { pos } : {}),
+      ...(origin ? { origin } : {}),
+      page: String(n),
+    })}#words`;
+
+  // links that toggle one filter while keeping the other
+  const withPos = (p: string) =>
+    `/learn?${new URLSearchParams({ ...(p ? { pos: p } : {}), ...(origin ? { origin } : {}) })}#words`;
+  const withOrigin = (o: string) =>
+    `/learn?${new URLSearchParams({ ...(pos ? { pos } : {}), ...(o ? { origin: o } : {}) })}#words`;
 
   const chip = (label: string, href: string, active: boolean) => (
     <Link
@@ -73,7 +89,7 @@ export default async function BrowsePage({
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
           A dictionary can tell you what a word means. It cannot tell you that the word changes shape
           when you put another one after it, which in Fuzhounese it almost always does. This page is
-          for that. Jump to whichever section you need.
+          for that. Open whichever section you need.
         </p>
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
           Everything here is sourced, and the sources are listed at the bottom. Where something has
@@ -90,14 +106,25 @@ export default async function BrowsePage({
         <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
           {total.toLocaleString()} {pos ? pos : "entr"}
           {pos ? (total === 1 ? "" : "s") : total === 1 ? "y" : "ies"}
+          {origin ? ` from ${originArea(origin)!.label}` : ""}
         </span>
       </div>
 
       <div className="space-y-2">
         <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Part of speech</p>
         <div className="flex flex-wrap gap-2">
-          {chip("All", "/learn", !pos)}
-          {PARTS_OF_SPEECH.map((p) => chip(p, `/learn?pos=${encodeURIComponent(p)}`, pos === p))}
+          {chip("All", withPos(""), !pos)}
+          {PARTS_OF_SPEECH.map((p) => chip(p, withPos(p), pos === p))}
+        </div>
+
+        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Where it is from</p>
+        <div className="flex flex-wrap gap-2">
+          {chip("Anywhere", withOrigin(""), !origin)}
+          {ORIGIN_GROUPS.flatMap((g) =>
+            ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
+              chip(`${a.label} ${a.hanzi}`, withOrigin(a.code), origin === a.code)
+            )
+          )}
         </div>
       </div>
 
@@ -105,7 +132,11 @@ export default async function BrowsePage({
         {entries.map((e) => <EntryCard key={e.id} entry={e} />)}
         {entries.length === 0 && (
           <p className="text-inkSoft sm:col-span-2">
-            {pos ? `No ${pos}s yet.` : "No approved words yet. Be the first to add one!"}
+            {origin
+              ? `Nothing recorded from ${originArea(origin)!.label} yet.`
+              : pos
+                ? `No ${pos}s yet.`
+                : "No approved words yet. Be the first to add one."}
           </p>
         )}
       </div>

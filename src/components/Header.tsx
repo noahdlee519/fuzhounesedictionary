@@ -19,6 +19,7 @@ export default async function Header() {
           <Link href="/learn" className={navLink}>Learn</Link>
           <Link href="/about" className={navLink}>About</Link>
           <Link href="/request" className={navLink}>Request</Link>
+          {user && <Link href="/record" className={navLink}>Record</Link>}
           {profile?.is_editor && <Link href="/admin" className={navLink}>Queue</Link>}
           <Link
             href="/submit"

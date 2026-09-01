@@ -27,7 +27,7 @@ security definer set search_path = public
 as $$
 declare
   max_pending  constant int := 100;
-  max_per_day  constant int := 40;
+  max_per_day  constant int := 100;
   max_per_min  constant int := 5;
   v_uid uuid := auth.uid();
   v_n   int;
@@ -51,8 +51,8 @@ begin
     where contributor_id = v_uid and created_at > now() - interval '24 hours';
   if v_n >= max_per_day then
     raise exception
-      'You have added % words in the last day, which is the daily limit. Please carry on tomorrow.',
-      v_n using errcode = 'check_violation';
+      'You have added % words today, which is the daily limit of %. Please carry on tomorrow.',
+      v_n, max_per_day using errcode = 'check_violation';
   end if;
 
   select count(*) into v_n
@@ -131,6 +131,9 @@ set file_size_limit = 5242880,
     allowed_mime_types = array[
       'audio/mpeg','audio/mp3','audio/mp4','audio/aac','audio/x-m4a','audio/m4a',
       'audio/wav','audio/x-wav','audio/vnd.wave','audio/webm','audio/ogg',
-      'audio/opus','audio/flac','audio/x-flac'
+      'audio/opus','audio/flac','audio/x-flac',
+      -- MediaRecorder reports these parameterised forms; the browser client
+      -- strips them before upload, but accept them in case anything else does not
+      'audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4;codecs=mp4a.40.2'
     ]
 where id = 'audio';

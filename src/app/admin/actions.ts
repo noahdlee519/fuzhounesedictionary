@@ -79,3 +79,29 @@ export async function saveEdit(formData: FormData) {
   revalidatePath(`/entry/${id}`);
   redirect("/admin");
 }
+
+export async function approveRecording(formData: FormData) {
+  await requireEditor();
+  const id = String(formData.get("id"));
+  const entryId = String(formData.get("entry_id") ?? "");
+  await adminClient()
+    .from("recordings")
+    .update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: null })
+    .eq("id", id);
+  revalidatePath("/admin");
+  revalidatePath("/record");
+  if (entryId) revalidatePath(`/entry/${entryId}`);
+}
+
+export async function rejectRecording(formData: FormData) {
+  await requireEditor();
+  const id = String(formData.get("id"));
+  const entryId = String(formData.get("entry_id") ?? "");
+  const note = String(formData.get("note") ?? "").trim() || null;
+  await adminClient()
+    .from("recordings")
+    .update({ status: "rejected", reviewed_at: new Date().toISOString(), review_notes: note })
+    .eq("id", id);
+  revalidatePath("/admin");
+  if (entryId) revalidatePath(`/entry/${entryId}`);
+}
