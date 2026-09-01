@@ -154,7 +154,7 @@ export default async function ImprovePage({
           <Link href="/account" className="text-lacquer hover:underline">
             your account page
           </Link>
-          . That is what makes them useful to someone comparing counties later.
+          .
         </p>
       </section>
 

@@ -42,6 +42,17 @@ const SORT_CAP = 1000;
 
 const collator = new Intl.Collator("en", { sensitivity: "base" });
 
+/* Two of the parts of speech mean nothing to most English speakers, and they
+   are exactly the ones a Fuzhounese learner most needs explained. Each gets a
+   hover note on its filter chip. Grounded in words actually in the dictionary:
+   the particles are 賣, 各, 未; the measure words are 隻 and 本. */
+const POS_NOTES: Record<string, string> = {
+  particle:
+    "A short word that carries no meaning on its own but does grammatical work \u2014 turning a statement into a question, marking a plural, or showing that something has already happened.",
+  "measure word":
+    "A counting word that goes between a number and a noun, like the \u201csheets\u201d in \u201cthree sheets of paper\u201d. Fuzhounese needs one, and which word you use depends on the kind of thing being counted.",
+};
+
 export const metadata: Metadata = {
   title: "Learn Fuzhounese",
   description: SHOW_GUIDE
@@ -143,23 +154,39 @@ export default async function BrowsePage({
 
   const hasNext = from + PAGE_SIZE < total;
 
-  const chip = (label: string, href: string, active: boolean, empty = false) => (
-    <Link
-      key={label}
-      href={href}
-      aria-current={active ? "true" : undefined}
-      title={empty ? `No ${label} in the dictionary yet` : undefined}
-      className={
-        "border px-2.5 py-1 text-[13px] transition-colors " +
-        (active
-          ? "border-lacquer bg-lacquer text-paper"
-          : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer") +
-        (empty && !active ? " opacity-40" : "")
-      }
-    >
-      {label}
-    </Link>
-  );
+  const chip = (label: string, href: string, active: boolean, empty = false) => {
+    const info = POS_NOTES[label];
+    const tipId = info ? `tip-${label.replace(/\s+/g, "-")}` : undefined;
+    return (
+      <Link
+        key={label}
+        href={href}
+        aria-current={active ? "true" : undefined}
+        aria-describedby={tipId}
+        title={empty ? `No ${label} in the dictionary yet` : undefined}
+        className={
+          "border px-2.5 py-1 text-[13px] transition-colors " +
+          (info ? "has-info " : "") +
+          (active
+            ? "border-lacquer bg-lacquer text-paper"
+            : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer") +
+          (empty && !active ? " opacity-40" : "")
+        }
+      >
+        {label}
+        {info && (
+          <>
+            <span className="info-dot" aria-hidden="true">
+              i
+            </span>
+            <span id={tipId} role="tooltip" className="info-tip">
+              {info}
+            </span>
+          </>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <div className="space-y-10">
@@ -202,7 +229,9 @@ export default async function BrowsePage({
 
       <div className="space-y-2">
         <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Part of speech</p>
-        <div className="flex flex-wrap gap-2">
+        {/* relative: the info panels are positioned against this row, so they
+            stay inside the content column however the chips wrap */}
+        <div className="relative flex flex-wrap gap-2">
           {chip("All", hrefWith({ pos: "" }), !pos)}
           {PARTS_OF_SPEECH.map((p) =>
             chip(p, hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p))

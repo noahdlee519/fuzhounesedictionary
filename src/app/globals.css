@@ -55,6 +55,74 @@ body {
   .page-fade { animation: none; }
 }
 
+/* Information tooltip on a filter chip.
+
+   No JavaScript: the panel is a sibling of the dot, shown on hovering the dot
+   and on keyboard focus of the chip itself — the dot is a plain span rather
+   than a button because it lives inside a link, and a control inside a link is
+   invalid and unreachable by keyboard anyway. The chip carries
+   aria-describedby, so a screen reader reads the explanation without needing
+   the hover at all. */
+.info-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  margin-left: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px;
+  font-style: italic;
+  line-height: 1;
+  opacity: .55;
+  cursor: help;
+  vertical-align: baseline;
+}
+.info-dot:hover { opacity: 1; }
+
+.info-tip {
+  position: absolute;
+  /* Bounded by the chip ROW, which is the nearest positioned ancestor, and
+     dropped just below it.
+
+     Anchoring to the individual chip does not survive measurement: growing
+     rightward runs off the right edge at 900px, 760px and 420px, growing
+     leftward or centring runs off the left edge once the row wraps and a chip
+     lands against the margin. The row is exactly as wide as the content column,
+     so a panel pinned inside it cannot leave the screen at any width. Below
+     rather than above so it does not cover the page heading. */
+  top: calc(100% + 8px);
+  /* Right edge of the row, which is where both tooltipped chips sit — near
+     enough to read as belonging to them, while still bounded by the row. */
+  right: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: min(16rem, calc(100vw - 2rem));
+  border: 1px solid var(--rule-strong, var(--rule));
+  background: var(--paper);
+  padding: .6rem .7rem;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  box-shadow: 0 2px 10px rgb(0 0 0 / .09);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease-out;
+}
+.info-dot:hover ~ .info-tip,
+.has-info:focus-visible .info-tip {
+  opacity: 1;
+  visibility: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .info-tip { transition: none; }
+}
+
 ::selection { background: var(--lacquer); color: var(--paper); }
 
 /* tighten the display face wherever it is used for big headings */
