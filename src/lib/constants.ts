@@ -9,7 +9,6 @@ export const PARTS_OF_SPEECH = [
   "particle",
   "phrase",
   "proper noun",
-  "other",
 ] as const;
 
 export const LICENSE = {

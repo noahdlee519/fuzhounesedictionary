@@ -1,5 +1,6 @@
 import Link from "next/link";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
+import OriginFilter from "@/components/OriginFilter";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { recordingCounts, toCard } from "@/lib/entries";
@@ -246,22 +247,17 @@ export default async function BrowsePage({
           )}
         </div>
 
-        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          Where it is from
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
-          {ORIGIN_GROUPS.flatMap((g) =>
-            ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
-              chip(
-                `${a.label} ${a.hanzi}`,
-                hrefWith({ origin: a.code }),
-                origin === a.code,
-                countsKnown && !originCounts.get(a.code)
-              )
-            )
-          )}
-        </div>
+        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Origin</p>
+        <OriginFilter
+          value={origin}
+          pos={pos}
+          sort={sort === DEFAULT_SORT ? "" : sort}
+          groups={ORIGIN_GROUPS}
+          areas={ORIGIN_AREAS}
+          emptyCodes={
+            countsKnown ? ORIGIN_AREAS.filter((a) => !originCounts.get(a.code)).map((a) => a.code) : []
+          }
+        />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">

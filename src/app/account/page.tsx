@@ -58,6 +58,16 @@ export default async function AccountPage({
     .order("created_at", { ascending: false });
 
   const entries = data ?? [];
+
+  // Everything else this person has contributed, not just their first word.
+  const { data: recData } = await supabase
+    .from("recordings")
+    .select("id, kind, status, created_at, entry:entries(id, headword, hanzi, romanization, status)")
+    .eq("contributor_id", user.id)
+    .order("created_at", { ascending: false });
+  const recordings = (recData ?? []) as any[];
+  const meaningsCount = entries.reduce((n: number, e: any) => n + (e.senses?.length ?? 0), 0);
+
   const precision = profile?.origin_precision ?? "hidden";
   const publicLine = formatOrigin(profile?.origin_area, profile?.origin_locality);
 
@@ -75,6 +85,7 @@ export default async function AccountPage({
             <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
               {profile?.display_name || "My account"}
             </h1>
+            <p className="truncate text-sm text-inkFaint">{user.email}</p>
             <Link
               href={`/contributor/${user.id}`}
               className="text-sm text-inkFaint transition-colors hover:text-lacquer"
@@ -92,6 +103,22 @@ export default async function AccountPage({
         </div>
         <AvatarUpload userId={user.id} hasAvatar={!!profile?.avatar_url} />
       </div>
+
+      {/* ---- contributions at a glance ---------------------------------- */}
+      <section className="grid grid-cols-3 gap-3">
+        {[
+          { n: entries.length, label: entries.length === 1 ? "word added" : "words added" },
+          { n: meaningsCount, label: meaningsCount === 1 ? "meaning" : "meanings" },
+          { n: recordings.length, label: recordings.length === 1 ? "recording" : "recordings" },
+        ].map((s) => (
+          <div key={s.label} className="border border-rule bg-surface p-4 text-center">
+            <div className="font-display text-3xl font-bold tabular-nums text-lacquer">{s.n}</div>
+            <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+              {s.label}
+            </div>
+          </div>
+        ))}
+      </section>
 
       {/* ------------------------------------------------------------------ */}
       <section className="space-y-4">
@@ -213,6 +240,48 @@ export default async function AccountPage({
                   {e.status === "rejected" && e.review_notes && (
                     <p className="mt-2 text-sm text-inkFaint">Editor note: {e.review_notes}</p>
                   )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      <section className="space-y-3">
+        <h2 className="border-t border-rule pt-5 font-display text-lg font-bold uppercase tracking-tight">
+          My recordings
+        </h2>
+
+        {recordings.length === 0 ? (
+          <div className="border border-rule bg-surface p-8 text-center">
+            <p className="text-inkSoft">You haven&apos;t recorded anything yet.</p>
+            <Link href="/improve" className="mt-2 inline-block font-medium text-lacquer hover:underline">
+              Record a word &rarr;
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {recordings.map((r: any) => {
+              const w = r.entry;
+              const name = w?.romanization || w?.headword || "a word";
+              const body = (
+                <div className="flex items-baseline gap-3">
+                  {w?.hanzi && <span className="font-display text-xl font-bold">{w.hanzi}</span>}
+                  <span className="romanization font-display font-semibold text-lacquer">{name}</span>
+                  <span className="text-sm text-inkFaint">
+                    {r.kind === "example" ? "in a sentence" : "the word"}
+                  </span>
+                  <span
+                    className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[r.status] ?? STATUS_STYLE.pending}`}
+                  >
+                    {r.status}
+                  </span>
+                </div>
+              );
+              return (
+                <div key={r.id} className="border border-rule bg-surface p-4">
+                  {w && w.status === "approved" ? <Link href={`/entry/${w.id}`}>{body}</Link> : body}
                 </div>
               );
             })}
