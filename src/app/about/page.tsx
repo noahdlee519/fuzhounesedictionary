@@ -65,7 +65,7 @@ export default function AboutPage() {
               height={528}
               className="w-full"
             />
-            <figcaption className="mt-3 border-t border-rule pt-3 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+            <figcaption className="mt-3 border-t border-rule pt-3 text-[11px] uppercase tracking-wide text-inkFaint">
               Fujian province, southeast China
             </figcaption>
           </figure>
