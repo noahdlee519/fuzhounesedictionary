@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Chivo, Newsreader, IBM_Plex_Mono } from "next/font/google";
 import Header from "@/components/Header";
+import PageFade from "@/components/PageFade";
 import { Analytics } from "@vercel/analytics/next";
 import { LICENSE } from "@/lib/constants";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <Header />
+        <PageFade>
         <main id="main" className="relative z-10 mx-auto max-w-4xl px-5 py-10">
           {children}
         </main>
@@ -70,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/admin" className="hover:text-lacquer">Editors</Link>
           </div>
         </footer>
+        </PageFade>
         <Analytics />
       </body>
     </html>

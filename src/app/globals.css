@@ -40,6 +40,21 @@ body {
 
 .romanization { font-variant-ligatures: none; }
 
+/* Page fade. Driven by PageFade, which re-keys its wrapper on every
+   navigation — and on a click of the link for the page you are already on.
+   Opacity only, deliberately: the earlier version also drifted upward, and the
+   movement is what made it feel templated. */
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.page-fade {
+  animation: page-fade-in 180ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-fade { animation: none; }
+}
+
 ::selection { background: var(--lacquer); color: var(--paper); }
 
 /* tighten the display face wherever it is used for big headings */

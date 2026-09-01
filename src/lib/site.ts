@@ -17,4 +17,5 @@ export const SITE_URL = "https://fuzhounese.org";
 export const SITE_NAME = "Fuzhounese Dictionary";
 
 // Noah's wording, used verbatim as the meta description / search snippet.
-export const SITE_DESCRIPTION = "The Collaborative Fuzhounese-English Dictionary.";
+export const SITE_DESCRIPTION =
+  "The collaborative Fuzhounese-English dictionary project. Search for words, characters, romanization, and audio—and contribute your own entries.";
