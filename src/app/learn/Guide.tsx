@@ -307,6 +307,23 @@ export default function Guide() {
           years old, and words that sound literary in Mandarin are ordinary here. <Han>囝</Han> is
           just the word for a child.
         </P>
+        <div className="pt-1">
+          <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Start here</p>
+          <ul className="mt-2 max-w-[68ch] list-disc space-y-1.5 pl-5 text-[17px] leading-relaxed text-inkSoft marker:text-lacquer">
+            <li>
+              <a href="#sounds" className="text-lacquer hover:underline">The sounds</a> — the
+              consonants and vowels, and the two ways a syllable is allowed to end.
+            </li>
+            <li>
+              <a href="#tones" className="text-lacquer hover:underline">The seven tones</a> — pitch
+              on a five-point scale, with an example word carrying each one.
+            </li>
+            <li>
+              <a href="#phrases" className="text-lacquer hover:underline">The phrasebook</a> — a few
+              things to actually say, once the sounds make sense.
+            </li>
+          </ul>
+        </div>
       </Section>
 
       <Section id="sounds" title="Sounds">

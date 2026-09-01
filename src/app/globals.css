@@ -76,6 +76,18 @@ body {
   font-size: 9px;
   font-style: italic;
   line-height: 1;
+  /* Optical centring. The circle centres the glyph's ADVANCE box, but an italic
+     "i" is not symmetric inside it: the tittle sits right of the stem, so in a
+     13px circle the letter reads as sitting off to the right even though its
+     bounding box is centred.
+
+     Measured on the real IBM Plex Mono italic at 10x: with no correction the
+     tittle is +0.26px right of centre; 0.5px of padding here shifts the glyph a
+     quarter pixel and brings the tittle to +0.01px, with the body a quarter
+     pixel left. That is the best balance available — the glyph is asymmetric, so
+     no single offset centres every part of it. Going further (1px of padding)
+     over-corrects and the letter starts to read left. */
+  padding-right: 0.5px;
   opacity: .55;
   cursor: help;
   vertical-align: baseline;

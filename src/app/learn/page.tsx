@@ -10,10 +10,9 @@ import Guide, { Contents, Sources } from "./Guide";
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
-/* Guide temporarily hidden while Noah edits the teaching content — 2026-09-01.
-   Flip this back to true to restore the contents list, all ten sections and the
-   sources block. Nothing was deleted; Guide.tsx is untouched. */
-const SHOW_GUIDE: boolean = false;
+/* The teaching guide — the contents list, all the sections, and the sources
+   block. Flip to false to hide it and show only the word list below. */
+const SHOW_GUIDE: boolean = true;
 
 /* ---------------------------------------------------------------------------
    Sorting.
@@ -153,6 +152,7 @@ export default async function BrowsePage({
   };
 
   const hasNext = from + PAGE_SIZE < total;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const chip = (label: string, href: string, active: boolean, empty = false) => {
     const info = POS_NOTES[label];
@@ -290,7 +290,7 @@ export default async function BrowsePage({
         ) : (
           <span />
         )}
-        <span className="text-inkFaint">Page {page}</span>
+        <span className="text-inkFaint">Page {page}/{totalPages}</span>
         {hasNext ? (
           <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
             Next →
