@@ -20,12 +20,12 @@ function countLabel(n: number) {
 function Speaker() {
   return (
     <svg
-      width="11"
-      height="11"
+      width="14"
+      height="14"
       viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="1.4"
       strokeLinejoin="round"
       aria-hidden="true"
       className="shrink-0"
