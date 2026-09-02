@@ -255,22 +255,33 @@ export default async function BrowsePage({
           )}
         </div>
 
-        <p className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          Where it is from
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
-          {ORIGIN_GROUPS.flatMap((g) =>
-            ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
-              chip(
-                `${a.label} ${a.hanzi}`,
-                hrefWith({ origin: a.code }),
-                origin === a.code,
-                countsKnown && !originCounts.get(a.code)
+        {/* Collapsible, open by default — the same <details> idiom as the guide
+            sections, so it needs no JavaScript. A chosen origin still shows in
+            the count line above even when this is folded away. */}
+        <details open className="group pt-2">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint marker:content-none hover:text-lacquer">
+            Origin
+            <span
+              aria-hidden
+              className="text-[10px] transition-transform group-open:rotate-90"
+            >
+              &#9656;
+            </span>
+          </summary>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
+            {ORIGIN_GROUPS.flatMap((g) =>
+              ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
+                chip(
+                  `${a.label} ${a.hanzi}`,
+                  hrefWith({ origin: a.code }),
+                  origin === a.code,
+                  countsKnown && !originCounts.get(a.code)
+                )
               )
-            )
-          )}
-        </div>
+            )}
+          </div>
+        </details>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
