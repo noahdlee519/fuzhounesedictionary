@@ -125,6 +125,8 @@ const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) =>
 const TONES: {
   name?: string; pitch: string; levels: number[]; short?: boolean; extra?: boolean;
   han?: string; buc?: string;
+  /** the romanization is a dictionary entry in tone digits, not a reconstructed mark */
+  cited?: boolean;
 }[] = [
   { name: "陰平", pitch: "44", levels: [4, 4], han: "天", buc: "tiĕng" },
   { name: "陽平", pitch: "53", levels: [5, 3], han: "儂", buc: "nè̤ng" },
@@ -133,16 +135,18 @@ const TONES: {
   { name: "陽去", pitch: "242", levels: [2, 4, 2], han: "二", buc: "nê" },
   { name: "陰入", pitch: "23", levels: [2, 3], short: true, han: "福", buc: "hók" },
   { name: "陽入", pitch: "5", levels: [5, 5], short: true, han: "日", buc: "nĭk" },
-  // The eighth is a sandhi-only tone, drawn dashed and labelled "in-word":
-  // it is one of the two extra tones (21 / 24) that surface only inside words.
-  { pitch: "21", levels: [2, 1], extra: true },
+  // The eighth is one of the two tones (21 / 24) that only surface inside a
+  // word, so its example is the first syllable of a two-syllable entry: 二 is
+  // 242 on its own and 21 at the front of 二八天.
+  { pitch: "21", levels: [2, 1], extra: true, han: "二八天", buc: "ni21 weik21 tieng44", cited: true },
 ];
 
-function ToneGlyph({ levels, short, extra }: { levels: number[]; short?: boolean; extra?: boolean }) {
-  const W = 88;
+function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean; extra?: boolean }) {
+  const W = 100; // 88 of chart, then the 1–5 labels down the right
   const H = 64;
   const PAD = 6;
-  const span = short ? (W - PAD * 2) * 0.5 : W - PAD * 2;
+  const RIGHT = 18; // space for the labels
+  const span = short ? (W - RIGHT - PAD * 2) * 0.5 : W - RIGHT - PAD * 2;
   const y = (lvl: number) => PAD + ((5 - lvl) / 4) * (H - PAD * 2);
   const pts = levels
     .map((lvl, i) => `${PAD + (levels.length === 1 ? 0 : (i / (levels.length - 1)) * span)},${y(lvl)}`)
@@ -150,16 +154,28 @@ function ToneGlyph({ levels, short, extra }: { levels: number[]; short?: boolean
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-hidden className="block">
       {[1, 2, 3, 4, 5].map((lvl) => (
-        <line
-          key={lvl}
-          x1={PAD}
-          x2={W - PAD}
-          y1={y(lvl)}
-          y2={y(lvl)}
-          stroke="currentColor"
-          strokeWidth={lvl === 1 || lvl === 5 ? 0.9 : 0.5}
-          className="text-rule"
-        />
+        <g key={lvl}>
+          <line
+            x1={PAD}
+            x2={W - RIGHT - PAD}
+            y1={y(lvl)}
+            y2={y(lvl)}
+            stroke="currentColor"
+            strokeWidth={lvl === 1 || lvl === 5 ? 0.9 : 0.5}
+            className="text-rule"
+          />
+          {/* the scale, 5 high to 1 low, so the digits in "213" can be read off */}
+          <text
+            x={W - RIGHT + 5}
+            y={y(lvl)}
+            dominantBaseline="central"
+            fontSize="7.5"
+            fill="currentColor"
+            className="font-mono text-inkFaint"
+          >
+            {lvl}
+          </text>
+        </g>
       ))}
       <polyline
         points={pts}
@@ -168,7 +184,6 @@ function ToneGlyph({ levels, short, extra }: { levels: number[]; short?: boolean
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray={extra ? "4 3" : undefined}
         className="text-lacquer"
       />
     </svg>
@@ -180,7 +195,7 @@ export const ToneChart = () => (
     {TONES.map((t) => (
       <figure
         key={t.pitch}
-        className={"border bg-surface p-3 " + (t.extra ? "border-dashed border-ruleStrong" : "border-rule")}
+        className="border border-rule bg-surface p-3"
       >
         <div className="text-rule">
           <ToneGlyph levels={t.levels} short={t.short} extra={t.extra} />
@@ -196,14 +211,18 @@ export const ToneChart = () => (
           )}
         </figcaption>
         {t.buc && (
-          <div className="mt-1.5 flex items-baseline gap-1.5 text-[13px]">
+          <div className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 text-[13px]">
             <span className="font-display font-semibold text-ink">{t.han}</span>
-            <span
-              title="Bàng-uâ-cê—unchecked: the mark-to-tone mapping isn't confirmed yet"
-              className="romanization italic text-inkSoft underline decoration-dotted decoration-inkFaint underline-offset-2"
-            >
-              {t.buc}
-            </span>
+            {t.cited ? (
+              <span className="romanization italic text-inkSoft">{t.buc}</span>
+            ) : (
+              <span
+                title="Bàng-uâ-cê—unchecked: the mark-to-tone mapping isn't confirmed yet"
+                className="romanization italic text-inkSoft underline decoration-dotted decoration-inkFaint underline-offset-2"
+              >
+                {t.buc}
+              </span>
+            )}
           </div>
         )}
       </figure>
@@ -385,7 +404,7 @@ export default function Guide() {
         </P>
         <P>
           The two extra tones are <Num>21</Num> and <Num>24</Num>. You will never hear them on a
-          word said by itself; the dashed box above, marked <i>in-word</i>, is the <Num>21</Num>.
+          word said by itself; the box above marked <i>in-word</i> is the <Num>21</Num>, shown on the first syllable of <Han>二八天</Han>.
         </P>
       </Section>
 

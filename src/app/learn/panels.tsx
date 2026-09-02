@@ -82,15 +82,16 @@ const features = (
         <Han>上聲</Han> <Num>31</Num>, <Han>陰去</Han> <Num>213</Num>, <Han>陽去</Han>{" "}
         <Num>242</Num>, <Han>陰入</Han> <Num>23</Num>, <Han>陽入</Han> <Num>5</Num>. The last two are
         short, on syllables that end in a glottal stop—the catch in the middle of
-        &ldquo;uh-oh&rdquo;. Two more tones appear only inside longer words; the dashed box is one
-        of them.
+        &ldquo;uh-oh&rdquo;. Two more tones appear only inside longer words; the last box is one of
+        them, heard on the first syllable of <Han>二八天</Han>.
       </P>
       <div className="pt-1">
         <ToneChart />
       </div>
       <p className="max-w-[68ch] text-sm text-inkFaint">
-        The word under each box carries that tone. A dotted romanization means its tone mark has not
-        yet been confirmed by a speaker.
+        The word under each box carries that tone. The two short lines are the entering tones, cut
+        off by the glottal stop. A dotted romanization means its tone mark has not yet been
+        confirmed by a speaker.
       </p>
     </Block>
 
