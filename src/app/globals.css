@@ -137,6 +137,23 @@ body {
 
 ::selection { background: var(--lacquer); color: var(--paper); }
 
+/* The narrow-screen row of nav links scrolls sideways when there are more
+   than fit (an editor sees six). A scrollbar under four words would look
+   broken, so it is hidden; the strip still scrolls by touch, trackpad and
+   keyboard. The mask fades the last 20px — exactly the strip's end padding —
+   so an overflowing word dissolves at the screen edge instead of being sliced,
+   while a word that fits is never touched. */
+.nav-strip {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+          mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+}
+.nav-strip::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) {
+  .nav-strip { -webkit-mask-image: none; mask-image: none; }
+}
+
 /* tighten the display face wherever it is used for big headings */
 .font-display { letter-spacing: -0.015em; }
 
