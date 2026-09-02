@@ -6,6 +6,8 @@ import { recordingCounts, toCard } from "@/lib/entries";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
+import LearnPanels from "./LearnPanels";
+import { learnPanels } from "./panels";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
@@ -57,7 +59,7 @@ export const metadata: Metadata = {
   title: "Learn Fuzhounese",
   description: SHOW_GUIDE
     ? "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z."
-    : "Every word in the Fuzhounese Dictionary, A to Z, filterable by part of speech and by where in Fujian it is from.",
+    : "How Fuzhounese works — its tones, tone sandhi, measure words and how it is written — and every word in the dictionary, A to Z.",
   alternates: { canonical: "/learn" },
 };
 
@@ -229,6 +231,10 @@ export default async function BrowsePage({
       {SHOW_GUIDE && <Contents />}
 
       {SHOW_GUIDE && <Guide />}
+
+      {/* Features · Orthography · Further reading — one panel at a time,
+          the first open on arrival. Content lives in panels.tsx. */}
+      <LearnPanels panels={learnPanels} />
 
       <div
         id="words"

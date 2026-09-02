@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   keywords: [
-    "Fuzhounese", "Foochow", "福州話", "Eastern Min", "Min Dong",
+    "Fuzhounese", "Fuzhou", "福州話", "Eastern Min", "Min Dong",
     "Fuzhou dialect", "Bàng-uâ-cê", "Chinese dialect dictionary",
   ],
   alternates: { canonical: "/" },
