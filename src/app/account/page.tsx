@@ -64,7 +64,7 @@ export default async function AccountPage({
   // Everything else this person has contributed, not just their first word.
   const { data: recData } = await supabase
     .from("recordings")
-    .select("id, kind, status, created_at, entry:entries(id, headword, hanzi, romanization, status)")
+    .select("id, kind, audio_url, status, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))")
     .eq("contributor_id", user.id)
     .order("created_at", { ascending: false });
   const recordings: RecordingByRowProps[] = (recData ?? []).map((r: any) => ({
@@ -196,7 +196,7 @@ export default async function AccountPage({
         {show === "meanings" && (
           meanings.length === 0 ? (
             <div className="border border-rule bg-surface p-8 text-center">
-              <p className="text-inkSoft">No meanings yet — they come with the words you add.</p>
+              <p className="text-inkSoft">No meanings yet.</p>
               <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word →</Link>
             </div>
           ) : (

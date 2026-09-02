@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
+import Avatar from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { formatOrigin } from "@/lib/origins";
 import { toCard } from "@/lib/entries";
@@ -35,7 +36,7 @@ export default async function ContributorPage({ params }: { params: { id: string
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, origin_area, origin_locality, created_at")
+    .select("id, display_name, avatar_url, origin_area, origin_locality, created_at")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -58,7 +59,7 @@ export default async function ContributorPage({ params }: { params: { id: string
   // same whoever is looking at it (the owner and editors can see more).
   const { data: recData, count: recCount } = await supabase
     .from("recordings")
-    .select("id, kind, audio_url, status, created_at, entry:entries(id, headword, hanzi, romanization, status)", {
+    .select("id, kind, audio_url, status, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))", {
       count: "exact",
     })
     .eq("contributor_id", params.id)
@@ -80,24 +81,28 @@ export default async function ContributorPage({ params }: { params: { id: string
 
   return (
     <div className="space-y-8">
-      <section className="border-b border-rule pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Contributor</p>
-        <h1 className="mt-2 font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
-          {profile.display_name || "Anonymous contributor"}
-        </h1>
-        {origin && (
-          <p className="mt-3 text-inkSoft">
-            <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Fuzhounese from </span>
-            {origin}
+      <section className="flex items-start justify-between gap-6 border-b border-rule pb-6">
+        <div className="min-w-0">
+          <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Contributor</p>
+          <h1 className="mt-2 font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+            {profile.display_name || "Anonymous contributor"}
+          </h1>
+          {origin && (
+            <p className="mt-3 text-inkSoft">
+              <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Fuzhounese from </span>
+              {origin}
+            </p>
+          )}
+          <p className="mt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+            Member since {since}
           </p>
-        )}
-        <p className="mt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          Member since {since}
-        </p>
-        <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          {total.toLocaleString()} word{total === 1 ? "" : "s"} ·{" "}
-          {totalRecs.toLocaleString()} recording{totalRecs === 1 ? "" : "s"}
-        </p>
+          <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+            {total.toLocaleString()} word{total === 1 ? "" : "s"} ·{" "}
+            {totalRecs.toLocaleString()} recording{totalRecs === 1 ? "" : "s"}
+          </p>
+        </div>
+        {/* Bigger than the header avatar — this is the one page about the person. */}
+        <Avatar src={profile.avatar_url} name={profile.display_name} size={80} className="ring-1 ring-rule" />
       </section>
 
       <section className="space-y-3">

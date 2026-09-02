@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 /* One recording in a person's list — on their public profile and on their own
-   account page. Reads: word · what was said · the player · (status, if not
-   approved). The entry link is only offered when the entry itself is live;
-   a pending word has no page yet. */
+   account page. Reads: word · its first English meaning · the player · (status,
+   on the owner's page). A sentence recording says so after the meaning. The
+   entry link is only offered when the entry itself is live; a pending word has
+   no page yet. */
 
 export interface RecordingByRowProps {
   id: string;
@@ -17,6 +18,7 @@ export interface RecordingByRowProps {
     hanzi: string | null;
     romanization: string | null;
     status: string;
+    senses?: { definition_en: string | null; sort: number | null }[] | null;
   } | null;
 }
 
@@ -35,11 +37,17 @@ export default function RecordingByRow({
 }) {
   const w = r.entry;
   const name = w?.romanization || w?.headword || "a word";
+  const meaning = [...(w?.senses ?? [])]
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+    .find((s) => s.definition_en)?.definition_en;
   const title = (
-    <span className="flex items-baseline gap-3">
+    <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
       {w?.hanzi && <span className="font-display text-xl font-bold">{w.hanzi}</span>}
       <span className="romanization font-display font-semibold text-lacquer">{name}</span>
-      <span className="text-sm text-inkFaint">{r.kind === "example" ? "in a sentence" : "the word"}</span>
+      {meaning && <span className="text-sm text-inkFaint">{meaning}</span>}
+      {r.kind === "example" && (
+        <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">in a sentence</span>
+      )}
     </span>
   );
 
