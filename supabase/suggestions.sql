@@ -45,6 +45,31 @@ do $$ begin
         or (kind = 'ipa'     and sense_id is null));
 exception when duplicate_object then null; end $$;
 
+-- A sense named by an example must belong to the entry the example is for.
+-- Without this, a hand-edited sense_id could file an example against word A
+-- that, on approval, is written onto word B.
+create or replace function public.check_suggestion_sense()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if new.sense_id is not null and not exists (
+    select 1 from public.senses s
+     where s.id = new.sense_id and s.entry_id = new.entry_id
+  ) then
+    raise exception 'That meaning does not belong to this word.'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists suggestions_check_sense on public.suggestions;
+create trigger suggestions_check_sense
+  before insert or update of sense_id, entry_id on public.suggestions
+  for each row execute function public.check_suggestion_sense();
+
 -- Don't let the same person queue the same suggestion twice.
 create unique index if not exists suggestions_no_dupe_pending
   on public.suggestions (entry_id, kind, coalesce(sense_id, entry_id), contributor_id, value)
@@ -74,8 +99,16 @@ begin
   if new.contributor_id is not null then
     select origin_area, origin_locality into v_area, v_loc
       from public.profiles where id = new.contributor_id;
-    new.origin_area     := coalesce(new.origin_area, v_area);
-    new.origin_locality := coalesce(new.origin_locality, v_loc);
+    -- The profile decides, not the client. A signed-in user cannot label a
+    -- suggestion with an origin other than the one on their profile; the
+    -- service role (import scripts) may still set it explicitly.
+    if auth.uid() is not null then
+      new.origin_area     := v_area;
+      new.origin_locality := v_loc;
+    else
+      new.origin_area     := coalesce(new.origin_area, v_area);
+      new.origin_locality := coalesce(new.origin_locality, v_loc);
+    end if;
   end if;
 
   -- service role (import scripts) and editors publish straight away
@@ -183,6 +216,7 @@ begin
          set example       = new.value,
              example_gloss = coalesce(nullif(btrim(new.value_gloss), ''), example_gloss)
        where id = new.sense_id
+         and entry_id = new.entry_id            -- never a sense of another word
          and coalesce(btrim(example), '') = '';
     end if;
   end if;

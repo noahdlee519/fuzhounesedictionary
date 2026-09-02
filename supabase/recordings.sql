@@ -61,8 +61,16 @@ begin
   if new.contributor_id is not null then
     select origin_area, origin_locality into v_area, v_loc
       from public.profiles where id = new.contributor_id;
-    new.origin_area     := coalesce(new.origin_area, v_area);
-    new.origin_locality := coalesce(new.origin_locality, v_loc);
+    -- The profile decides, not the client. A signed-in user cannot label a
+    -- recording with an origin other than the one on their profile; the
+    -- service role (import scripts) may still set it explicitly.
+    if auth.uid() is not null then
+      new.origin_area     := v_area;
+      new.origin_locality := v_loc;
+    else
+      new.origin_area     := coalesce(new.origin_area, v_area);
+      new.origin_locality := coalesce(new.origin_locality, v_loc);
+    end if;
   end if;
 
   -- service role (import scripts) and editors publish straight away

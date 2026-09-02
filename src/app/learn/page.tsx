@@ -185,7 +185,9 @@ export default async function BrowsePage({
           (active
             ? "border-lacquer bg-lacquer text-paper"
             : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer") +
-          (empty && !active ? " opacity-40" : "")
+          // Chips that carry an explanation are never dimmed, entries or not —
+          // the tooltip is the point of them, and a faded "i" reads as broken.
+          (empty && !active && !info ? " opacity-40" : "")
         }
       >
         {label}

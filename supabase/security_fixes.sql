@@ -1,6 +1,10 @@
 -- ============================================================================
---  Security fixes — 2026-09-02. RUN THIS FIRST, before anything else pending.
---  Run in Supabase → SQL Editor. Safe to run more than once.
+--  Security fixes — 2026-09-02. Run in Supabase → SQL Editor.
+--  Safe to run more than once, and safe to run in ANY order relative to the
+--  other migrations: the parts that touch the recordings and suggestions
+--  tables only run if those tables exist, and recordings.sql / suggestions.sql
+--  now carry the same fixed function bodies, so whichever file runs last
+--  leaves the fixed version in place.
 --
 --  Three things, in order of how much they matter:
 --
@@ -83,13 +87,18 @@ begin
 end;
 $$;
 
-drop trigger if exists suggestions_check_sense on public.suggestions;
-create trigger suggestions_check_sense
-  before insert or update of sense_id, entry_id on public.suggestions
-  for each row execute function public.check_suggestion_sense();
+do $$ begin
+  if to_regclass('public.suggestions') is not null then
+    drop trigger if exists suggestions_check_sense on public.suggestions;
+    create trigger suggestions_check_sense
+      before insert or update of sense_id, entry_id on public.suggestions
+      for each row execute function public.check_suggestion_sense();
+  end if;
+end $$;
 
--- Same function as suggestions.sql, with one extra predicate on the senses
--- update and the origin change from section 3 folded in.
+-- Function bodies below resolve their tables at call time, so creating them
+-- before suggestions.sql / recordings.sql have run is fine. Those two files
+-- now define the same bodies, so running them afterwards changes nothing.
 create or replace function public.apply_suggestion()
 returns trigger
 language plpgsql
