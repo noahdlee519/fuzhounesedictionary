@@ -6,6 +6,7 @@ import Avatar from "@/components/Avatar";
 import AvatarUpload from "@/components/AvatarUpload";
 import SavedNotice from "@/components/SavedNotice";
 import SubmitButton from "@/components/SubmitButton";
+import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import { saveProfile } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -30,7 +31,7 @@ const inputCls =
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: { saved?: string };
+  searchParams: { saved?: string; show?: string };
 }) {
   const { user } = await getSessionUser();
 
@@ -48,13 +49,13 @@ export default async function AccountPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url, origin_area, origin_locality, origin_precision")
+    .select("id, display_name, avatar_url, origin_area, origin_locality, origin_precision, created_at")
     .eq("id", user.id)
     .maybeSingle();
 
   const { data, error: entriesError } = await supabase
     .from("entries")
-    .select("id, headword, hanzi, romanization, status, review_notes, created_at, senses(definition_en, sort)")
+    .select("id, headword, hanzi, romanization, status, review_notes, created_at, senses(id, definition_en, part_of_speech, sort)")
     .eq("contributor_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -66,8 +67,26 @@ export default async function AccountPage({
     .select("id, kind, status, created_at, entry:entries(id, headword, hanzi, romanization, status)")
     .eq("contributor_id", user.id)
     .order("created_at", { ascending: false });
-  const recordings = (recData ?? []) as any[];
-  const meaningsCount = entries.reduce((n: number, e: any) => n + (e.senses?.length ?? 0), 0);
+  const recordings: RecordingByRowProps[] = (recData ?? []).map((r: any) => ({
+    ...r,
+    entry: Array.isArray(r.entry) ? r.entry[0] ?? null : r.entry ?? null,
+  }));
+
+  // Every meaning on every word this person added, newest word first, in the
+  // order the meanings appear on the entry page.
+  const meanings = entries.flatMap((e: any) =>
+    [...(e.senses ?? [])]
+      .sort((a: any, b: any) => (a.sort ?? 0) - (b.sort ?? 0))
+      .map((sense: any) => ({ ...sense, entry: e }))
+  );
+
+  // Which list the tiles are showing. The tiles are links, so this survives a
+  // refresh and needs no JavaScript.
+  const show = (["words", "meanings", "recordings"] as const).find((k) => k === searchParams.show) ?? "words";
+
+  const since = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("en-GB", { year: "numeric", month: "long" })
+    : null;
 
   const precision = profile?.origin_precision ?? "hidden";
   const publicLine = formatOrigin(profile?.origin_area, profile?.origin_locality);
@@ -87,12 +106,13 @@ export default async function AccountPage({
               {profile?.display_name || "My account"}
             </h1>
             <p className="truncate text-sm text-inkFaint">{user.email}</p>
-            <Link
-              href={`/contributor/${user.id}`}
-              className="text-sm text-inkFaint transition-colors hover:text-lacquer"
-            >
-              View profile →
-            </Link>
+            <p className="text-sm text-inkFaint">
+              {since && <span>Member since {since}</span>}
+              {since && <span aria-hidden> · </span>}
+              <Link href={`/contributor/${user.id}`} className="transition-colors hover:text-lacquer">
+                View profile →
+              </Link>
+            </p>
           </div>
           <div className="ml-auto flex items-center gap-4">
             <form action="/auth/signout" method="post">
@@ -105,24 +125,125 @@ export default async function AccountPage({
         <AvatarUpload userId={user.id} hasAvatar={!!profile?.avatar_url} />
       </div>
 
-      {/* ---- contributions at a glance ---------------------------------- */}
-      <section className="grid grid-cols-3 gap-3">
-        {[
-          { n: entries.length, label: entries.length === 1 ? "word added" : "words added" },
-          { n: meaningsCount, label: meaningsCount === 1 ? "meaning" : "meanings" },
-          { n: recordings.length, label: recordings.length === 1 ? "recording" : "recordings" },
-        ].map((s) => (
-          <div key={s.label} className="border border-rule bg-surface p-4 text-center">
-            <div className="font-display text-3xl font-bold tabular-nums text-lacquer">{s.n}</div>
-            <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
-              {s.label}
+      {/* ---- contributions: three tiles that double as tabs ---------------- */}
+      <section className="space-y-4">
+        <nav aria-label="Your contributions" className="grid grid-cols-3 gap-3">
+          {[
+            { key: "words", n: entries.length, label: entries.length === 1 ? "word added" : "words added" },
+            { key: "meanings", n: meanings.length, label: meanings.length === 1 ? "meaning" : "meanings" },
+            { key: "recordings", n: recordings.length, label: recordings.length === 1 ? "recording" : "recordings" },
+          ].map((t) => {
+            const active = show === t.key;
+            return (
+              <Link
+                key={t.key}
+                href={`/account?show=${t.key}`}
+                scroll={false}
+                aria-current={active ? "true" : undefined}
+                className={
+                  "block border bg-surface p-4 text-center transition-colors " +
+                  (active
+                    ? "border-lacquer"
+                    : "border-rule hover:border-lacquer")
+                }
+              >
+                <div className="font-display text-3xl font-bold tabular-nums text-lacquer">{t.n}</div>
+                <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+                  {t.label}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {show === "words" && (
+          entriesError ? (
+            <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+              Your words could not be loaded just now. Please check back shortly.
+            </p>
+          ) : entries.length === 0 ? (
+            <div className="border border-rule bg-surface p-8 text-center">
+              <p className="text-inkSoft">You haven&apos;t added any words yet.</p>
+              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word →</Link>
             </div>
-          </div>
-        ))}
+          ) : (
+            <div className="grid gap-3">
+              {entries.map((e: any) => {
+                const first = [...(e.senses ?? [])].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))[0];
+                const body = (
+                  <div className="flex items-baseline gap-3">
+                    {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
+                    <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
+                    <span className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
+                      {e.status}
+                    </span>
+                  </div>
+                );
+                return (
+                  <div key={e.id} className="border border-rule bg-surface p-4">
+                    {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
+                    {first && <p className="mt-1 text-sm text-inkSoft">{first.definition_en}</p>}
+                    {e.status === "rejected" && e.review_notes && (
+                      <p className="mt-2 text-sm text-inkFaint">Editor note: {e.review_notes}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        )}
+
+        {show === "meanings" && (
+          meanings.length === 0 ? (
+            <div className="border border-rule bg-surface p-8 text-center">
+              <p className="text-inkSoft">No meanings yet — they come with the words you add.</p>
+              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word →</Link>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {meanings.map((m: any) => {
+                const e = m.entry;
+                const body = (
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
+                    <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
+                    {m.part_of_speech && (
+                      <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">{m.part_of_speech}</span>
+                    )}
+                    <span className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
+                      {e.status}
+                    </span>
+                  </div>
+                );
+                return (
+                  <div key={m.id} className="border border-rule bg-surface p-4">
+                    {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
+                    <p className="mt-1 text-sm text-inkSoft">{m.definition_en}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        )}
+
+        {show === "recordings" && (
+          recordings.length === 0 ? (
+            <div className="border border-rule bg-surface p-8 text-center">
+              <p className="text-inkSoft">You haven&apos;t recorded anything yet.</p>
+              <Link href="/improve" className="mt-2 inline-block font-medium text-lacquer hover:underline">
+                Record a word &rarr;
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {recordings.map((r) => <RecordingByRow key={r.id} recording={r} showStatus />)}
+            </div>
+          )
+        )}
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      <section className="space-y-4">
+      <section className="space-y-4 border-t border-rule pt-8">
         <div>
           <h2 className="font-display text-lg font-bold uppercase tracking-tight">Your Fuzhounese</h2>
           <p className="mt-1 max-w-2xl text-sm text-inkSoft">
@@ -211,90 +332,6 @@ export default async function AccountPage({
             {searchParams.saved && <SavedNotice />}
           </div>
         </form>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      <section className="space-y-3">
-        <h2 className="border-t border-rule pt-5 font-display text-lg font-bold uppercase tracking-tight">
-          My submissions
-        </h2>
-
-        {entriesError ? (
-          <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
-            Your words could not be loaded just now. Please check back shortly.
-          </p>
-        ) : entries.length === 0 ? (
-          <div className="border border-rule bg-surface p-8 text-center">
-            <p className="text-inkSoft">You haven&apos;t added any words yet.</p>
-            <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word →</Link>
-          </div>
-        ) : (
-          <div className="grid gap-3">
-            {entries.map((e: any) => {
-              const first = [...(e.senses ?? [])].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))[0];
-              const body = (
-                <div className="flex items-baseline gap-3">
-                  {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
-                  <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
-                  <span className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
-                    {e.status}
-                  </span>
-                </div>
-              );
-              return (
-                <div key={e.id} className="border border-rule bg-surface p-4">
-                  {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
-                  {first && <p className="mt-1 text-sm text-inkSoft">{first.definition_en}</p>}
-                  {e.status === "rejected" && e.review_notes && (
-                    <p className="mt-2 text-sm text-inkFaint">Editor note: {e.review_notes}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      <section className="space-y-3">
-        <h2 className="border-t border-rule pt-5 font-display text-lg font-bold uppercase tracking-tight">
-          My recordings
-        </h2>
-
-        {recordings.length === 0 ? (
-          <div className="border border-rule bg-surface p-8 text-center">
-            <p className="text-inkSoft">You haven&apos;t recorded anything yet.</p>
-            <Link href="/improve" className="mt-2 inline-block font-medium text-lacquer hover:underline">
-              Record a word &rarr;
-            </Link>
-          </div>
-        ) : (
-          <div className="grid gap-3">
-            {recordings.map((r: any) => {
-              const w = r.entry;
-              const name = w?.romanization || w?.headword || "a word";
-              const body = (
-                <div className="flex items-baseline gap-3">
-                  {w?.hanzi && <span className="font-display text-xl font-bold">{w.hanzi}</span>}
-                  <span className="romanization font-display font-semibold text-lacquer">{name}</span>
-                  <span className="text-sm text-inkFaint">
-                    {r.kind === "example" ? "in a sentence" : "the word"}
-                  </span>
-                  <span
-                    className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[r.status] ?? STATUS_STYLE.pending}`}
-                  >
-                    {r.status}
-                  </span>
-                </div>
-              );
-              return (
-                <div key={r.id} className="border border-rule bg-surface p-4">
-                  {w && w.status === "approved" ? <Link href={`/entry/${w.id}`}>{body}</Link> : body}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </section>
     </div>
   );

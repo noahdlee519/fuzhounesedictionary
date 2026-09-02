@@ -101,13 +101,29 @@ language plpgsql
 security definer set search_path = public
 as $$
 declare
-  max_pending constant int := 100;
-  max_per_day constant int := 200;   -- a recording session is meant to be fast
-  max_per_min constant int := 20;
+  max_per_word constant int := 2;    -- mirrored by MAX_RECORDINGS_PER_WORD in src/lib/constants.ts
+  max_pending  constant int := 100;
+  max_per_day  constant int := 200;  -- a recording session is meant to be fast
+  max_per_min  constant int := 20;
   v_uid uuid := auth.uid();
   v_n   int;
 begin
-  if v_uid is null or public.is_editor() then
+  if v_uid is null then
+    return new;                      -- service role (import scripts)
+  end if;
+
+  -- Two takes of one word per person — say it on its own and in a sentence,
+  -- or two tries at the word — and that is the word done for you. Rejected
+  -- takes do not count, so a "please try again" from an editor is not a
+  -- dead end. Applies to editors too: it is a content rule, not a rate limit.
+  select count(*) into v_n from public.recordings
+    where contributor_id = v_uid and entry_id = new.entry_id and status <> 'rejected';
+  if v_n >= max_per_word then
+    raise exception 'You have already recorded this word twice, which is the limit per word.'
+      using errcode = 'check_violation';
+  end if;
+
+  if public.is_editor() then
     return new;
   end if;
 

@@ -7,6 +7,7 @@ import Recorder from "@/components/Recorder";
 import SavedNotice from "@/components/SavedNotice";
 import SuggestBox, { type SenseOption } from "@/components/SuggestBox";
 import { formatOrigin, ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
+import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -83,9 +84,13 @@ export default async function ImprovePage({
   // instead of inviting them to send the same thing again. RLS means this only
   // ever returns their own rows.
   const mine: Record<string, { ipa: boolean; example: boolean }> = {};
+  // How many takes this user already has on each word (not counting rejected
+  // ones), so the record button disappears at the two-per-word cap instead of
+  // inviting a recording the database would refuse.
+  const takes: Record<string, number> = {};
 
   if (ids.length) {
-    const [{ data: senseRows }, { data: pendingRows }] = await Promise.all([
+    const [{ data: senseRows }, { data: pendingRows }, { data: takeRows }] = await Promise.all([
       supabase.from("senses").select("id, entry_id, definition_en, sort").in("entry_id", ids),
       supabase
         .from("suggestions")
@@ -93,7 +98,14 @@ export default async function ImprovePage({
         .eq("contributor_id", user.id)
         .eq("status", "pending")
         .in("entry_id", ids),
+      supabase
+        .from("recordings")
+        .select("entry_id")
+        .eq("contributor_id", user.id)
+        .neq("status", "rejected")
+        .in("entry_id", ids),
     ]);
+    for (const t of (takeRows ?? []) as any[]) takes[t.entry_id] = (takes[t.entry_id] ?? 0) + 1;
 
     for (const s of (senseRows ?? []) as any[]) {
       (senses[s.entry_id] ??= []).push({ id: s.id, definition_en: s.definition_en });
@@ -266,7 +278,13 @@ export default async function ImprovePage({
               </div>
 
               {r.needs_recording ? (
-                <Recorder userId={user.id} entryId={r.id} kind="headword" label="Needs a recording" />
+                (takes[r.id] ?? 0) >= MAX_RECORDINGS_PER_WORD ? (
+                  <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                    you have recorded this twice
+                  </span>
+                ) : (
+                  <Recorder userId={user.id} entryId={r.id} kind="headword" label="Needs a recording" />
+                )
               ) : (
                 <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
                   has a recording

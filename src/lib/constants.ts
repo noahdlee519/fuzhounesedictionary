@@ -19,6 +19,12 @@ export const LICENSE = {
 export const AUDIO_BUCKET = "audio";
 export const MAX_AUDIO_BYTES = 5 * 1024 * 1024; // 5 MB (FR-12)
 
+/* How many recordings one person may leave on one word — the word on its own
+   and in a sentence, or two tries at the word. Enforced by the database
+   (supabase/recording_cap.sql); this copy is for hiding the record button
+   once it is reached. Rejected takes do not count. Change both together. */
+export const MAX_RECORDINGS_PER_WORD = 2;
+
 export const AVATAR_BUCKET = "avatars";
 export const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
 

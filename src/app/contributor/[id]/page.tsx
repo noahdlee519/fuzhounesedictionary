@@ -4,6 +4,7 @@ import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { formatOrigin } from "@/lib/origins";
 import { toCard } from "@/lib/entries";
+import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
 
@@ -52,9 +53,27 @@ export default async function ContributorPage({ params }: { params: { id: string
 
   const entries: CardProps[] = (data ?? []).map(toCard);
 
+  // Their voice, too. Approved only, on words that are live — the public
+  // policy already limits it to that, and saying so here keeps the page the
+  // same whoever is looking at it (the owner and editors can see more).
+  const { data: recData, count: recCount } = await supabase
+    .from("recordings")
+    .select("id, kind, audio_url, status, created_at, entry:entries(id, headword, hanzi, romanization, status)", {
+      count: "exact",
+    })
+    .eq("contributor_id", params.id)
+    .eq("status", "approved")
+    .order("created_at", { ascending: false })
+    .limit(60);
+  const recordings: RecordingByRowProps[] = (recData ?? []).map((r: any) => ({
+    ...r,
+    entry: Array.isArray(r.entry) ? r.entry[0] ?? null : r.entry ?? null,
+  }));
+
   const origin = formatOrigin(profile.origin_area, profile.origin_locality);
   const total = count ?? 0;
-  const joined = new Date(profile.created_at).toLocaleDateString(undefined, {
+  const totalRecs = recCount ?? 0;
+  const since = new Date(profile.created_at).toLocaleDateString("en-GB", {
     year: "numeric",
     month: "long",
   });
@@ -73,16 +92,34 @@ export default async function ContributorPage({ params }: { params: { id: string
           </p>
         )}
         <p className="mt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          {total.toLocaleString()} word{total === 1 ? "" : "s"} · joined {joined}
+          Member since {since}
+        </p>
+        <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          {total.toLocaleString()} word{total === 1 ? "" : "s"} ·{" "}
+          {totalRecs.toLocaleString()} recording{totalRecs === 1 ? "" : "s"}
         </p>
       </section>
 
       <section className="space-y-3">
+        <h2 className="font-display text-lg font-bold uppercase tracking-tight">Words</h2>
         {entries.length === 0 ? (
           <p className="text-inkSoft">No published words yet.</p>
         ) : (
           <div className="grid gap-3">
             {entries.map((e) => <EntryCard key={e.id} entry={e} />)}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="border-t border-rule pt-5 font-display text-lg font-bold uppercase tracking-tight">
+          Recordings
+        </h2>
+        {recordings.length === 0 ? (
+          <p className="text-inkSoft">No published recordings yet.</p>
+        ) : (
+          <div className="grid gap-3">
+            {recordings.map((r) => <RecordingByRow key={r.id} recording={r} />)}
           </div>
         )}
       </section>

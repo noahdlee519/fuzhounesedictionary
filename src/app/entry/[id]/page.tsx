@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
 import SignInButton from "@/components/SignInButton";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
+import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,19 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
   const exampleRecs = (senseId: string) =>
     recordings.filter((r: any) => r.kind === "example" && r.sense_id === senseId);
 
+  // The viewer's own takes on this word, in any state but rejected — the same
+  // count the database uses for the two-per-word cap. RLS returns a person's
+  // own rows whatever their status, so this is complete for the viewer.
+  const myTakes = user
+    ? recordings.filter((r) => r.contributor?.id === user.id && r.status !== "rejected").length
+    : 0;
+  const capped = myTakes >= MAX_RECORDINGS_PER_WORD;
+  const cappedNote = (
+    <p className="text-sm text-inkFaint">
+      You have recorded this word twice, which is the limit per word.
+    </p>
+  );
+
   const senses: Sense[] = [...(entry.senses ?? [])].sort(
     (a: Sense, b: Sense) => (a.sort ?? 0) - (b.sort ?? 0)
   );
@@ -117,16 +131,20 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
 
         {user ? (
           <div className="border border-dashed border-rule p-4">
-            <Recorder
-              userId={user.id}
-              entryId={entry.id}
-              kind="headword"
-              label={
-                headwordRecs.length || entry.audio_url
-                  ? "Add your pronunciation of this word"
-                  : "Be the first to say this word"
-              }
-            />
+            {capped ? (
+              cappedNote
+            ) : (
+              <Recorder
+                userId={user.id}
+                entryId={entry.id}
+                kind="headword"
+                label={
+                  headwordRecs.length || entry.audio_url
+                    ? "Add your pronunciation of this word"
+                    : "Be the first to say this word"
+                }
+              />
+            )}
           </div>
         ) : (
           !entry.audio_url &&
@@ -171,7 +189,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
             {s.example && (
               <div className="mt-2 space-y-2">
                 <RecordingList recordings={exampleRecs(s.id)} compact />
-                {user && (
+                {user && !capped && (
                   <Recorder
                     userId={user.id}
                     entryId={entry.id}
