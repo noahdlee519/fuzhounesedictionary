@@ -175,7 +175,7 @@ function ToneGlyph({ levels, short, extra }: { levels: number[]; short?: boolean
   );
 }
 
-const ToneChart = () => (
+export const ToneChart = () => (
   <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
     {TONES.map((t) => (
       <figure
@@ -199,7 +199,7 @@ const ToneChart = () => (
           <div className="mt-1.5 flex items-baseline gap-1.5 text-[13px]">
             <span className="font-display font-semibold text-ink">{t.han}</span>
             <span
-              title="Bàng-uâ-cê — unchecked: the mark-to-tone mapping isn't confirmed yet"
+              title="Bàng-uâ-cê—unchecked: the mark-to-tone mapping isn't confirmed yet"
               className="romanization italic text-inkSoft underline decoration-dotted decoration-inkFaint underline-offset-2"
             >
               {t.buc}

@@ -1,4 +1,5 @@
 import type { Panel } from "./LearnPanels";
+import { ToneChart } from "./Guide";
 
 /* The three short panels above the word list. Digests of the longer guide in
    Guide.tsx, and held to the same rule: every claim traces to a source named
@@ -42,7 +43,7 @@ const features = (
     <Block>
       <H>Word order</H>
       <P>
-        Subject, verb, object — the same order as English and Mandarin. Words do not change form:
+        Subject, verb, object—the same order as English and Mandarin. Words do not change form:
         nouns have no plural ending and no case, verbs do not conjugate, and there is no grammatical
         gender. Position and a handful of small particles do the work that endings do in European
         languages. The owner comes first in a possessive. Tense is not marked on the verb: an adverb
@@ -54,7 +55,7 @@ const features = (
       <H>Questions</H>
       <P>
         The verb stays where it is. A particle at the end turns a statement into a yes-or-no
-        question — <Han>汝會講福州話賣？</Han> <i>do you speak Fuzhounese?</i> — or a negative does
+        question—<Han>汝會講福州話賣？</Han> <i>do you speak Fuzhounese?</i>—or a negative does
         the same job. <Han>未</Han> <Rom>mà̤</Rom> at the end asks whether something has happened
         yet: <Han>食飯未</Han> <Rom>siăh buáng mà̤</Rom>, <i>have you eaten?</i>, which is also how
         people say hello.
@@ -80,9 +81,17 @@ const features = (
         high and <Num>1</Num> low: <Han>陰平</Han> <Num>44</Num>, <Han>陽平</Han> <Num>53</Num>,{" "}
         <Han>上聲</Han> <Num>31</Num>, <Han>陰去</Han> <Num>213</Num>, <Han>陽去</Han>{" "}
         <Num>242</Num>, <Han>陰入</Han> <Num>23</Num>, <Han>陽入</Han> <Num>5</Num>. The last two are
-        short, on syllables that end in a glottal stop — the catch in the middle of
-        &ldquo;uh-oh&rdquo;. Two more tones appear only inside longer words.
+        short, on syllables that end in a glottal stop—the catch in the middle of
+        &ldquo;uh-oh&rdquo;. Two more tones appear only inside longer words; the dashed box is one
+        of them.
       </P>
+      <div className="pt-1">
+        <ToneChart />
+      </div>
+      <p className="max-w-[68ch] text-sm text-inkFaint">
+        The word under each box carries that tone. A dotted romanization means its tone mark has not
+        yet been confirmed by a speaker.
+      </p>
     </Block>
 
     <Block>
@@ -100,7 +109,7 @@ const features = (
       <H>Consonants shift too</H>
       <P>
         Inside a word, a syllable&apos;s opening consonant changes to suit the ending of the syllable
-        before it — a <Rom>p</Rom> goes soft after a vowel and becomes an <Rom>m</Rom> after{" "}
+        before it—a <Rom>p</Rom> goes soft after a vowel and becomes an <Rom>m</Rom> after{" "}
         <Rom>-ng</Rom>. It is why the same character can be spelt differently from one entry to the
         next. And the vowel itself can change with the tone: <Han>福</Han> on its own is [hɔuʔ], but
         in <Han>福州</Han> it is [huʔ]. Almost no other Chinese variety does this.
@@ -111,7 +120,7 @@ const features = (
       <H>Sounds</H>
       <P>
         There is no <b>f</b> and no <b>v</b>, anywhere. A syllable can end in a vowel, in{" "}
-        <Rom>-ng</Rom>, or in the glottal stop — nothing else. The old <Rom>-m</Rom>, <Rom>-n</Rom>{" "}
+        <Rom>-ng</Rom>, or in the glottal stop—nothing else. The old <Rom>-m</Rom>, <Rom>-n</Rom>{" "}
         and <Rom>-ng</Rom> endings all became <Rom>-ng</Rom>; the old <Rom>-p</Rom>, <Rom>-t</Rom>{" "}
         and <Rom>-k</Rom> all became the glottal stop.
       </P>
@@ -127,7 +136,7 @@ const orthography = (
       <H>Characters</H>
       <P>
         Fuzhounese is written with the same Chinese characters as Mandarin, and most words share a
-        character with their Mandarin relative — which is why a written sentence is usually more or
+        character with their Mandarin relative—which is why a written sentence is usually more or
         less readable to anyone who reads Chinese, while the spoken language is not. Some ordinary
         words keep a character that sounds literary elsewhere: <Han>囝</Han> <Rom>giāng</Rom> is
         just the word for a child, <Han>儂</Han> <Rom>nè̤ng</Rom> a person, <Han>厝</Han>{" "}
@@ -167,12 +176,12 @@ const orthography = (
 /* ------------------------------------------------------------------------ */
 
 const READING: { href: string; title: string; note: string }[] = [
-  { href: "https://www.fulingo.com/", title: "Fulingo", note: "Duolingo-style Fuzhounese lessons, with native audio." },
-  { href: "https://seedict.com/", title: "Seedict", note: "Fuzhounese word list and dictionary." },
-  { href: "https://en.wiktionary.org/wiki/Fuzhounese", title: "Wiktionary: Fuzhounese", note: "The Wiktionary entry, with links to Min Dong words across the site." },
-  { href: "https://en.wikipedia.org/wiki/Fuzhou_dialect", title: "Wikipedia: Fuzhou dialect", note: "Sounds, tones, sandhi and grammar — the main source for the notes above." },
-  { href: "https://en.wikipedia.org/wiki/B%C3%A0ng-u%C3%A2-c%C3%AA", title: "Wikipedia: Bàng-uâ-cê", note: "The history and letters of the missionary romanization." },
-  { href: "https://cdo.wikipedia.org/", title: "Mìng-dĕ̤ng-ngṳ̄ Wikipedia", note: "A Wikipedia written in Fuzhounese, in Bàng-uâ-cê." },
+  { href: "https://www.fulingo.com/", title: "Fulingo", note: "Duolingo-style Fuzhounese lessons with native audio" },
+  { href: "https://seedict.com/", title: "Seedict", note: "Fuzhounese word list" },
+  { href: "https://en.wiktionary.org/wiki/Fuzhounese", title: "Wiktionary: Fuzhounese", note: "Dictionary entry for Fuzhounese" },
+  { href: "https://en.wikipedia.org/wiki/Fuzhou_dialect", title: "Wikipedia: Fuzhou dialect", note: "Sounds, tones, sandhi and grammar" },
+  { href: "https://en.wikipedia.org/wiki/B%C3%A0ng-u%C3%A2-c%C3%AA", title: "Wikipedia: Bàng-uâ-cê", note: "The background and rules for a popular romanization method" },
+  { href: "https://cdo.wikipedia.org/", title: "Mìng-dĕ̤ng-ngṳ̄ Wikipedia", note: "A Wiki written in Bàng-uâ-cê" },
 ];
 
 const reading = (
@@ -193,10 +202,6 @@ const reading = (
         </li>
       ))}
     </ul>
-    <p className="max-w-[68ch] text-sm text-inkFaint">
-      Tone values and the sandhi behaviour also follow the printed Fuzhounese–English dictionary
-      whose transcription some entries here use; full citation to follow.
-    </p>
   </>
 );
 
