@@ -7,7 +7,7 @@ import { ToneChart } from "./Guide";
    Voice: plain and short. */
 
 const P = ({ children }: { children: React.ReactNode }) => (
-  <p className="max-w-[68ch] leading-relaxed text-inkSoft">{children}</p>
+  <p className="leading-relaxed text-inkSoft">{children}</p>
 );
 
 const H = ({ children }: { children: React.ReactNode }) => (
@@ -88,7 +88,7 @@ const features = (
       <div className="pt-1">
         <ToneChart />
       </div>
-      <p className="max-w-[68ch] text-sm text-inkFaint">
+      <p className="text-sm text-inkFaint">
         The word under each box carries that tone. The two short lines are the entering tones, cut
         off by the glottal stop. A dotted romanization means its tone mark has not yet been
         confirmed by a speaker.
@@ -188,7 +188,7 @@ const READING: { href: string; title: string; note: string }[] = [
 const reading = (
   <>
     <P>Other places to learn, look things up, or read the language.</P>
-    <ul className="max-w-[68ch] space-y-3">
+    <ul className="space-y-3">
       {READING.map((r) => (
         <li key={r.href} className="leading-relaxed">
           <a

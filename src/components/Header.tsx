@@ -79,8 +79,10 @@ export function HeaderView({ user, profile }: SessionShape) {
             plain
             className="border border-lacquer bg-lacquer px-2.5 py-1 text-paper sm:px-3 transition-colors hover:bg-transparent hover:text-lacquer"
           >
-            <span className="sm:hidden">+ Add</span>
-            <span className="hidden sm:inline">+ Add a word</span>
+            {/* The serif sits a touch high in the box next to the "+"; the words
+                are nudged down without moving the plus. */}
+            <span className="sm:hidden">+ <span className="relative top-[2px]">Add</span></span>
+            <span className="hidden sm:inline">+ <span className="relative top-[2px]">Add a word</span></span>
           </NavLink>
           {user ? (
             <NavLink
