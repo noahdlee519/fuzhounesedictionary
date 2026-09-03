@@ -69,6 +69,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {LICENSE.name}
             </a>
             .{" · "}
+            <Link href="/privacy" className="hover:text-lacquer">Privacy</Link>
+            {" · "}
+            <Link href="/terms" className="hover:text-lacquer">Terms</Link>
+            {" · "}
             <Link href="/admin" className="hover:text-lacquer">Editors</Link>
           </div>
         </footer>

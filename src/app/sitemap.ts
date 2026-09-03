@@ -6,7 +6,7 @@ export const revalidate = 3600;
 
 // Public data only, so a plain anon client (no cookies) is all this needs.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const stat = ["", "/learn", "/about", "/request", "/submit"].map((path) => ({
+  const stat = ["", "/learn", "/about", "/request", "/submit", "/privacy", "/terms"].map((path) => ({
     url: `${SITE_URL}${path}`,
     lastModified: new Date(),
     changeFrequency: (path === "" ? "daily" : "weekly") as "daily" | "weekly",

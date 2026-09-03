@@ -46,6 +46,11 @@ export default async function SubmitPage({
         <div className="flex justify-center">
           <SignInButton next="/submit" />
         </div>
+        <p className="text-xs text-inkFaint">
+          By contributing you agree to the{" "}
+          <Link href="/terms" className="underline hover:text-lacquer">terms</Link> and license your
+          work CC BY-SA 4.0.
+        </p>
       </div>
     );
   }
