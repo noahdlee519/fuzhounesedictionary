@@ -5,16 +5,29 @@ import { useEffect, useState } from "react";
 const FULL = "Search for characters, romanizations, English or Chinese";
 const SHORT = "Search a word…";
 
+const NARROW = "(max-width: 639px)";
+
 export default function SearchBar({ defaultValue = "" }: { defaultValue?: string }) {
-  // Read the media query on first render, not in an effect: autoFocus is
-  // acted on at mount, so a value that only becomes right afterwards is too
-  // late — the phone keyboard had already opened on every visit.
-  const [narrow, setNarrow] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches
+  // Two reads of the same media query, for two different reasons.
+  //
+  // autoFocus is acted on when the element mounts, so it has to be right on
+  // the very first client render — an effect is too late, and the phone
+  // keyboard had already opened on every visit. React never renders autoFocus
+  // as an attribute, so a server/client difference here is harmless.
+  const [focusOnMount] = useState(
+    () => !(typeof window !== "undefined" && window.matchMedia(NARROW).matches)
   );
 
+  // The placeholder IS an attribute, and React does not patch attributes that
+  // differ between server and client. Initialising it from the window meant
+  // phones hydrated against the long server string and, since the state
+  // already held `true`, the effect's setState was a no-op — the short text
+  // never appeared. So this one starts as the server rendered it and is
+  // switched in an effect.
+  const [narrow, setNarrow] = useState(false);
+
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
+    const mq = window.matchMedia(NARROW);
     const update = () => setNarrow(mq.matches);
     update();
     mq.addEventListener("change", update);
@@ -35,7 +48,7 @@ export default function SearchBar({ defaultValue = "" }: { defaultValue?: string
         type="search"
         name="q"
         defaultValue={defaultValue}
-        autoFocus={!narrow}
+        autoFocus={focusOnMount}
         placeholder={narrow ? SHORT : FULL}
         className="w-full bg-transparent px-5 pt-[18px] pb-[14px] text-lg leading-none outline-none placeholder:text-inkFaint"
       />

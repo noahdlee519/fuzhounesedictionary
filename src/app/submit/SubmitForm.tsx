@@ -51,7 +51,6 @@ export default function SubmitForm({
   const [hanzi, setHanzi] = useState("");
   const [romanization, setRomanization] = useState(initialRomanization);
   const [ipa, setIpa] = useState("");
-  const [variety, setVariety] = useState("");
   const [originArea, setOriginArea] = useState(defaultOriginArea);
   const [originLocality, setOriginLocality] = useState(defaultOriginLocality);
   const [notes, setNotes] = useState("");
@@ -120,7 +119,9 @@ export default function SubmitForm({
         p_ipa: ipa,
         p_audio_url: finalAudio,
         p_notes: notes,
-        p_variety: variety,
+        // Legacy column, superseded by origin_area/origin_locality. The RPC
+        // still takes it, so send it empty.
+        p_variety: "",
         p_senses: senses.filter((s) => s.definition_en.trim()),
         p_origin_area: originArea,
         p_origin_locality: originLocality,

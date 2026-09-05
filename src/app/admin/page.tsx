@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
+import DeleteRecording from "@/components/DeleteRecording";
 import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +15,7 @@ import {
 } from "./actions";
 import type { Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
+import { one, sortSenses } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
@@ -54,28 +56,42 @@ export default async function AdminPage() {
   }
 
   const supabase = createClient();
-  const { data } = await supabase
-    .from("entries")
-    .select("*, senses(*), contributor:profiles(id, display_name)")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
-  const pending = data ?? [];
-
-  const { data: recData } = await supabase
-    .from("recordings")
-    .select("id, entry_id, kind, audio_url, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword)")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
-  const pendingRecs = recData ?? [];
-
-  const { data: sugData } = await supabase
-    .from("suggestions")
-    .select(
-      "id, entry_id, kind, value, value_gloss, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword), sense:senses(definition_en)"
-    )
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
-  const pendingSugs = sugData ?? [];
+  // Three independent queues, fetched together. To-one embeds are flattened
+  // here so the markup below never has to ask whether it got an array.
+  const [{ data, error }, { data: recData, error: recError }, { data: sugData, error: sugError }] =
+    await Promise.all([
+      supabase
+        .from("entries")
+        .select("*, senses(*), contributor:profiles(id, display_name)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("recordings")
+        .select("id, entry_id, kind, audio_url, note, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("suggestions")
+        .select(
+          "id, entry_id, kind, value, value_gloss, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword), sense:senses(definition_en)"
+        )
+        .eq("status", "pending")
+        .order("created_at", { ascending: true }),
+    ]);
+  const pending = (data ?? []).map((e: any) => ({ ...e, contributor: one(e.contributor) }));
+  const pendingRecs = (recData ?? []).map((r: any) => ({
+    ...r,
+    entry: one(r.entry),
+    contributor: one(r.contributor),
+  }));
+  const pendingSugs = (sugData ?? []).map((s: any) => ({
+    ...s,
+    entry: one(s.entry),
+    contributor: one(s.contributor),
+    sense: one(s.sense),
+  }));
+  // A failed queue must not read as "nothing waiting".
+  const failed = Boolean(error || recError || sugError);
 
   return (
     <div className="space-y-6">
@@ -95,9 +111,7 @@ export default async function AdminPage() {
           </h2>
           <div className="grid gap-3">
             {pendingSugs.map((s: any) => {
-              const e = Array.isArray(s.entry) ? s.entry[0] : s.entry;
-              const c = Array.isArray(s.contributor) ? s.contributor[0] : s.contributor;
-              const sense = Array.isArray(s.sense) ? s.sense[0] : s.sense;
+              const { entry: e, contributor: c, sense } = s;
               const origin = formatOrigin(s.origin_area, s.origin_locality);
               return (
                 <div key={s.id} className="border border-rule bg-surface p-4">
@@ -164,8 +178,7 @@ export default async function AdminPage() {
           </h2>
           <div className="grid gap-3">
             {pendingRecs.map((r: any) => {
-              const e = Array.isArray(r.entry) ? r.entry[0] : r.entry;
-              const c = Array.isArray(r.contributor) ? r.contributor[0] : r.contributor;
+              const { entry: e, contributor: c } = r;
               const origin = formatOrigin(r.origin_area, r.origin_locality);
               return (
                 <div key={r.id} className="border border-rule bg-surface p-4">
@@ -185,6 +198,9 @@ export default async function AdminPage() {
                     </span>
                   </div>
                   <audio controls src={r.audio_url} className="mt-3 h-9 w-full max-w-sm" />
+                  {r.note && (
+                    <p className="romanization mt-2 text-sm text-inkSoft">{r.note}</p>
+                  )}
                   <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
                     <form action={approveRecording}>
                       <input type="hidden" name="id" value={r.id} />
@@ -207,6 +223,8 @@ export default async function AdminPage() {
                         ✕ Reject
                       </SubmitButton>
                     </form>
+                    {/* Reject keeps the row; this removes it and its file. */}
+                    <DeleteRecording id={r.id} back="/admin" className="ml-auto" />
                   </div>
                 </div>
               );
@@ -215,14 +233,22 @@ export default async function AdminPage() {
         </section>
       )}
 
+      {failed && (
+        <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+          Part of the queue could not be loaded just now. Please reload in a moment.
+        </p>
+      )}
+
       {pending.length === 0 ? (
-        <div className="border border-rule bg-surface p-8 text-center text-inkSoft">
-          Nothing waiting for review.
-        </div>
+        !failed && (
+          <div className="border border-rule bg-surface p-8 text-center text-inkSoft">
+            Nothing waiting for review.
+          </div>
+        )
       ) : (
         <div className="grid gap-4">
           {pending.map((e: any) => {
-            const senses: Sense[] = [...(e.senses ?? [])].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+            const senses: Sense[] = sortSenses(e.senses);
             const origin = formatOrigin(e.origin_area, e.origin_locality) || e.variety;
             return (
               <div key={e.id} className="border border-rule bg-surface p-4">

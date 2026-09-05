@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatOrigin } from "@/lib/origins";
+import DeleteRecording from "./DeleteRecording";
 
 /* One player per recording, labelled with who said it and where their
    Fuzhounese is from. This is the point of the recordings table: the same word
@@ -11,6 +12,7 @@ export interface RecordingRow {
   sense_id: string | null;
   audio_url: string;
   status: string;
+  note?: string | null;
   origin_area: string | null;
   origin_locality: string | null;
   created_at: string;
@@ -20,9 +22,15 @@ export interface RecordingRow {
 export default function RecordingList({
   recordings,
   compact = false,
+  canDelete = false,
+  back,
 }: {
   recordings: RecordingRow[];
   compact?: boolean;
+  /** Editors get a delete control on every row. */
+  canDelete?: boolean;
+  /** Where the delete action returns to; the entry page, normally. */
+  back?: string;
 }) {
   if (!recordings.length) return null;
 
@@ -31,6 +39,7 @@ export default function RecordingList({
       {recordings.map((r) => {
         const origin = formatOrigin(r.origin_area, r.origin_locality);
         const who = r.contributor?.display_name;
+        const note = (r.note ?? "").trim();
         return (
           <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <audio
@@ -63,6 +72,14 @@ export default function RecordingList({
                 </span>
               )}
             </span>
+            {canDelete && <DeleteRecording id={r.id} back={back ?? "/admin"} />}
+            {/* The speaker's own line about the take — the sentence they read,
+                or how they would put it. Sits under the player, full width. */}
+            {note && (
+              <p className="basis-full text-sm text-inkSoft">
+                <span className="romanization">{note}</span>
+              </p>
+            )}
           </li>
         );
       })}

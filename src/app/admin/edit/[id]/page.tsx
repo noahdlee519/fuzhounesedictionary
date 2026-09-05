@@ -7,6 +7,7 @@ import { PARTS_OF_SPEECH } from "@/lib/constants";
 import type { Sense } from "@/lib/types";
 import type { Metadata } from "next";
 import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
+import { sortSenses } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function EditEntryPage({ params }: { params: { id: string }
     .maybeSingle();
 
   if (!entry) redirect("/admin");
-  const senses: Sense[] = [...((entry as any).senses ?? [])].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const senses: Sense[] = sortSenses((entry as any).senses);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">

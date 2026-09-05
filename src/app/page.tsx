@@ -3,7 +3,7 @@ import SearchBar from "@/components/SearchBar";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import type { SearchRow } from "@/lib/types";
-import { recordingCounts, toCard } from "@/lib/entries";
+import { recordingCounts, toCards } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
@@ -34,9 +34,7 @@ export default async function Home({
         .from("entries")
         .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)")
         .eq("status", "approved").order("created_at", { ascending: false }).limit(12);
-      const rows = data ?? [];
-      const counts = await recordingCounts(supabase, rows.map((r: any) => r.id));
-      results = rows.map((r: any) => toCard(r, counts.get(r.id) ?? 0));
+      results = await toCards(supabase, data ?? []);
     }
   } catch {
     errored = true;

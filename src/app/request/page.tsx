@@ -38,22 +38,22 @@ export default async function WantedPage({
   const isEd = Boolean(profile?.is_editor);
   const supabase = createClient();
 
-  const { data: rows, error } = await supabase
-    .from("word_requests_ranked")
-    .select("*")
-    .eq("status", "open")
-    .order("votes", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(200);
+  // The board and the viewer's own votes are independent; fetched together.
+  const [{ data: rows, error }, { data: myVotes }] = await Promise.all([
+    supabase
+      .from("word_requests_ranked")
+      .select("*")
+      .eq("status", "open")
+      .order("votes", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(200),
+    user
+      ? supabase.from("word_request_votes").select("request_id").eq("user_id", user.id)
+      : Promise.resolve({ data: null }),
+  ]);
 
   const requests = (rows as RankedRow[] | null) ?? [];
-
-  let votedIds = new Set<string>();
-  if (user) {
-    const { data: myVotes } = await supabase
-      .from("word_request_votes").select("request_id").eq("user_id", user.id);
-    votedIds = new Set((myVotes ?? []).map((v: any) => v.request_id));
-  }
+  const votedIds = new Set<string>((myVotes ?? []).map((v: any) => v.request_id));
 
   const inputCls =
     "w-full border border-rule bg-surface px-3 py-2 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint";

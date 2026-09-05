@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { STATUS_STYLE } from "@/lib/status";
+import { sortSenses } from "@/lib/entries";
 
 /* One recording in a person's list — on their public profile and on their own
    account page. Reads: word · its first English meaning · the player · (status,
@@ -11,6 +13,7 @@ export interface RecordingByRowProps {
   kind: string;
   audio_url: string;
   status: string;
+  note?: string | null;
   created_at: string;
   entry: {
     id: string;
@@ -22,11 +25,6 @@ export interface RecordingByRowProps {
   } | null;
 }
 
-const STATUS_STYLE: Record<string, string> = {
-  pending: "text-amber-700 ring-amber-600/40 dark:text-amber-300",
-  approved: "text-lacquer ring-lacquer",
-  rejected: "text-inkFaint ring-rule",
-};
 
 export default function RecordingByRow({
   recording: r,
@@ -37,9 +35,7 @@ export default function RecordingByRow({
 }) {
   const w = r.entry;
   const name = w?.romanization || w?.headword || "a word";
-  const meaning = [...(w?.senses ?? [])]
-    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
-    .find((s) => s.definition_en)?.definition_en;
+  const meaning = sortSenses(w?.senses).find((s) => s.definition_en)?.definition_en;
   const title = (
     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
       {w?.hanzi && <span className="font-display text-xl font-bold">{w.hanzi}</span>}
@@ -70,6 +66,7 @@ export default function RecordingByRow({
         )}
       </div>
       <audio controls src={r.audio_url} className="mt-2 h-9 w-full max-w-sm" />
+      {r.note?.trim() && <p className="romanization mt-2 text-sm text-inkSoft">{r.note.trim()}</p>}
     </div>
   );
 }

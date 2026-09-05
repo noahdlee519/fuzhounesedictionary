@@ -24,7 +24,7 @@ export async function saveProfile(formData: FormData) {
     : "hidden";
 
   // The database trigger scrubs whatever the chosen precision does not publish.
-  await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({
       display_name: displayName || null,
@@ -33,6 +33,8 @@ export async function saveProfile(formData: FormData) {
       origin_precision: precision,
     })
     .eq("id", user.id);
+  // A failed write used to come back as "Changes saved". Say so instead.
+  if (error) redirect("/account?problem=1");
 
   revalidatePath("/account");
   revalidatePath(`/contributor/${user.id}`);

@@ -25,6 +25,10 @@ export const MAX_AUDIO_BYTES = 5 * 1024 * 1024; // 5 MB (FR-12)
    once it is reached. Rejected takes do not count. Change both together. */
 export const MAX_RECORDINGS_PER_WORD = 2;
 
+/* A note left with a recording — the sentence read, or a usage remark. The
+   database enforces the same cap (supabase/recording_note.sql); change both. */
+export const MAX_RECORDING_NOTE = 300;
+
 export const AVATAR_BUCKET = "avatars";
 export const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
 

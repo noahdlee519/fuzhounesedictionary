@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AUDIO_BUCKET, MAX_AUDIO_BYTES } from "@/lib/constants";
+import { AUDIO_BUCKET, MAX_AUDIO_BYTES, MAX_RECORDING_NOTE } from "@/lib/constants";
 
 /* ---------------------------------------------------------------------------
    Record straight in the browser and save to the recordings table.
@@ -67,6 +67,9 @@ export default function Recorder({
   const [blob, setBlob] = useState<Blob | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
+  // A line to go with the take: the sentence being read, or how the speaker
+  // would put it. Optional; shown beside the player once approved.
+  const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -92,6 +95,14 @@ export default function Recorder({
   }, []);
 
   useEffect(() => cleanup, [cleanup]);
+
+  // The preview URL is revoked on discard and save; this covers leaving the
+  // page with a take still waiting.
+  useEffect(() => {
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [url]);
 
   async function start() {
     setError(null);
@@ -139,6 +150,7 @@ export default function Recorder({
     setBlob(null);
     setUrl(null);
     setSeconds(0);
+    setNote("");
     setError(null);
   }
 
@@ -166,6 +178,7 @@ export default function Recorder({
         sense_id: kind === "example" ? senseId ?? null : null,
         audio_url: pub.publicUrl,
         seconds: Math.round(seconds * 100) / 100,
+        note: note.trim().slice(0, MAX_RECORDING_NOTE) || null,
         contributor_id: userId,
       });
       // The database raises the rate-limit messages; they are written to be read.
@@ -249,6 +262,26 @@ export default function Recorder({
           </>
         )}
       </div>
+
+      {blob && url && !recording && (
+        <label className="block max-w-md">
+          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+            Note (optional)
+          </span>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={MAX_RECORDING_NOTE}
+            disabled={saving}
+            placeholder={
+              kind === "example"
+                ? "e.g. how you would actually say it, if it differs"
+                : "e.g. a sentence you said it in, or how it is used"
+            }
+            className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+          />
+        </label>
+      )}
 
       {error && <p className="text-sm text-lacquer">{error}</p>}
     </div>

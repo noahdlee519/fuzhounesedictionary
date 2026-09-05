@@ -1,11 +1,12 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth";
 import { requestWord } from "@/app/request/actions";
-import type { Sense } from "@/lib/types";
+import type { EntryWithSenses, Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
-import { firstSense, entryTitle } from "@/lib/entries";
+import { firstSense, sortSenses, one, entryTitle } from "@/lib/entries";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
@@ -15,19 +16,25 @@ import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+/* generateMetadata and the page both need the entry. cache() dedupes the two
+   calls within one request, so the database is asked once, not twice. */
+const loadEntry = cache(async (id: string) => {
   const supabase = createClient();
   const { data } = await supabase
     .from("entries")
-    .select("headword, hanzi, romanization, senses(definition_en, part_of_speech, sort)")
-    .eq("id", params.id)
+    .select("*, senses(*), contributor:profiles(id, display_name)")
+    .eq("id", id)
     .eq("status", "approved")
     .maybeSingle();
+  return data as (EntryWithSenses & { senses: Sense[] }) | null;
+});
 
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const data = await loadEntry(params.id);
   if (!data) return { title: "Word not found" };
 
-  const name = entryTitle(data as any);
-  const sense = firstSense((data as any).senses);
+  const name = entryTitle(data);
+  const sense = firstSense(data.senses);
   const gloss = sense?.definition_en ? `\u201c${sense.definition_en}\u201d` : "";
   const description = `${name} in Fuzhounese${gloss ? ` means ${gloss}` : ""}. Definitions, romanization and pronunciation from the ${SITE_NAME}.`;
 
@@ -42,32 +49,32 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
 export default async function EntryPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const { user } = await getSessionUser();
-  const { data: entry } = await supabase
-    .from("entries")
-    .select("*, senses(*), contributor:profiles(id, display_name)")
-    .eq("id", params.id)
-    .eq("status", "approved")
-    .maybeSingle();
+  // None of these depend on each other, so they go out together. Recordings
+  // are keyed by entry id, not by the entry row, and RLS filters them to what
+  // the viewer may hear: approved ones plus their own pending ones.
+  const [{ user, profile }, entry, { data: recRows }] = await Promise.all([
+    getSessionUser(),
+    loadEntry(params.id),
+    supabase
+      .from("recordings")
+      .select("id, kind, sense_id, audio_url, status, note, origin_area, origin_locality, created_at, contributor:profiles(id, display_name)")
+      .eq("entry_id", params.id)
+      .order("created_at", { ascending: true }),
+  ]);
 
   if (!entry) notFound();
 
-  // Recordings the viewer is allowed to hear: approved ones, plus their own
-  // pending ones so they can tell their upload worked. RLS does the filtering.
-  const { data: recRows } = await supabase
-    .from("recordings")
-    .select("id, kind, sense_id, audio_url, status, origin_area, origin_locality, created_at, contributor:profiles(id, display_name)")
-    .eq("entry_id", params.id)
-    .order("created_at", { ascending: true });
-  // supabase-js types a to-one embed as an array; flatten it once here rather
-  // than casting at every use site.
+  // Editors can remove a recording from here, without a trip to the queue.
+  const canDelete = Boolean(profile?.is_editor);
+  const here = `/entry/${entry.id}`;
+
   const recordings: RecordingRow[] = (recRows ?? []).map((r: any) => ({
     ...r,
-    contributor: Array.isArray(r.contributor) ? r.contributor[0] ?? null : r.contributor ?? null,
+    contributor: one(r.contributor),
   }));
-  const headwordRecs = recordings.filter((r: any) => r.kind === "headword");
+  const headwordRecs = recordings.filter((r) => r.kind === "headword");
   const exampleRecs = (senseId: string) =>
-    recordings.filter((r: any) => r.kind === "example" && r.sense_id === senseId);
+    recordings.filter((r) => r.kind === "example" && r.sense_id === senseId);
 
   // The viewer's own takes on this word, in any state but rejected — the same
   // count the database uses for the two-per-word cap. RLS returns a person's
@@ -82,14 +89,10 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
     </p>
   );
 
-  const senses: Sense[] = [...(entry.senses ?? [])].sort(
-    (a: Sense, b: Sense) => (a.sort ?? 0) - (b.sort ?? 0)
-  );
-  const contributor = (entry as any).contributor as
-    | { id: string; display_name: string | null }
-    | null;
+  const senses = sortSenses(entry.senses);
+  const contributor = one(entry.contributor);
   const credit = contributor?.display_name ?? undefined;
-  const wordOrigin = formatOrigin((entry as any).origin_area, (entry as any).origin_locality);
+  const wordOrigin = formatOrigin(entry.origin_area, entry.origin_locality);
 
   return (
     <article className="space-y-7">
@@ -105,9 +108,9 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
         {entry.ipa && <span className="font-mono text-inkFaint">/{entry.ipa}/</span>}
         {/* && binds tighter than ?: — the old form fell into the else branch
             and drew an empty bordered pill on every entry with no origin. */}
-        {wordOrigin && (entry as any).origin_area ? (
+        {wordOrigin && entry.origin_area ? (
           <Link
-            href={`/learn?origin=${encodeURIComponent((entry as any).origin_area)}`}
+            href={`/learn?origin=${encodeURIComponent(entry.origin_area)}`}
             className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
           >
             {wordOrigin}
@@ -127,7 +130,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
           </audio>
         )}
 
-        <RecordingList recordings={headwordRecs} />
+        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} />
 
         {user ? (
           <div className="border border-dashed border-rule p-4">
@@ -188,7 +191,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
             )}
             {s.example && (
               <div className="mt-2 space-y-2">
-                <RecordingList recordings={exampleRecs(s.id)} compact />
+                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} />
                 {user && !capped && (
                   <Recorder
                     userId={user.id}

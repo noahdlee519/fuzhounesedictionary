@@ -4,7 +4,7 @@ import EntryCard, { type CardProps } from "@/components/EntryCard";
 import Avatar from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { formatOrigin } from "@/lib/origins";
-import { toCard } from "@/lib/entries";
+import { one, toCards } from "@/lib/entries";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
@@ -42,34 +42,45 @@ export default async function ContributorPage({ params }: { params: { id: string
 
   if (!profile) notFound();
 
-  const { data, count } = await supabase
-    .from("entries")
-    .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)", {
-      count: "exact",
-    })
-    .eq("contributor_id", params.id)
-    .eq("status", "approved")
-    .order("created_at", { ascending: false })
-    .limit(60);
+  // Words and recordings are independent; fetched together. Recordings are
+  // approved only, on words that are live — the public policy already limits
+  // it to that, and saying so here keeps the page the same whoever is looking
+  // at it (the owner and editors can see more).
+  const [
+    { data, count, error: entriesError },
+    { data: recData, count: recCount, error: recError },
+  ] = await Promise.all([
+    supabase
+      .from("entries")
+      .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)", {
+        count: "exact",
+      })
+      .eq("contributor_id", params.id)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(60),
+    supabase
+      .from("recordings")
+      .select("id, kind, audio_url, status, note, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))", {
+        count: "exact",
+      })
+      .eq("contributor_id", params.id)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(60),
+  ]);
 
-  const entries: CardProps[] = (data ?? []).map(toCard);
-
-  // Their voice, too. Approved only, on words that are live — the public
-  // policy already limits it to that, and saying so here keeps the page the
-  // same whoever is looking at it (the owner and editors can see more).
-  const { data: recData, count: recCount } = await supabase
-    .from("recordings")
-    .select("id, kind, audio_url, status, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))", {
-      count: "exact",
-    })
-    .eq("contributor_id", params.id)
-    .eq("status", "approved")
-    .order("created_at", { ascending: false })
-    .limit(60);
+  // Same card, same recording count, as everywhere else on the site.
+  const entries: CardProps[] = await toCards(supabase, data ?? []);
   const recordings: RecordingByRowProps[] = (recData ?? []).map((r: any) => ({
     ...r,
-    entry: Array.isArray(r.entry) ? r.entry[0] ?? null : r.entry ?? null,
+    entry: one(r.entry),
   }));
+  const unavailable = (
+    <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+      Unavailable at the moment. Please check back shortly.
+    </p>
+  );
 
   const origin = formatOrigin(profile.origin_area, profile.origin_locality);
   const total = count ?? 0;
@@ -107,7 +118,9 @@ export default async function ContributorPage({ params }: { params: { id: string
 
       <section className="space-y-3">
         <h2 className="font-display text-lg font-bold uppercase tracking-tight">Words</h2>
-        {entries.length === 0 ? (
+        {entriesError ? (
+          unavailable
+        ) : entries.length === 0 ? (
           <p className="text-inkSoft">No published words yet.</p>
         ) : (
           <div className="grid gap-3">
@@ -120,7 +133,9 @@ export default async function ContributorPage({ params }: { params: { id: string
         <h2 className="border-t border-rule pt-5 font-display text-lg font-bold uppercase tracking-tight">
           Recordings
         </h2>
-        {recordings.length === 0 ? (
+        {recError ? (
+          unavailable
+        ) : recordings.length === 0 ? (
           <p className="text-inkSoft">No published recordings yet.</p>
         ) : (
           <div className="grid gap-3">

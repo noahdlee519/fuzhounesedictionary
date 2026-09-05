@@ -58,9 +58,10 @@ export async function requestWord(formData: FormData) {
   }
 
   if (existingId) {
-    await supabase
+    const { error } = await supabase
       .from("word_request_votes")
       .upsert({ request_id: existingId, user_id: user.id }, { onConflict: "request_id,user_id", ignoreDuplicates: true });
+    if (error) redirect(`${back}?notice=${encodeURIComponent("Your vote could not be saved. Please try again.")}`);
   }
 
   revalidatePath("/request");
@@ -74,9 +75,12 @@ export async function voteRequest(formData: FormData) {
   if (!user) redirect("/request");
   const id = String(formData.get("id"));
   const supabase = createClient();
-  await supabase
+  const { error } = await supabase
     .from("word_request_votes")
     .upsert({ request_id: id, user_id: user.id }, { onConflict: "request_id,user_id", ignoreDuplicates: true });
+  // supabase-js resolves with { error } rather than rejecting; a swallowed
+  // failure looked like a vote that silently did not count.
+  if (error) redirect(`/request?notice=${encodeURIComponent("Your vote could not be saved. Please try again.")}`);
   revalidatePath("/request");
 }
 
@@ -85,10 +89,11 @@ export async function fulfillRequest(formData: FormData) {
   if (!(await isEditor())) redirect("/");
   const { user } = await getSessionUser();
   const id = String(formData.get("id"));
-  await adminClient()
+  const { error } = await adminClient()
     .from("word_requests")
     .update({ status: "fulfilled", fulfilled_at: new Date().toISOString(), fulfilled_by: user?.id ?? null })
     .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/request");
   revalidatePath("/");
 }

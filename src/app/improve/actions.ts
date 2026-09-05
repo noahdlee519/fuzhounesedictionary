@@ -31,7 +31,9 @@ export async function suggest(formData: FormData) {
   // suggestion from page 5 of Changle does not dump them on page 1 of everything.
   const page = String(formData.get("page") ?? "").trim();
   const origin = String(formData.get("origin") ?? "").trim();
-  const back = (params: Record<string, string>) => {
+  // Typed `never`: redirect() throws, so nothing after a back() call runs.
+  // Without the annotation TypeScript assumes the function falls through.
+  const back = (params: Record<string, string>): never => {
     const qs = new URLSearchParams({
       ...(origin ? { origin } : {}),
       ...(page && page !== "1" ? { page } : {}),

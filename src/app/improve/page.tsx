@@ -8,6 +8,7 @@ import SavedNotice from "@/components/SavedNotice";
 import SuggestBox, { type SenseOption } from "@/components/SuggestBox";
 import { formatOrigin, ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
+import { sortSenses } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
@@ -107,11 +108,10 @@ export default async function ImprovePage({
     ]);
     for (const t of (takeRows ?? []) as any[]) takes[t.entry_id] = (takes[t.entry_id] ?? 0) + 1;
 
-    for (const s of (senseRows ?? []) as any[]) {
+    // Same order as the meanings on the entry page, so "which meaning" in the
+    // example form matches what the person sees there.
+    for (const s of sortSenses<any>(senseRows)) {
       (senses[s.entry_id] ??= []).push({ id: s.id, definition_en: s.definition_en });
-    }
-    for (const list of Object.values(senses)) {
-      list.sort((a, b) => (a.definition_en ?? "").localeCompare(b.definition_en ?? ""));
     }
     for (const s of (pendingRows ?? []) as any[]) {
       mine[s.entry_id] ??= { ipa: false, example: false };

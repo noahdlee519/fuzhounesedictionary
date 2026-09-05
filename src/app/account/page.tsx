@@ -10,18 +10,14 @@ import RecordingByRow, { type RecordingByRowProps } from "@/components/Recording
 import { saveProfile } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
+import { STATUS_STYLE } from "@/lib/status";
+import { firstSense, one, sortSenses } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "My account",
   robots: { index: false, follow: false },
-};
-
-const STATUS_STYLE: Record<string, string> = {
-  pending: "text-amber-700 ring-amber-600/40 dark:text-amber-300",
-  approved: "text-lacquer ring-lacquer",
-  rejected: "text-inkFaint ring-rule",
 };
 
 const labelCls = "block font-mono text-xs uppercase tracking-[0.1em] text-inkFaint";
@@ -31,7 +27,7 @@ const inputCls =
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: { saved?: string; show?: string };
+  searchParams: { saved?: string; problem?: string; show?: string };
 }) {
   const { user } = await getSessionUser();
 
@@ -47,37 +43,36 @@ export default async function AccountPage({
 
   const supabase = createClient();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, display_name, avatar_url, origin_area, origin_locality, origin_precision, created_at")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const { data, error: entriesError } = await supabase
-    .from("entries")
-    .select("id, headword, hanzi, romanization, status, review_notes, created_at, senses(id, definition_en, part_of_speech, sort)")
-    .eq("contributor_id", user.id)
-    .order("created_at", { ascending: false });
+  // Profile, words and recordings are independent; fetched together.
+  const [{ data: profile }, { data, error: entriesError }, { data: recData }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url, origin_area, origin_locality, origin_precision, created_at")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("entries")
+      .select("id, headword, hanzi, romanization, status, review_notes, created_at, senses(id, definition_en, part_of_speech, sort)")
+      .eq("contributor_id", user.id)
+      .order("created_at", { ascending: false }),
+    // Everything else this person has contributed, not just their first word.
+    supabase
+      .from("recordings")
+      .select("id, kind, audio_url, status, note, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))")
+      .eq("contributor_id", user.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const entries = data ?? [];
-
-  // Everything else this person has contributed, not just their first word.
-  const { data: recData } = await supabase
-    .from("recordings")
-    .select("id, kind, audio_url, status, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))")
-    .eq("contributor_id", user.id)
-    .order("created_at", { ascending: false });
   const recordings: RecordingByRowProps[] = (recData ?? []).map((r: any) => ({
     ...r,
-    entry: Array.isArray(r.entry) ? r.entry[0] ?? null : r.entry ?? null,
+    entry: one(r.entry),
   }));
 
   // Every meaning on every word this person added, newest word first, in the
   // order the meanings appear on the entry page.
   const meanings = entries.flatMap((e: any) =>
-    [...(e.senses ?? [])]
-      .sort((a: any, b: any) => (a.sort ?? 0) - (b.sort ?? 0))
-      .map((sense: any) => ({ ...sense, entry: e }))
+    sortSenses<any>(e.senses).map((sense: any) => ({ ...sense, entry: e }))
   );
 
   // Which list the tiles are showing. The tiles are links, so this survives a
@@ -169,7 +164,7 @@ export default async function AccountPage({
           ) : (
             <div className="grid gap-3">
               {entries.map((e: any) => {
-                const first = [...(e.senses ?? [])].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))[0];
+                const first = firstSense<any>(e.senses);
                 const body = (
                   <div className="flex items-baseline gap-3">
                     {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
@@ -330,6 +325,11 @@ export default async function AccountPage({
               Save
             </SubmitButton>
             {searchParams.saved && <SavedNotice />}
+            {searchParams.problem && (
+              <span role="alert" className="text-sm text-lacquer">
+                Your changes could not be saved just now. Please try again.
+              </span>
+            )}
           </div>
         </form>
       </section>

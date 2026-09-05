@@ -2,7 +2,7 @@ import Link from "next/link";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
-import { recordingCounts, toCard } from "@/lib/entries";
+import { recordingCounts, toCard, toCards } from "@/lib/entries";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
@@ -101,17 +101,32 @@ export default async function BrowsePage({
   // call to action attached. Tracked and rendered as an unavailable panel.
   let failed = false;
 
+  /* The word list and the filter-chip tally are independent, so they are
+     requested together rather than one after the other. */
+  const listQuery =
+    lang === "fz"
+      ? base().order("headword", { ascending: asc }).range(from, to)
+      : base().range(0, SORT_CAP - 1);
+
+  /* What each filter would actually return. Without this, every chip looks
+     alike and clicking "adverb" on a dictionary with no adverbs is a dead end
+     with no warning. Same embed direction as the query above, so no new risk;
+     if it comes back empty we simply do not dim anything. */
+  const tallyQuery = supabase
+    .from("entries")
+    .select("origin_area, senses(part_of_speech)")
+    .eq("status", "approved")
+    .range(0, SORT_CAP - 1);
+
+  const [list, { data: tally }] = await Promise.all([listQuery, tallyQuery]);
+
   if (lang === "fz") {
-    const { data, count, error } = await base()
-      .order("headword", { ascending: asc })
-      .range(from, to);
+    const { data, count, error } = list;
     if (error) failed = true;
-    const rows = data ?? [];
-    const counts = await recordingCounts(supabase, rows.map((r: any) => r.id));
-    entries = rows.map((r: any) => toCard(r, counts.get(r.id) ?? 0));
+    entries = await toCards(supabase, data ?? []);
     total = count ?? 0;
   } else {
-    const { data, error } = await base().range(0, SORT_CAP - 1);
+    const { data, error } = list;
     if (error) failed = true;
     const all = (data ?? []).map((r: any) => toCard(r));
     // Entries with no gloss sort last in both directions rather than flipping
@@ -130,16 +145,6 @@ export default async function BrowsePage({
       recordings: (r.recordings ?? 0) + (counts.get(r.id) ?? 0),
     }));
   }
-
-  /* What each filter would actually return. Without this, every chip looks
-     alike and clicking "adverb" on a dictionary with no adverbs is a dead end
-     with no warning. Same embed direction as the query above, so no new risk;
-     if it comes back empty we simply do not dim anything. */
-  const { data: tally } = await supabase
-    .from("entries")
-    .select("origin_area, senses(part_of_speech)")
-    .eq("status", "approved")
-    .range(0, SORT_CAP - 1);
 
   const posCounts = new Map<string, number>();
   const originCounts = new Map<string, number>();
