@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ORIGIN_AREA_CODES, ORIGIN_PRECISIONS } from "@/lib/origins";
+import { MAX_RECORDING_NOTE } from "@/lib/constants";
 
 export async function saveProfile(formData: FormData) {
   const supabase = createClient();
@@ -40,4 +41,31 @@ export async function saveProfile(formData: FormData) {
   revalidatePath(`/contributor/${user.id}`);
   // Comes back as ?saved=1, which is what puts the confirmation on screen.
   redirect("/account?saved=1");
+}
+
+/* Add or change the note on one of your own recordings, from the account page.
+   Runs as the signed-in user: RLS limits the update to rows they contributed,
+   and a trigger keeps every column but `note` unchanged
+   (supabase/recording_note.sql). */
+export async function saveRecordingNote(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/account");
+
+  const id = String(formData.get("id") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim().slice(0, MAX_RECORDING_NOTE) || null;
+  if (!id) redirect("/account?show=recordings");
+
+  const { error } = await supabase
+    .from("recordings")
+    .update({ note })
+    .eq("id", id)
+    .eq("contributor_id", user.id);
+  if (error) redirect("/account?show=recordings&problem=1");
+
+  revalidatePath("/account");
+  revalidatePath(`/contributor/${user.id}`);
+  redirect("/account?show=recordings&saved=1");
 }

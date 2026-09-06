@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
 import DeleteRecording from "@/components/DeleteRecording";
+import DeleteEntry from "@/components/DeleteEntry";
 import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -314,6 +315,7 @@ export default async function AdminPage() {
                   >
                     Edit →
                   </Link>
+                  <DeleteEntry id={e.id} back="/admin" className="ml-auto" />
                 </div>
               </div>
             );

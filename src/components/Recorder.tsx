@@ -73,6 +73,12 @@ export default function Recorder({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // After a save: the row's id, so a note can be added or changed afterwards
+  // without leaving the page. Its own draft and status, separate from `note`,
+  // which belongs to the take still on screen.
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [savedNote, setSavedNote] = useState("");
+  const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -172,18 +178,26 @@ export default function Recorder({
 
       const { data: pub } = supabase.storage.from(AUDIO_BUCKET).getPublicUrl(path);
 
-      const { error: insErr } = await supabase.from("recordings").insert({
-        entry_id: entryId,
-        kind,
-        sense_id: kind === "example" ? senseId ?? null : null,
-        audio_url: pub.publicUrl,
-        seconds: Math.round(seconds * 100) / 100,
-        note: note.trim().slice(0, MAX_RECORDING_NOTE) || null,
-        contributor_id: userId,
-      });
+      const trimmed = note.trim().slice(0, MAX_RECORDING_NOTE);
+      const { data: inserted, error: insErr } = await supabase
+        .from("recordings")
+        .insert({
+          entry_id: entryId,
+          kind,
+          sense_id: kind === "example" ? senseId ?? null : null,
+          audio_url: pub.publicUrl,
+          seconds: Math.round(seconds * 100) / 100,
+          note: trimmed || null,
+          contributor_id: userId,
+        })
+        .select("id")
+        .single();
       // The database raises the rate-limit messages; they are written to be read.
       if (insErr) throw new Error(insErr.message);
 
+      setSavedId(inserted?.id ?? null);
+      setSavedNote(trimmed);
+      setNoteState("idle");
       setDone(true);
       discard();
       onSaved?.();
@@ -207,14 +221,71 @@ export default function Recorder({
     );
   }
 
+  /* Write the note onto the saved row. RLS lets a person update their own
+     recording, and a trigger makes sure the note is the only column that
+     changes (supabase/recording_note.sql). */
+  async function saveNote() {
+    if (!savedId) return;
+    setNoteState("saving");
+    const { error: updErr } = await supabase
+      .from("recordings")
+      .update({ note: savedNote.trim().slice(0, MAX_RECORDING_NOTE) || null })
+      .eq("id", savedId);
+    if (updErr) {
+      setNoteState("error");
+      return;
+    }
+    setNoteState("saved");
+    router.refresh();
+  }
+
   if (done) {
     return (
-      <p className="flex flex-wrap items-center gap-3 text-sm text-inkSoft">
-        <span>Saved. It will appear once an editor has listened to it.</span>
-        <button onClick={() => setDone(false)} className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
-          Record another
-        </button>
-      </p>
+      <div className="space-y-2 text-sm text-inkSoft">
+        <p className="flex flex-wrap items-center gap-3">
+          <span>Saved. It will appear once an editor has listened to it.</span>
+          <button onClick={() => setDone(false)} className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+            Record another
+          </button>
+        </p>
+        {savedId && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveNote();
+            }}
+            className="flex max-w-md flex-wrap items-end gap-2"
+          >
+            <label className="block grow">
+              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+                {savedNote ? "Your note" : "Add a note"}
+              </span>
+              <input
+                value={savedNote}
+                onChange={(e) => {
+                  setSavedNote(e.target.value);
+                  setNoteState("idle");
+                }}
+                maxLength={MAX_RECORDING_NOTE}
+                disabled={noteState === "saving"}
+                placeholder="e.g. a sentence you said it in, or how it is used"
+                className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm text-ink outline-none focus:border-lacquer placeholder:text-inkFaint"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={noteState === "saving"}
+              className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}
+            >
+              {noteState === "saving" ? "Saving…" : "Save note"}
+            </button>
+            {noteState === "saved" && <span className="basis-full text-xs text-lacquer">Note saved.</span>}
+            {noteState === "error" && (
+              <span className="basis-full text-xs text-lacquer">The note could not be saved. Please try again.</span>
+            )}
+          </form>
+        )}
+      </div>
     );
   }
 

@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
 import SignInButton from "@/components/SignInButton";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
+import DeleteEntry from "@/components/DeleteEntry";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -236,17 +237,30 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
         }}
       />
 
-      <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-        Added {new Date(entry.created_at).toLocaleDateString()}
-        {contributor && (
-          <>
-            {" · contributed by "}
-            <Link href={`/contributor/${contributor.id}`} className="hover:text-lacquer">
-              {credit || "a contributor"}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          Added {new Date(entry.created_at).toLocaleDateString()}
+          {contributor && (
+            <>
+              {" · contributed by "}
+              <Link href={`/contributor/${contributor.id}`} className="hover:text-lacquer">
+                {credit || "a contributor"}
+              </Link>
+            </>
+          )}
+        </p>
+        {canDelete && (
+          <span className="flex flex-wrap items-center gap-3">
+            <Link
+              href={`/admin/edit/${entry.id}`}
+              className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"
+            >
+              Edit →
             </Link>
-          </>
+            <DeleteEntry id={entry.id} back="/learn" />
+          </span>
         )}
-      </p>
+      </div>
     </article>
   );
 }

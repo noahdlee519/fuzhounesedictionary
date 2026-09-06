@@ -221,6 +221,16 @@ export default async function AccountPage({
           )
         )}
 
+        {show === "recordings" && (searchParams.saved || searchParams.problem) && (
+          <p className="flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
+            {searchParams.saved ? (
+              <SavedNotice message="Note saved" />
+            ) : (
+              <span role="alert">The note could not be saved. Please try again.</span>
+            )}
+          </p>
+        )}
+
         {show === "recordings" && (
           recordings.length === 0 ? (
             <div className="border border-rule bg-surface p-8 text-center">
@@ -231,7 +241,9 @@ export default async function AccountPage({
             </div>
           ) : (
             <div className="grid gap-3">
-              {recordings.map((r) => <RecordingByRow key={r.id} recording={r} showStatus />)}
+              {recordings.map((r) => (
+                <RecordingByRow key={r.id} recording={r} showStatus editableNote />
+              ))}
             </div>
           )
         )}
@@ -324,8 +336,8 @@ export default async function AccountPage({
             >
               Save
             </SubmitButton>
-            {searchParams.saved && <SavedNotice />}
-            {searchParams.problem && (
+            {searchParams.saved && show !== "recordings" && <SavedNotice />}
+            {searchParams.problem && show !== "recordings" && (
               <span role="alert" className="text-sm text-lacquer">
                 Your changes could not be saved just now. Please try again.
               </span>

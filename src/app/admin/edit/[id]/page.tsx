@@ -8,6 +8,7 @@ import type { Sense } from "@/lib/types";
 import type { Metadata } from "next";
 import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
 import { sortSenses } from "@/lib/entries";
+import DeleteEntry from "@/components/DeleteEntry";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +104,11 @@ export default async function EditEntryPage({ params }: { params: { id: string }
 
         <button className="border border-lacquer bg-lacquer px-8 py-3 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">Save changes</button>
       </form>
+
+      {/* Outside the edit form: a form cannot nest inside another form. */}
+      <div className="flex justify-end border-t border-rule pt-4">
+        <DeleteEntry id={entry.id} back="/admin" />
+      </div>
     </div>
   );
 }

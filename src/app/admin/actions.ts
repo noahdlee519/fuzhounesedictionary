@@ -214,3 +214,52 @@ function storagePath(url: string | null): string | null {
     return null;
   }
 }
+
+/* Remove a word from the site outright: the entry, its meanings, every
+   recording and suggestion on it, and any request pointing at it (all
+   cascade from entries in the schema), plus the audio files in our bucket.
+
+   Reject is the normal answer to a bad submission — it keeps the row so the
+   contributor sees why. This is for the cases Reject does not cover: a
+   duplicate, a word that was never Fuzhounese, something approved by
+   mistake, a takedown. There is no undo, which is why the control asks twice. */
+export async function deleteEntry(formData: FormData) {
+  await requireEditor();
+  const id = String(formData.get("id") ?? "");
+  const raw = String(formData.get("back") ?? "/admin");
+  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";
+  if (!id) redirect(back);
+
+  const supabase = adminClient();
+  const [{ data: entry, error: readErr }, { data: recs }] = await Promise.all([
+    supabase.from("entries").select("id, audio_url, contributor_id").eq("id", id).maybeSingle(),
+    supabase.from("recordings").select("audio_url, contributor_id").eq("entry_id", id),
+  ]);
+  if (readErr) throw new Error(readErr.message);
+  if (!entry) redirect(back); // already gone
+
+  const { error: delErr } = await supabase.from("entries").delete().eq("id", id);
+  if (delErr) throw new Error(delErr.message);
+
+  // Files second, so a storage hiccup never leaves a half-deleted word on the site.
+  const paths = [entry.audio_url, ...(recs ?? []).map((r) => r.audio_url)]
+    .map(storagePath)
+    .filter((p): p is string => Boolean(p));
+  if (paths.length) {
+    const { error: fileErr } = await supabase.storage.from(AUDIO_BUCKET).remove(paths);
+    if (fileErr) console.error(`entry ${id} deleted but ${paths.length} file(s) not removed: ${fileErr.message}`);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/improve");
+  revalidatePath("/learn");
+  revalidatePath("/request");
+  revalidatePath("/");
+  revalidatePath("/sitemap.xml");
+  revalidatePath(`/entry/${id}`);
+  const people = new Set<string>();
+  if (entry.contributor_id) people.add(entry.contributor_id);
+  for (const r of recs ?? []) if (r.contributor_id) people.add(r.contributor_id);
+  for (const p of people) revalidatePath(`/contributor/${p}`);
+  redirect(back);
+}
