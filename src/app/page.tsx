@@ -4,6 +4,7 @@ import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import type { SearchRow } from "@/lib/types";
 import { recordingCounts, toCards } from "@/lib/entries";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,8 @@ export default async function Home({
 }) {
   const q = (searchParams.q ?? "").trim();
   const supabase = createClient();
+  // Only for the assistant's sign-in gate; cache() shares the call with Header.
+  const { user } = await getSessionUser();
 
   let results: CardProps[] = [];
   let errored = false;
@@ -57,7 +60,7 @@ export default async function Home({
         <h1 className="font-display text-[22px] font-bold uppercase leading-tight tracking-tight text-balance text-ink sm:text-[28px]">
           The Collaborative Fuzhounese-English Dictionary
         </h1>
-        <SearchBar defaultValue={q} />
+        <SearchBar defaultValue={q} signedIn={!!user} />
       </section>
 
       {errored && (

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const UPDATED = "3 September 2026";
+const UPDATED = "6 September 2026";
 
 export default function PrivacyPage() {
   return (
@@ -60,6 +60,14 @@ export default function PrivacyPage() {
           suggestion and whether it was accepted. If you are an editor, we keep a record of what you
           reviewed.
         </p>
+        <p>
+          <b>The assistant:</b> if you use &ldquo;Ask the dictionary&rdquo;, each question and answer
+          is kept with your account, with what it cost to answer. The question is sent to Anthropic,
+          whose model produces the answer, under{" "}
+          <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noreferrer" className="text-lacquer hover:underline">its privacy policy</a>
+          ; the dictionary&apos;s own text goes with it, nothing about you does. We read the questions
+          it could not answer to decide which words to add next.
+        </p>
       </Section>
 
       <Section n={2} title="What is public">
@@ -101,14 +109,16 @@ export default function PrivacyPage() {
 
       <Section n={4} title="Who else sees it">
         <p>
-          Three companies process data on our behalf, each under its own privacy policy:{" "}
+          Four companies process data on our behalf, each under its own privacy policy:{" "}
           <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noreferrer" className="text-lacquer hover:underline">Vercel</a>{" "}
           hosts the site and runs the analytics;{" "}
           <a href="https://supabase.com/privacy" target="_blank" rel="noreferrer" className="text-lacquer hover:underline">Supabase</a>{" "}
           stores the database, your sign-in session and the audio and picture files;{" "}
           <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="text-lacquer hover:underline">Google</a>{" "}
-          handles sign-in. Their servers may be in a different country from you, so using the site
-          means your data can be transferred there.
+          handles sign-in;{" "}
+          <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noreferrer" className="text-lacquer hover:underline">Anthropic</a>{" "}
+          answers the questions you put to the assistant. Their servers may be in a different country
+          from you, so using the site means your data can be transferred there.
         </p>
         <p>
           Beyond that, we share personal data only if the law requires it. Published contributions are,
@@ -134,7 +144,8 @@ export default function PrivacyPage() {
           Your account and profile: until you ask us to delete them. Approved contributions: as part of
           the dictionary, indefinitely, because removing words would break it for everyone else.
           Rejected submissions: kept privately with the editor&apos;s note so you can see why, until you
-          delete your account. Server logs: a matter of weeks, set by Vercel.
+          delete your account. Assistant questions: until you delete your account. Server logs: a
+          matter of weeks, set by Vercel.
         </p>
       </Section>
 
