@@ -41,9 +41,10 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
     return (
       <section aria-label="Ask the dictionary" className="page-fade space-y-3 border border-rule bg-surface p-5">
         <p className="text-sm text-inkSoft">
-          Ask about a word, a meaning or how the language works. Answers come from this dictionary and
-          its learn page; where the dictionary falls short it says so and marks any guess as a guess.
-          Sign in to use it—each account gets a small daily share, so the cost stays sane.
+          Ask about a word, a meaning or how the language works. Answers come from data
+          composing the dictionary. It is not a perfect tool and has limitations, especially with
+          translating sentences. Sign in to use it—each account gets a small
+          daily share, so the cost stays sane.
         </p>
         <SignInButton next="/" label="Sign in with Google" />
       </section>
@@ -87,13 +88,13 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
       aria-label="Ask the dictionary"
       className="page-fade border border-rule bg-surface"
     >
-      <div className="max-h-[50vh] space-y-4 overflow-y-auto p-5">
+      <div className="max-h-[50vh] space-y-4 overflow-y-auto px-5 pt-5 pb-4">
         {turns.length === 0 && (
           <div className="space-y-3">
             <p className="text-sm text-inkSoft">
-              Ask about a word, a meaning or how the language works. Answers come from this
-              dictionary and its learn page; where the dictionary falls short it says so and marks
-              any guess as a guess. It does not translate sentences.
+              Ask about a word, a meaning or how the language works. Answers come from data
+              composing the dictionary. It is not a perfect tool and has limitations, especially
+              with translating sentences.
             </p>
             <div className="flex flex-wrap gap-2">
               {STARTERS.map((s) => (
@@ -132,7 +133,9 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
             {notice}
           </p>
         )}
-        <div ref={endRef} />
+        {/* scroll anchor; !mt-0 keeps it out of the space-y rhythm, or it adds
+            a blank 16px under whatever is last */}
+        <div ref={endRef} className="!mt-0" />
       </div>
 
       <form
@@ -153,7 +156,8 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
           maxLength={500}
           placeholder="Ask the dictionary…"
           autoComplete="off"
-          className="w-full bg-transparent px-5 py-3 outline-none placeholder:text-inkFaint"
+          // pt/pb split by a pixel: the serif sits high in the box otherwise.
+          className="w-full bg-transparent px-5 pt-[13px] pb-[11px] outline-none placeholder:text-inkFaint"
         />
         <button
           type="submit"
