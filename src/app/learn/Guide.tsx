@@ -86,7 +86,7 @@ function Section({
   );
 }
 
-const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) => (
+export const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) => (
   <div className="overflow-x-auto">
     <table className="w-full min-w-[32rem] border-collapse text-left text-[15px]">
       <thead>
@@ -511,9 +511,10 @@ export default function Guide() {
           settled form by the 1890s. Two things about it trip people up. <Rom>b</Rom>, <Rom>d</Rom>,{" "}
           <Rom>g</Rom> and <Rom>c</Rom> are the unaspirated sounds and <Rom>p</Rom>, <Rom>t</Rom>,{" "}
           <Rom>k</Rom> and <Rom>ch</Rom> the aspirated ones, so <Rom>b</Rom> is not voiced the way an
-          English b is. And vowel quality is marked underneath the letter (<Rom>a̤ e̤ o̤ ṳ</Rom>),
-          leaving the space above it free for the tone. It never travelled much beyond the mission
-          churches.
+          English b is: it is the p of &ldquo;spin&rdquo;, without the puff of air in &ldquo;pin&rdquo;.
+          And vowel quality is marked underneath the letter (<Rom>a̤ e̤ o̤ ṳ</Rom>), leaving the space
+          above it free for the tone. For example, the Bàng-uâ-cê name of the city is{" "}
+          <Rom>Hók-ciŭ</Rom>. It never travelled much beyond the mission churches.
         </P>
         <div className="border-l-2 border-lacquer bg-surface p-4">
           <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Missing</p>

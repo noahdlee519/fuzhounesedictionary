@@ -1,5 +1,5 @@
 import type { Panel } from "./LearnPanels";
-import { ToneChart } from "./Guide";
+import { ToneChart, Table } from "./Guide";
 
 /* The three short panels above the word list. Digests of the longer guide in
    Guide.tsx, and held to the same rule: every claim traces to a source named
@@ -98,32 +98,85 @@ const features = (
     <Block>
       <H>Tone sandhi</H>
       <P>
-        The seven tones above are what a syllable has by itself. Put two syllables together and the
-        first one changes; the last keeps its tone. This is the thing to know before anything else:
-        if you read a word off this page syllable by syllable, it will not sound like the language.
-        Longer words work in pairs, so a four-syllable word behaves roughly like two two-syllable
-        words in a row.
+        The tone in the table is the tone a syllable has <i>on its own</i>. Inside a word it is
+        different. The rule has two halves. <b>The last syllable of a word keeps its own tone.</b>{" "}
+        <b>The syllable before it changes</b>, and what it changes to depends on both syllables.
+      </P>
+      <P>
+        Take the name of the city, <Han>福州</Han> <Rom>Hók-ciŭ</Rom>. <Han>福</Han> by itself is a
+        short rising tone, <Num>23</Num>. <Han>州</Han> by itself is high and level, <Num>44</Num>.
+        Said together, <Han>州</Han> stays at <Num>44</Num> because it is last, but <Han>福</Han>{" "}
+        drops to a low <Num>21</Num>, a pitch it never has when alone. So the word is{" "}
+        <Rom>huk21 ciu44</Rom>, not <Rom>hok23 ciu44</Rom>.
+      </P>
+      <P>
+        This is why a word read off the page syllable by syllable does not sound like the language,
+        and why the tone marks on a Bàng-uâ-cê headword cannot simply be read aloud: they give each
+        syllable&apos;s tone in isolation. Entries written with tone numbers, like{" "}
+        <Rom>seik21 zo213</Rom>, are different: they record the tones as actually spoken, with the
+        change already made. Longer words work in pairs, so a four-syllable word behaves roughly
+        like two two-syllable words in a row. The practical advice is to learn each word whole, from
+        a recording, rather than assembling it from its parts.
       </P>
     </Block>
 
     <Block>
       <H>Consonants shift too</H>
       <P>
-        Inside a word, a syllable&apos;s opening consonant changes to suit the ending of the syllable
-        before it—a <Rom>p</Rom> goes soft after a vowel and becomes an <Rom>m</Rom> after{" "}
-        <Rom>-ng</Rom>. It is why the same character can be spelt differently from one entry to the
-        next. And the vowel itself can change with the tone: <Han>福</Han> on its own is [hɔuʔ], but
-        in <Han>福州</Han> it is [huʔ]. Almost no other Chinese variety does this.
+        Tones are not the only thing that moves. Inside a word, the consonant that <i>opens</i> a
+        syllable changes to suit how the syllable <i>before</i> it ends. There are three cases.
+      </P>
+      <Table
+        head={["Opening consonant", "After a vowel", "After -ng", "After -k"]}
+        rows={[
+          [<>b, p</>, "softens to a loose b, [β]", "becomes m", "no change"],
+          [<>d, t, s</>, "become l", "become n", "no change"],
+          [<>g, k, h</>, "disappear", "become ng", "no change"],
+          [<>c, ch</>, "soften to [ʒ], the s of “measure”", "—", "no change"],
+          [<>m, n, ng</>, "no change", "no change", "no change"],
+        ]}
+      />
+      <P>
+        One word shows all three. <Han>八</Han> <Rom>báik</Rom>, <i>eight</i>, opens with a b. In{" "}
+        <Han>二八天</Han> <Rom>ni21 weik21 tieng44</Rom> it follows a vowel, so the b goes soft. In{" "}
+        <Han>七讲八昕</Han> <Rom>cik21 goung21 meik5 tiang213</Rom> it follows an <Rom>-ng</Rom>, so
+        the same b becomes an m. Same character, three different consonants, depending only on its
+        neighbour. This is why one character can be spelt differently from one entry to the next,
+        and why a word you know may be hard to pick out inside a longer one.
+      </P>
+      <P>
+        The vowel can move as well. Every vowel has a tighter and a looser form, and the tone decides
+        which one you get; when the tone changes inside a word, the vowel follows it. <Han>福</Han>{" "}
+        alone is [hɔuʔ], with the loose vowel; in <Han>福州</Han>, on its changed tone, it tightens
+        to [huʔ]. Almost no other Chinese variety does this.
       </P>
     </Block>
 
     <Block>
       <H>Sounds</H>
       <P>
-        There is no <b>f</b> and no <b>v</b>, anywhere. A syllable can end in a vowel, in{" "}
-        <Rom>-ng</Rom>, or in the glottal stop—nothing else. The old <Rom>-m</Rom>, <Rom>-n</Rom>{" "}
-        and <Rom>-ng</Rom> endings all became <Rom>-ng</Rom>; the old <Rom>-p</Rom>, <Rom>-t</Rom>{" "}
-        and <Rom>-k</Rom> all became the glottal stop.
+        Fourteen consonants and seven vowels; the Orthography tab has the full chart with how each is
+        said. Three things stand out if you come from English or Mandarin.
+      </P>
+      <P>
+        <b>No f, no v.</b> Nowhere in the language. Where Mandarin has an f, Fuzhounese usually has
+        an h: <Han>福</Han> is <Rom>hók</Rom>, <Han>花</Han> is <Rom>huă</Rom>, <Han>風</Han> is{" "}
+        <Rom>hŭng</Rom>.
+      </P>
+      <P>
+        <b>Only three ways to end a syllable.</b> A vowel, <Rom>-ng</Rom>, or the glottal stop, the
+        catch in the middle of &ldquo;uh-oh&rdquo;, written <Rom>-h</Rom> or <Rom>-k</Rom>. Where
+        older Chinese ended syllables in <Rom>-m</Rom>, <Rom>-n</Rom> or <Rom>-ng</Rom>, Fuzhounese
+        has only <Rom>-ng</Rom>: <Han>心</Han> <Rom>sĭng</Rom>, <Han>山</Han> <Rom>săng</Rom>,{" "}
+        <Han>新</Han> <Rom>sĭng</Rom>. Where it ended in <Rom>-p</Rom>, <Rom>-t</Rom> or{" "}
+        <Rom>-k</Rom>, there is only the catch: <Han>十</Han> <Rom>sĕk</Rom>, <Han>白</Han>{" "}
+        <Rom>băh</Rom>, <Han>八</Han> <Rom>báik</Rom>.
+      </P>
+      <P>
+        <b>Two vowels English does not have.</b> <Rom>ṳ</Rom> is <i>ee</i> said with the lips
+        rounded, as in French <i>tu</i>: <Han>雨</Han> <Rom>ṳ̄</Rom>, <Han>魚</Han> <Rom>ngṳ̀</Rom>.{" "}
+        <Rom>e̤</Rom> is <i>eh</i> with the lips rounded, as in French <i>peu</i>: <Han>讀</Han>{" "}
+        <Rom>tĕ̤k</Rom>. The mark underneath is the signal.
       </P>
     </Block>
   </>
@@ -156,9 +209,12 @@ const orthography = (
         <b>Bàng-uâ-cê</b> <Han>平話字</Han> is the older one, and most headwords use it. American
         missionaries began it in the 1850s and settled it by the 1890s. Two things trip people up:{" "}
         <Rom>b d g c</Rom> are the <i>un</i>aspirated sounds and <Rom>p t k ch</Rom> the aspirated
-        ones, so <Rom>b</Rom> is not voiced like an English b; and vowel quality is marked under the
-        letter (<Rom>a̤ e̤ o̤ ṳ</Rom>), leaving the space above it for the tone mark. The name of the
-        city is <Rom>Hók-ciŭ</Rom>.
+        ones. So <Rom>b</Rom> is not voiced like an English b: it is the p of &ldquo;spin&rdquo;,
+        without the puff of air that the p of &ldquo;pin&rdquo; has. In the same way <Rom>d</Rom> is
+        the t of &ldquo;stop&rdquo;, <Rom>g</Rom> the k of &ldquo;skin&rdquo;, and <Rom>c</Rom> the
+        ts of &ldquo;cats&rdquo;. And vowel quality is marked under the letter (<Rom>a̤ e̤ o̤ ṳ</Rom>),
+        leaving the space above it for the tone mark. For example, the Bàng-uâ-cê name of the city
+        is <Rom>Hók-ciŭ</Rom>.
       </P>
       <P>
         <b>Tone numbers</b> write the pitch as digits after each syllable, <Rom>seik21 zo213</Rom>,
@@ -170,6 +226,68 @@ const orthography = (
         Where a contributor has added it, an entry also carries the pronunciation in the
         International Phonetic Alphabet.
       </P>
+    </Block>
+
+    <Block>
+      <H>The Bàng-uâ-cê alphabet</H>
+      <P>
+        Every letter, with its sound in the International Phonetic Alphabet, the nearest English
+        sound, and a word from this dictionary that uses it. The tone marks above the vowels are a
+        separate matter, covered under Tones.
+      </P>
+      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Consonants</p>
+      <Table
+        head={["Letter", "IPA", "Sounds like", "Example"]}
+        rows={[
+          [<Rom>b</Rom>, "p", "p in spin (no puff of air)", <><Han>八</Han> <Rom>báik</Rom>, eight</>],
+          [<Rom>p</Rom>, "pʰ", "p in pin (with the puff)", <><Han>鼻</Han> <Rom>pĭ</Rom>, nose</>],
+          [<Rom>m</Rom>, "m", "m in man", <><Han>米</Han> <Rom>mī</Rom>, rice</>],
+          [<Rom>d</Rom>, "t", "t in stop (no puff of air)", <><Han>地</Han> <Rom>dê</Rom>, ground</>],
+          [<Rom>t</Rom>, "tʰ", "t in top (with the puff)", <><Han>天</Han> <Rom>tiĕng</Rom>, sky</>],
+          [<Rom>n</Rom>, "n", "n in no", <><Han>年</Han> <Rom>niòng</Rom>, year</>],
+          [<Rom>l</Rom>, "l", "l in low", <><Han>冷</Han> <Rom>lēng</Rom>, cold</>],
+          [<Rom>g</Rom>, "k", "k in skin (no puff of air)", <><Han>狗</Han> <Rom>gāu</Rom>, dog</>],
+          [<Rom>k</Rom>, "kʰ", "k in kin (with the puff)", <><Han>看</Han> <Rom>káng</Rom>, to look</>],
+          [<Rom>ng</Rom>, "ŋ", "ng in sing, but starting a syllable", <><Han>魚</Han> <Rom>ngṳ̀</Rom>, fish</>],
+          [<Rom>h</Rom>, "h", "h in hat", <><Han>海</Han> <Rom>hāi</Rom>, sea</>],
+          [<Rom>c</Rom>, "ts", "ts in cats (no puff of air)", <><Han>酒</Han> <Rom>ciū</Rom>, wine</>],
+          [<Rom>ch</Rom>, "tsʰ", "ts in cats, with a puff of air", <><Han>菜</Han> <Rom>chái</Rom>, vegetable</>],
+          [<Rom>s</Rom>, "s", "s in see", <><Han>山</Han> <Rom>săng</Rom>, mountain</>],
+        ]}
+      />
+      <p className="pt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Vowels</p>
+      <Table
+        head={["Letter", "IPA", "Sounds like", "Example"]}
+        rows={[
+          [<Rom>a</Rom>, "a", "a in father", <><Han>花</Han> <Rom>huă</Rom>, flower</>],
+          [<Rom>a̤</Rom>, "ɛ", "e in bed", <><Han>洗</Han> <Rom>sā̤</Rom>, to wash</>],
+          [<Rom>e̤</Rom>, "ø", "eh with the lips rounded, as in French peu", <><Han>讀</Han> <Rom>tĕ̤k</Rom>, to read</>],
+          [<Rom>i</Rom>, "i", "ee in see", <><Han>鼻</Han> <Rom>pĭ</Rom>, nose</>],
+          [<Rom>o̤</Rom>, "ɔ", "aw in law", <><Han>做</Han> <Rom>có̤</Rom>, to do</>],
+          [<Rom>u</Rom>, "u", "oo in food", <><Han>烏</Han> <Rom>ŭ</Rom>, black</>],
+          [<Rom>ṳ</Rom>, "y", "ee with the lips rounded, as in French tu", <><Han>雨</Han> <Rom>ṳ̄</Rom>, rain</>],
+        ]}
+      />
+      <P>
+        The vowels combine: <Rom>ia</Rom>, <Rom>ua</Rom>, <Rom>ie</Rom>, <Rom>uo</Rom>, <Rom>io</Rom>,{" "}
+        <Rom>ai</Rom>, <Rom>au</Rom>, <Rom>iu</Rom>, <Rom>ui</Rom>, <Rom>eu</Rom> and so on, each said
+        as its letters in sequence: <Han>天</Han> <Rom>tiĕng</Rom>, <Han>花</Han> <Rom>huă</Rom>,{" "}
+        <Han>狗</Han> <Rom>gāu</Rom>, <Han>手</Han> <Rom>chiū</Rom>.
+      </P>
+      <p className="pt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Endings</p>
+      <Table
+        head={["Letter", "IPA", "Sounds like", "Example"]}
+        rows={[
+          [<Rom>-ng</Rom>, "ŋ", "ng in sing", <><Han>心</Han> <Rom>sĭng</Rom>, heart</>],
+          [<Rom>-h</Rom>, "ʔ", "the catch in “uh-oh”; the syllable stops short", <><Han>白</Han> <Rom>băh</Rom>, white</>],
+          [<Rom>-k</Rom>, "ʔ", "the same catch; spelt k because it once was one", <><Han>十</Han> <Rom>sĕk</Rom>, ten</>],
+        ]}
+      />
+      <p className="text-sm text-inkFaint">
+        Sounds after the Bàng-uâ-cê tables on Wikipedia, listed under Further reading. Some speakers
+        say <Rom>a̤</Rom> closer to <i>e</i> in <i>bed</i>, and <Rom>o̤</Rom> closer to <i>o</i>; the
+        values given are the traditional ones the spelling was built on.
+      </p>
     </Block>
   </>
 );
