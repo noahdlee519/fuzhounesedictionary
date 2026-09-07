@@ -248,7 +248,10 @@ export default async function BrowsePage({
 
       <div
         id="words"
-        className="flex scroll-mt-24 flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-6"
+        /* scroll-mt: how far below the top of the window the section's rule
+           lands when a link or the page-jump form targets #words. Nothing
+           sticky sits above it, so only a hairline of breathing room. */
+        className="flex scroll-mt-3 flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-6"
       >
         <h2 className="font-display text-xl font-bold uppercase tracking-tight sm:text-2xl">
           All words

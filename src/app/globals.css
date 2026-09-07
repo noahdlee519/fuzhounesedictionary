@@ -189,3 +189,16 @@ body {
 @media (max-width: 1120px) {
   .site-margin { display: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   The search box is a real <input type="search"> (screen readers announce it
+   as one, and Escape clears it), but Chrome and Safari also draw their own
+   little "x" inside it once you type. It sits right next to the sparkle
+   button and looks like a stray control, so it is hidden; the box already has
+   a Search button and the assistant button of its own.
+   --------------------------------------------------------------------------- */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}

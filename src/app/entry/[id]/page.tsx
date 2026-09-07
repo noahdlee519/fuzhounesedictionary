@@ -14,6 +14,8 @@ import SignInButton from "@/components/SignInButton";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
 import DeleteEntry from "@/components/DeleteEntry";
 import SavedNotice from "@/components/SavedNotice";
+import BackLink from "@/components/BackLink";
+import EditLink from "@/components/EditLink";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -104,9 +106,11 @@ export default async function EntryPage({
 
   return (
     <article className="space-y-7">
-      <Link href="/" className="font-mono text-xs uppercase tracking-wider text-inkFaint hover:text-lacquer">
-        ← Back to search
-      </Link>
+      <BackLink
+        fallback="/"
+        fallbackLabel="← Back to search"
+        className="font-mono text-xs uppercase tracking-wider text-inkFaint hover:text-lacquer"
+      />
 
       <header className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-rule pb-5">
         {entry.hanzi && <h1 className="font-display text-6xl font-extrabold leading-none">{entry.hanzi}</h1>}
@@ -268,12 +272,11 @@ export default async function EntryPage({
         </p>
         {canDelete && (
           <span className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/admin/edit/${entry.id}`}
+            <EditLink
+              entryId={entry.id}
+              here={here}
               className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"
-            >
-              Edit →
-            </Link>
+            />
             <DeleteEntry id={entry.id} back="/learn" />
           </span>
         )}

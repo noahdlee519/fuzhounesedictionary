@@ -44,6 +44,11 @@ export async function reject(formData: FormData) {
 export async function saveEdit(formData: FormData) {
   await requireEditor();
   const id = String(formData.get("id"));
+  // Back to wherever the edit was opened from — the queue, or the entry page
+  // (and from there the browser's own Back returns to the word list). Only a
+  // path on this site is honoured.
+  const rawBack = String(formData.get("back") ?? "");
+  const back = rawBack.startsWith("/") && !rawBack.startsWith("//") ? rawBack : "/admin";
   const supabase = adminClient();
 
   // Update entry core fields.
@@ -93,8 +98,10 @@ export async function saveEdit(formData: FormData) {
   if (senseErr) throw new Error(senseErr.message);
 
   revalidatePath("/admin");
+  revalidatePath("/learn");
+  revalidatePath("/");
   revalidatePath(`/entry/${id}`);
-  redirect("/admin");
+  redirect(back);
 }
 
 export async function approveSuggestion(formData: FormData) {

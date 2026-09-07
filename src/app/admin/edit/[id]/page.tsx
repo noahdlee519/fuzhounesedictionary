@@ -20,9 +20,25 @@ export const metadata: Metadata = {
 const cls =
   "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
 
-export default async function EditEntryPage({ params }: { params: { id: string } }) {
+export default async function EditEntryPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { back?: string };
+}) {
   const { profile } = await getSessionUser();
   if (!profile?.is_editor) redirect("/admin");
+
+  // Where Save returns to: the queue by default, or the entry page when the
+  // edit was opened from there. Only a path on this site is honoured.
+  const raw = (searchParams.back ?? "").trim();
+  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";
+  const backLabel = back.startsWith("/entry/")
+    ? "← Back to the word"
+    : back.startsWith("/admin")
+      ? "← Back to queue"
+      : "← Back to the list";
 
   // Service role read so editors can edit entries in any status.
   const { data: entry } = await adminClient()
@@ -38,13 +54,14 @@ export default async function EditEntryPage({ params }: { params: { id: string }
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-baseline justify-between">
         <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Edit entry</h1>
-        <Link href="/admin" className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer hover:underline">
-          ← Back to queue
+        <Link href={back} className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer hover:underline">
+          {backLabel}
         </Link>
       </div>
 
       <form action={saveEdit} className="space-y-5">
         <input type="hidden" name="id" value={entry.id} />
+        <input type="hidden" name="back" value={back} />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block"><span className="text-sm font-medium">Characters</span>
