@@ -100,9 +100,9 @@ export default async function Home({
             {/* How big the dictionary is so far. Only when the count came back —
                 a database blip must not print "0 words". */}
             {total !== null && (
-              <Link href="/learn#words" className="tabular-nums hover:text-lacquer">
-                {total.toLocaleString()} word{total === 1 ? "" : "s"} so far
-              </Link>
+              <span className="tabular-nums">
+                {total.toLocaleString()} word{total === 1 ? "" : "s"} total
+              </span>
             )}
           </div>
           <div className="grid gap-3">
