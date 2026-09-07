@@ -7,7 +7,7 @@ import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
 import LearnPanels from "./LearnPanels";
-import { learnPanels } from "./panels";
+import { learnPanels, panelAnchors } from "./panels";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
@@ -239,7 +239,7 @@ export default async function BrowsePage({
 
       {/* Features · Orthography · Further reading — one panel at a time,
           the first open on arrival. Content lives in panels.tsx. */}
-      <LearnPanels panels={learnPanels} />
+      <LearnPanels panels={learnPanels} anchors={panelAnchors} />
 
       <div
         id="words"

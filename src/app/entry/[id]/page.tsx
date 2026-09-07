@@ -13,6 +13,7 @@ import Recorder from "@/components/Recorder";
 import SignInButton from "@/components/SignInButton";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
 import DeleteEntry from "@/components/DeleteEntry";
+import SavedNotice from "@/components/SavedNotice";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +49,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function EntryPage({ params }: { params: { id: string } }) {
+export default async function EntryPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { saved?: string; problem?: string };
+}) {
   const supabase = createClient();
   // None of these depend on each other, so they go out together. Recordings
   // are keyed by entry id, not by the entry row, and RLS filters them to what
@@ -123,6 +130,16 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
         ) : null}
       </header>
 
+      {(searchParams.saved || searchParams.problem) && (
+        <p className="flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
+          {searchParams.saved ? (
+            <SavedNotice message="Note saved" />
+          ) : (
+            <span role="alert">The note could not be saved. Please try again.</span>
+          )}
+        </p>
+      )}
+
       <section className="space-y-3">
         {/* the legacy single-file column still plays, if it holds anything */}
         {entry.audio_url && (
@@ -131,7 +148,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
           </audio>
         )}
 
-        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} />
+        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} />
 
         {user ? (
           <div className="border border-dashed border-rule p-4">
@@ -192,7 +209,7 @@ export default async function EntryPage({ params }: { params: { id: string } }) 
             )}
             {s.example && (
               <div className="mt-2 space-y-2">
-                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} />
+                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} viewerId={user?.id} />
                 {user && !capped && (
                   <Recorder
                     userId={user.id}

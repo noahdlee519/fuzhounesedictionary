@@ -56,16 +56,24 @@ export async function saveRecordingNote(formData: FormData) {
 
   const id = String(formData.get("id") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim().slice(0, MAX_RECORDING_NOTE) || null;
-  if (!id) redirect("/account?show=recordings");
+  // Where the form was: the account page (default) or an entry page. Only a
+  // path on this site is honoured — the same guard as everywhere else.
+  const raw = String(formData.get("back") ?? "").trim();
+  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/account?show=recordings";
+  const withFlag = (flag: string) => `${back}${back.includes("?") ? "&" : "?"}${flag}`;
+  if (!id) redirect(back);
 
-  const { error } = await supabase
+  const { data: row, error } = await supabase
     .from("recordings")
     .update({ note })
     .eq("id", id)
-    .eq("contributor_id", user.id);
-  if (error) redirect("/account?show=recordings&problem=1");
+    .eq("contributor_id", user.id)
+    .select("entry_id")
+    .maybeSingle();
+  if (error) redirect(withFlag("problem=1"));
 
   revalidatePath("/account");
   revalidatePath(`/contributor/${user.id}`);
-  redirect("/account?show=recordings&saved=1");
+  if (row?.entry_id) revalidatePath(`/entry/${row.entry_id}`);
+  redirect(withFlag("saved=1"));
 }

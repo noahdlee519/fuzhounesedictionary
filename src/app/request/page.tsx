@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
 import { requestWord, voteRequest, fulfillRequest } from "./actions";
+import VoteButton from "./VoteButton";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -125,9 +126,9 @@ export default async function WantedPage({
               <li key={r.id} className="flex items-stretch gap-4 border border-rule bg-surface p-4">
                 <form action={voteRequest} className="flex flex-col items-center justify-center">
                   <input type="hidden" name="id" value={r.id} />
-                  <button
+                  <VoteButton
                     title={user ? (voted ? "You upvoted this" : "Upvote") : "Sign in to vote"}
-                    disabled={!user}
+                    locked={!user}
                     className={
                       "flex w-14 flex-col items-center border px-2 py-1 leading-tight transition-colors " +
                       (voted ? "border-lacquer bg-accentSoft text-lacquer" : "border-rule text-inkFaint hover:border-lacquer hover:text-lacquer") +
@@ -136,7 +137,7 @@ export default async function WantedPage({
                   >
                     <span aria-hidden className="text-base leading-none">▲</span>
                     <span className="font-mono text-sm font-medium tabular-nums">{r.votes}</span>
-                  </button>
+                  </VoteButton>
                 </form>
 
                 <div className="min-w-0 flex-1">
@@ -166,7 +167,9 @@ export default async function WantedPage({
                     {isEd && (
                       <form action={fulfillRequest}>
                         <input type="hidden" name="id" value={r.id} />
-                        <button className="uppercase hover:text-lacquer">Mark done ✓</button>
+                        <SubmitButton pending="…" className="uppercase hover:text-lacquer disabled:opacity-60">
+                          Mark done ✓
+                        </SubmitButton>
                       </form>
                     )}
                   </div>

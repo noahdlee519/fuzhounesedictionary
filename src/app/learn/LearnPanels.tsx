@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /* Three buttons above the word list — Features, Orthography, Further reading —
    each opening one panel. One panel at a time; the first is open on arrival;
    pressing the open one folds it away. The panel bodies are server-rendered
    and handed in as children, so this file holds only the switch. */
+
+const NO_ANCHORS: Record<string, string> = {};
 
 export interface Panel {
   key: string;
@@ -13,9 +15,35 @@ export interface Panel {
   body: React.ReactNode;
 }
 
-export default function LearnPanels({ panels }: { panels: Panel[] }) {
+export default function LearnPanels({
+  panels,
+  anchors = NO_ANCHORS,
+}: {
+  panels: Panel[];
+  /** id inside a panel body → that panel's key, so "#tones" can open it. */
+  anchors?: Record<string, string>;
+}) {
   const [open, setOpen] = useState<string | null>(panels[0]?.key ?? null);
   const current = panels.find((p) => p.key === open) ?? null;
+
+  /* A link to an id inside a closed panel has nothing to scroll to. Watch the
+     hash: if it names a known anchor, open its panel, then scroll once the
+     panel has rendered. Runs on arrival too, for a link from another page. */
+  useEffect(() => {
+    const follow = () => {
+      const id = window.location.hash.slice(1);
+      const key = anchors[id];
+      if (!key) return;
+      setOpen(key);
+      // After React has painted the newly opened panel.
+      requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ block: "start" });
+      });
+    };
+    follow();
+    window.addEventListener("hashchange", follow);
+    return () => window.removeEventListener("hashchange", follow);
+  }, [anchors]);
 
   return (
     <section className="space-y-4">

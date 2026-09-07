@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatOrigin } from "@/lib/origins";
 import DeleteRecording from "./DeleteRecording";
+import RecordingNoteEditor from "./RecordingNoteEditor";
 
 /* One player per recording, labelled with who said it and where their
    Fuzhounese is from. This is the point of the recordings table: the same word
@@ -24,13 +25,16 @@ export default function RecordingList({
   compact = false,
   canDelete = false,
   back,
+  viewerId,
 }: {
   recordings: RecordingRow[];
   compact?: boolean;
   /** Editors get a delete control on every row. */
   canDelete?: boolean;
-  /** Where the delete action returns to; the entry page, normally. */
+  /** Where the delete and note actions return to; the entry page, normally. */
   back?: string;
+  /** The signed-in viewer: their own rows get an add/edit-note control. */
+  viewerId?: string | null;
 }) {
   if (!recordings.length) return null;
 
@@ -40,6 +44,7 @@ export default function RecordingList({
         const origin = formatOrigin(r.origin_area, r.origin_locality);
         const who = r.contributor?.display_name;
         const note = (r.note ?? "").trim();
+        const mine = Boolean(viewerId && r.contributor?.id === viewerId);
         return (
           <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <audio
@@ -74,11 +79,18 @@ export default function RecordingList({
             </span>
             {canDelete && <DeleteRecording id={r.id} back={back ?? "/admin"} />}
             {/* The speaker's own line about the take — the sentence they read,
-                or how they would put it. Sits under the player, full width. */}
-            {note && (
-              <p className="basis-full text-sm text-inkSoft">
-                <span className="romanization">{note}</span>
-              </p>
+                or how they would put it. Sits under the player, full width.
+                On your own recording it is editable in place. */}
+            {mine ? (
+              <div className="basis-full">
+                <RecordingNoteEditor id={r.id} note={note} back={back ?? "/account?show=recordings"} compact />
+              </div>
+            ) : (
+              note && (
+                <p className="basis-full text-sm text-inkSoft">
+                  <span className="romanization">{note}</span>
+                </p>
+              )
             )}
           </li>
         );

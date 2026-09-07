@@ -26,9 +26,13 @@ const Num = ({ children }: { children: React.ReactNode }) => (
   <span className="font-mono tabular-nums text-ink">{children}</span>
 );
 
-const Block = ({ children }: { children: React.ReactNode }) => (
-  <div className="space-y-2">{children}</div>
+const Block = ({ id, children }: { id?: string; children: React.ReactNode }) => (
+  <div id={id} className="scroll-mt-24 space-y-2">{children}</div>
 );
+
+/* Anchors that live inside a panel, so a link like "#tones" can open the
+   right panel first. LearnPanels reads this. */
+export const panelAnchors: Record<string, string> = { tones: "features" };
 
 /* ------------------------------------------------------------------------ */
 
@@ -74,7 +78,7 @@ const features = (
       </P>
     </Block>
 
-    <Block>
+    <Block id="tones">
       <H>Tones</H>
       <P>
         Seven, when a syllable stands alone. Pitch is written on a five-point scale, <Num>5</Num>{" "}
@@ -213,8 +217,8 @@ const orthography = (
         without the puff of air that the p of &ldquo;pin&rdquo; has. In the same way <Rom>d</Rom> is
         the t of &ldquo;stop&rdquo;, <Rom>g</Rom> the k of &ldquo;skin&rdquo;, and <Rom>c</Rom> the
         ts of &ldquo;cats&rdquo;. And vowel quality is marked under the letter (<Rom>a̤ e̤ o̤ ṳ</Rom>),
-        leaving the space above it for the tone mark. For example, the Bàng-uâ-cê name of the city
-        is <Rom>Hók-ciŭ</Rom>.
+        leaving the space above it for the tone mark. For example, in <Han>乇</Han> <Rom>nó̤h</Rom>,{" "}
+        <i>thing</i>, the mark under the o says which o it is, and the mark above it gives the tone.
       </P>
       <P>
         <b>Tone numbers</b> write the pitch as digits after each syllable, <Rom>seik21 zo213</Rom>,
@@ -233,7 +237,11 @@ const orthography = (
       <P>
         Every letter, with its sound in the International Phonetic Alphabet, the nearest English
         sound, and a word from this dictionary that uses it. The tone marks above the vowels are a
-        separate matter, covered under Tones.
+        separate matter, covered under{" "}
+        <a href="#tones" className="text-lacquer hover:underline">
+          Tones
+        </a>{" "}
+        in the Features panel.
       </P>
       <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Consonants</p>
       <Table

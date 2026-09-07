@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { STATUS_STYLE } from "@/lib/status";
 import { sortSenses } from "@/lib/entries";
-import { MAX_RECORDING_NOTE } from "@/lib/constants";
-import { saveRecordingNote } from "@/app/account/actions";
-import SubmitButton from "./SubmitButton";
+import RecordingNoteEditor from "./RecordingNoteEditor";
 
 /* One recording in a person's list — on their public profile and on their own
    account page. Reads: word · its first English meaning · the player · (status,
@@ -74,38 +72,7 @@ export default function RecordingByRow({
       </div>
       <audio controls src={r.audio_url} className="mt-2 h-9 w-full max-w-sm" />
       {note && !editableNote && <p className="romanization mt-2 text-sm text-inkSoft">{note}</p>}
-      {editableNote && (
-        <details className="group mt-2">
-          <summary className="inline-flex cursor-pointer list-none items-baseline gap-2 text-sm marker:content-none [&::-webkit-details-marker]:hidden">
-            {note ? (
-              <span className="romanization text-inkSoft">{note}</span>
-            ) : (
-              <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">no note</span>
-            )}
-            <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint group-hover:text-lacquer group-open:text-lacquer">
-              {note ? "edit" : "+ add a note"}
-            </span>
-          </summary>
-          <form action={saveRecordingNote} className="mt-2 flex max-w-md flex-wrap items-center gap-2">
-            <input type="hidden" name="id" value={r.id} />
-            <label htmlFor={`note-${r.id}`} className="sr-only">Note</label>
-            <input
-              id={`note-${r.id}`}
-              name="note"
-              defaultValue={note}
-              maxLength={MAX_RECORDING_NOTE}
-              placeholder="e.g. a sentence you said it in, or how it is used"
-              className="grow border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
-            />
-            <SubmitButton
-              pending="Saving…"
-              className="border border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-60"
-            >
-              Save note
-            </SubmitButton>
-          </form>
-        </details>
-      )}
+      {editableNote && <RecordingNoteEditor id={r.id} note={note} back="/account?show=recordings" />}
     </div>
   );
 }

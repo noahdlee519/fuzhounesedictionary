@@ -91,8 +91,29 @@ export default async function AdminPage() {
     contributor: one(s.contributor),
     sense: one(s.sense),
   }));
-  // A failed queue must not read as "nothing waiting".
-  const failed = Boolean(error || recError || sugError);
+  /* Each queue reports its own failure, by name, and the others still show.
+     This page is editors-only, so the message can say what is actually wrong:
+     the usual cause is a migration that has not been run, and "could not be
+     loaded" on its own sent Noah looking for a bug in the code. */
+  const missingTable = (e: { code?: string; message?: string } | null) =>
+    e?.code === "PGRST205" || /schema cache|does not exist/i.test(e?.message ?? "");
+  const problem = (what: string, file: string, e: { code?: string; message?: string } | null) =>
+    e ? (
+      <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+        <span className="font-medium text-ink">{what} could not be loaded.</span>{" "}
+        {missingTable(e) ? (
+          <>
+            The database does not have that table yet: run{" "}
+            <code className="font-mono text-[13px]">supabase/{file}</code> in the Supabase SQL
+            editor and reload.
+          </>
+        ) : (
+          <>Please reload in a moment. ({e.message})</>
+        )}
+      </p>
+    ) : null;
+  const waiting = pending.length + pendingRecs.length + pendingSugs.length;
+  const anyFailed = Boolean(error || recError || sugError);
 
   return (
     <div className="space-y-6">
@@ -101,9 +122,13 @@ export default async function AdminPage() {
           Moderation queue
         </h1>
         <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          {pending.length} waiting
+          {waiting} waiting
         </span>
       </div>
+
+      {problem("Suggestions", "suggestions.sql", sugError)}
+      {problem("Recordings", "recordings.sql", recError)}
+      {problem("Words", "schema.sql", error)}
 
       {pendingSugs.length > 0 && (
         <section className="space-y-3">
@@ -234,19 +259,13 @@ export default async function AdminPage() {
         </section>
       )}
 
-      {failed && (
-        <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
-          Part of the queue could not be loaded just now. Please reload in a moment.
-        </p>
-      )}
-
-      {pending.length === 0 ? (
-        !failed && (
+      {waiting === 0 ? (
+        !anyFailed && (
           <div className="border border-rule bg-surface p-8 text-center text-inkSoft">
             Nothing waiting for review.
           </div>
         )
-      ) : (
+      ) : pending.length === 0 ? null : (
         <div className="grid gap-4">
           {pending.map((e: any) => {
             const senses: Sense[] = sortSenses(e.senses);

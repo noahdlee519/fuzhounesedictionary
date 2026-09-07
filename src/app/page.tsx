@@ -19,6 +19,7 @@ export default async function Home({
   const { user } = await getSessionUser();
 
   let results: CardProps[] = [];
+  let total: number | null = null;
   let errored = false;
 
   try {
@@ -33,11 +34,17 @@ export default async function Home({
         recordings: (r.audio_url ? 1 : 0) + (counts.get(r.id) ?? 0),
       }));
     } else {
-      const { data } = await supabase
-        .from("entries")
-        .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)")
-        .eq("status", "approved").order("created_at", { ascending: false }).limit(12);
+      // The newest twelve, and the size of the whole dictionary (a HEAD count,
+      // no rows), fetched together.
+      const [{ data }, { count }] = await Promise.all([
+        supabase
+          .from("entries")
+          .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)")
+          .eq("status", "approved").order("created_at", { ascending: false }).limit(12),
+        supabase.from("entries").select("id", { count: "exact", head: true }).eq("status", "approved"),
+      ]);
       results = await toCards(supabase, data ?? []);
+      total = count ?? null;
     }
   } catch {
     errored = true;
@@ -88,7 +95,16 @@ export default async function Home({
         </section>
       ) : (
         <section className="space-y-3">
-          <h2 className="border-t border-rule pt-4 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Recently added</h2>
+          <div className="flex items-baseline justify-between gap-4 border-t border-rule pt-4 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+            <h2>Recently added</h2>
+            {/* How big the dictionary is so far. Only when the count came back —
+                a database blip must not print "0 words". */}
+            {total !== null && (
+              <Link href="/learn#words" className="tabular-nums hover:text-lacquer">
+                {total.toLocaleString()} word{total === 1 ? "" : "s"} so far
+              </Link>
+            )}
+          </div>
           <div className="grid gap-3">
             {results.map((e) => <EntryCard key={e.id} entry={e} />)}
           </div>
