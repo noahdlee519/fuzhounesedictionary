@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
@@ -175,6 +176,10 @@ export default async function BrowsePage({
   const hasNext = from + PAGE_SIZE < total;
   // At least 1, so an empty filter never reads "page 1 of 0".
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // A typed page past the end lands on the last page rather than an empty one.
+  if (!failed && page > totalPages) {
+    redirect(hrefWith({ page: totalPages > 1 ? String(totalPages) : "" }));
+  }
 
   const chip = (label: string, href: string, active: boolean, empty = false) => {
     const info = POS_NOTES[label];
@@ -334,9 +339,39 @@ export default async function BrowsePage({
         ) : (
           <span />
         )}
-        <span className="text-inkFaint">
-          Page {page} of {totalPages}
-        </span>
+        {/* "Page 3 of 12", where the 3 is a box you can type into. A plain GET
+            form, so it needs no JavaScript: the current filters ride along as
+            hidden fields, the fragment on the action keeps the scroll at the
+            list, and the server clamps whatever number arrives. With only one
+            page there is nothing to jump to, so it is plain text. */}
+        {totalPages > 1 ? (
+          <form action="/learn#words" method="get" className="flex items-center gap-1.5 text-inkFaint">
+            {pos && <input type="hidden" name="pos" value={pos} />}
+            {origin && <input type="hidden" name="origin" value={origin} />}
+            {sort !== DEFAULT_SORT && <input type="hidden" name="sort" value={sort} />}
+            <label htmlFor="page-jump">Page</label>
+            <input
+              id="page-jump"
+              name="page"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={totalPages}
+              defaultValue={page}
+              aria-label={`Page number, 1 to ${totalPages}`}
+              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center font-mono text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <span>of {totalPages}</span>
+            <button
+              type="submit"
+              className="ml-1 border border-rule px-2 py-0.5 text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
+            >
+              Go
+            </button>
+          </form>
+        ) : (
+          <span className="text-inkFaint">Page 1 of 1</span>
+        )}
         {hasNext ? (
           <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
             Next →

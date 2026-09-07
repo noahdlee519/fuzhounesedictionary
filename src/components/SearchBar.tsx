@@ -64,20 +64,35 @@ export default function SearchBar({
         placeholder={narrow ? SHORT : FULL}
         className="w-full bg-transparent px-5 pt-[18px] pb-[14px] text-lg leading-none outline-none placeholder:text-inkFaint"
       />
-      <button
-        type="button"
-        onClick={() => setAskOpen((o) => !o)}
-        aria-pressed={askOpen}
-        aria-controls="ask-panel"
-        title="Ask the dictionary"
-        aria-label="Ask the dictionary"
-        className={
-          "grid shrink-0 place-items-center px-3 transition-colors hover:text-lacquer " +
-          (askOpen ? "text-lacquer" : "text-inkFaint")
-        }
-      >
-        <SparkleSearch />
-      </button>
+      {/* The sparkle button, with a hover hint beneath it. A styled tooltip
+          rather than a title attribute: it appears at once instead of after
+          the browser's delay, and reads the same in every browser. Hidden
+          once the panel is open — the hint has done its job. */}
+      <span className="group relative grid shrink-0">
+        <button
+          type="button"
+          onClick={() => setAskOpen((o) => !o)}
+          aria-pressed={askOpen}
+          aria-controls="ask-panel"
+          aria-label="Ask the dictionary"
+          aria-describedby={askOpen ? undefined : "ask-hint"}
+          className={
+            "grid h-full place-items-center px-3 transition-colors hover:text-lacquer " +
+            (askOpen ? "text-lacquer" : "text-inkFaint")
+          }
+        >
+          <SparkleSearch />
+        </button>
+        {!askOpen && (
+          <span
+            id="ask-hint"
+            role="tooltip"
+            className="pointer-events-none absolute right-0 top-full z-20 mt-1.5 whitespace-nowrap border border-rule bg-paper px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-inkSoft opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none"
+          >
+            Try the Fuzhounese search assistant
+          </span>
+        )}
+      </span>
       <button
         type="submit"
         className="shrink-0 bg-lacquer px-7 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90"
