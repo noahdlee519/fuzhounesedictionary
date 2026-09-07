@@ -250,7 +250,7 @@ export default async function EntryPage({
             description: senses.map((s) => s.definition_en).join("; "),
             inDefinedTermSet: {
               "@type": "DefinedTermSet",
-              name: "Fuzhounese Dictionary",
+              name: SITE_NAME,
               url: "https://fuzhounese.org",
             },
             inLanguage: "cdo",

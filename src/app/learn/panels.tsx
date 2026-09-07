@@ -39,9 +39,9 @@ export const panelAnchors: Record<string, string> = { tones: "features" };
 const features = (
   <>
     <P>
-      Fuzhounese is the Fuzhou variety of Eastern Min, one of the main branches of Chinese. A
-      Mandarin speaker cannot understand it, and neither can a Cantonese or Hokkien speaker. Written
-      down it is often readable to anyone literate in Chinese; spoken, it is a different language.
+      Fuzhounese is the variety of Eastern Min Chinese spoken around the city of Fuzhou. Written
+      down, it is often legible for those literate in other Chinese dialects like Mandarin and
+      Cantonese. However, the spoken form is altogether different.
     </P>
 
     <Block>

@@ -14,7 +14,8 @@
    deleted from Vercel, or left alone, without any effect. */
 export const SITE_URL = "https://fuzhounese.org";
 
-export const SITE_NAME = "Fuzhounese Dictionary";
+// The name search engines and browser tabs show. Noah's wording (7 Sep 2026).
+export const SITE_NAME = "Fuzhounese-English Dictionary";
 
 // Noah's wording, used verbatim as the meta description / search snippet.
 export const SITE_DESCRIPTION =

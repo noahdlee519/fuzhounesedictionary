@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -75,6 +76,10 @@ export default async function ImprovePage({
   const total = count ?? 0;
   const hasNext = to + 1 < total;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // A typed page past the end lands on the last page rather than an empty one.
+  if (!error && page > totalPages) {
+    redirect(`/improve?${new URLSearchParams({ ...(origin ? { origin } : {}), ...(totalPages > 1 ? { page: String(totalPages) } : {}) })}#worklist`);
+  }
 
   const ids = rows.map((r: any) => r.id);
 
@@ -216,7 +221,7 @@ export default async function ImprovePage({
         </div>
       )}
 
-      <ol className="divide-y divide-rule border-y border-rule">
+      <ol id="worklist" className="scroll-mt-3 divide-y divide-rule border-y border-rule">
         {rows.map((r: any, i: number) => {
           const wordOrigin = formatOrigin(r.origin_area, r.origin_locality);
           return (
@@ -304,9 +309,31 @@ export default async function ImprovePage({
           ) : (
             <span />
           )}
-          <span className="text-inkFaint">
-            Page {page} of {totalPages}
-          </span>
+          {/* "Page 3 of 12", where the 3 is a box you can type into. Same
+              form as on /learn: plain GET, filters ride along as hidden
+              fields, the fragment keeps the scroll at the list. */}
+          <form action="/improve#worklist" method="get" className="flex items-center gap-1.5 text-inkFaint">
+            {origin && <input type="hidden" name="origin" value={origin} />}
+            <label htmlFor="page-jump">Page</label>
+            <input
+              id="page-jump"
+              name="page"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={totalPages}
+              defaultValue={page}
+              aria-label={`Page number, 1 to ${totalPages}`}
+              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center font-mono text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <span>of {totalPages}</span>
+            <button
+              type="submit"
+              className="ml-1 border border-rule px-2 py-0.5 text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
+            >
+              Go
+            </button>
+          </form>
           {hasNext ? (
             <Link href={href(origin, page + 1)} className="text-inkSoft hover:text-lacquer">
               Next {PAGE_SIZE} →
