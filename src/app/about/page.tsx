@@ -64,7 +64,7 @@ export default function AboutPage() {
               // role and aria-label are on the <svg> root itself.
               dangerouslySetInnerHTML={{ __html: FUJIAN_MAP }}
             />
-            <figcaption className="mt-3 border-t border-rule pt-3 font-display text-[11px] uppercase tracking-wide text-inkFaint">
+            <figcaption className="mt-3 font-display text-[11px] uppercase tracking-wide text-inkFaint">
               Fujian province, southeast China
             </figcaption>
           </figure>
@@ -76,7 +76,7 @@ export default function AboutPage() {
               height={264}
               className="w-full"
             />
-            <figcaption className="mt-3 border-t border-rule pt-3 text-sm leading-relaxed text-inkFaint">
+            <figcaption className="mt-3 text-sm leading-relaxed text-inkFaint">
               Including diaspora communities abroad, there are about ten million Fuzhounese speakers
               today.
             </figcaption>
@@ -94,7 +94,7 @@ export default function AboutPage() {
             className="h-40 w-40 shrink-0 border border-rule object-cover"
           />
           <div className="space-y-2">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-lacquer">Creator</p>
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-lacquer">Developer</p>
             <h2 className="font-display text-2xl font-bold tracking-tight">Noah Lee</h2>
             <p className="max-w-[46ch] text-inkSoft">
               Noah started this dictionary in 2021 to help preserve the dialect his family speaks.

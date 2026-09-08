@@ -159,7 +159,7 @@ export default async function ImprovePage({
             Improve the dictionary
           </h1>
           <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-            {total.toLocaleString()} need work
+            {total.toLocaleString()} word{total === 1 ? "" : "s"} need{total === 1 ? "s" : ""} work
           </span>
         </div>
         <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
@@ -169,10 +169,7 @@ export default async function ImprovePage({
         </p>
         <p className="max-w-[68ch] text-sm text-inkSoft">
           Your contributions are labelled with where your Fuzhounese is from, which you can set on{" "}
-          <Link href="/account" className="text-lacquer hover:underline">
-            your account page
-          </Link>
-          .
+          <Link href="/account" className="whitespace-nowrap text-lacquer hover:underline">your account page</Link>.
         </p>
       </section>
 

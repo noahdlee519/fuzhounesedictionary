@@ -81,8 +81,10 @@ export function HeaderView({ user, profile }: SessionShape) {
           >
             {/* The serif sits a touch high in the box next to the "+"; the words
                 are nudged down without moving the plus. */}
-            <span className="sm:hidden">+ <span className="relative top-[2px]">Add</span></span>
-            <span className="hidden sm:inline">+ <span className="relative top-[2px]">Add a word</span></span>
+            {/* The plus and the word sit on different baselines in this pairing:
+                the plus a pixel down, the word a pixel up, so they read level. */}
+            <span className="sm:hidden"><span className="relative top-[1px]">+</span> <span className="relative top-[1px]">Add</span></span>
+            <span className="hidden sm:inline"><span className="relative top-[1px]">+</span> <span className="relative top-[1px]">Contribute</span></span>
           </NavLink>
           {user ? (
             <NavLink

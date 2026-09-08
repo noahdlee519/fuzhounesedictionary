@@ -14,6 +14,7 @@ const UPDATED = "6 September 2026";
 export default function PrivacyPage() {
   return (
     <LegalPage
+      other="terms"
       title="Privacy policy"
       updated={UPDATED}
       intro={

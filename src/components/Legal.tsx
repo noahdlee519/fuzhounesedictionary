@@ -10,11 +10,14 @@ export function LegalPage({
   updated,
   intro,
   children,
+  other,
 }: {
   title: string;
   updated: string;
   intro: React.ReactNode;
   children: React.ReactNode;
+  /** The companion document to point at from the foot of this one. */
+  other: "privacy" | "terms";
 }) {
   return (
     <article className="space-y-10">
@@ -33,8 +36,13 @@ export function LegalPage({
         <a href={`mailto:${LEGAL_CONTACT}`} className="text-lacquer hover:underline">
           {LEGAL_CONTACT}
         </a>
-        . See also the <Link href="/privacy" className="text-lacquer hover:underline">privacy policy</Link>{" "}
-        and the <Link href="/terms" className="text-lacquer hover:underline">terms of service</Link>.
+        . See also the{" "}
+        {other === "privacy" ? (
+          <Link href="/privacy" className="text-lacquer hover:underline">privacy policy</Link>
+        ) : (
+          <Link href="/terms" className="text-lacquer hover:underline">terms of service</Link>
+        )}
+        .
       </p>
     </article>
   );

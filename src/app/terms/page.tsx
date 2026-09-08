@@ -17,6 +17,7 @@ const GOVERNING_STATE = "New York";
 export default function TermsPage() {
   return (
     <LegalPage
+      other="privacy"
       title="Terms of service"
       updated={UPDATED}
       intro={
