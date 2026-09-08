@@ -7,7 +7,8 @@ import { requestWord } from "@/app/request/actions";
 import type { EntryWithSenses, Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
 import { firstSense, sortSenses, one, entryTitle } from "@/lib/entries";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { LEGAL_CONTACT } from "@/components/Legal";
 import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
 import SignInButton from "@/components/SignInButton";
@@ -270,6 +271,15 @@ export default async function EntryPage({
             </>
           )}
         </p>
+        <span className="flex flex-wrap items-center gap-3">
+          {/* Anyone can flag an entry; the terms say what happens next. The
+              subject carries the page so the report is usable as sent. */}
+          <a
+            href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Report: ${entryTitle(entry)} (${SITE_URL}${here})`)}`}
+            className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"
+          >
+            Report
+          </a>
         {canDelete && (
           <span className="flex flex-wrap items-center gap-3">
             <EditLink
@@ -280,6 +290,7 @@ export default async function EntryPage({
             <DeleteEntry id={entry.id} back="/learn" />
           </span>
         )}
+        </span>
       </div>
     </article>
   );

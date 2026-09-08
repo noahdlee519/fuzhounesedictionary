@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { FUJIAN_MAP } from "./fujian-map";
 
 export const metadata: Metadata = {
   title: "About",  // the root layout appends " · Fuzhounese-English Dictionary"
@@ -58,12 +59,10 @@ export default function AboutPage() {
 
         <div className="space-y-8 lg:pt-1">
           <figure>
-            <img
-              src="/fujian-map.svg"
-              alt="Map of Fujian province in southeast China, with its capital Fuzhou labeled."
-              width={470}
-              height={528}
-              className="w-full"
+            <div
+              className="w-full [&>svg]:h-auto [&>svg]:w-full"
+              // role and aria-label are on the <svg> root itself.
+              dangerouslySetInnerHTML={{ __html: FUJIAN_MAP }}
             />
             <figcaption className="mt-3 border-t border-rule pt-3 font-display text-[11px] uppercase tracking-wide text-inkFaint">
               Fujian province, southeast China

@@ -6,6 +6,15 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  // No Supabase session cookie means no session to refresh. Most visitors
+  // are signed out, and this skips a network round-trip to Supabase Auth on
+  // every one of their page views. Signed-in requests carry
+  // "sb-<ref>-auth-token" (possibly chunked as ".0", ".1", …).
+  const hasSession = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
+  if (!hasSession) return response;
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

@@ -99,7 +99,26 @@ export default function TermsPage() {
         </Ul>
       </Section>
 
-      <Section n={5} title="Copyright complaints">
+      <Section n={5} title="Reporting and removal">
+        <p>
+          Everything in the dictionary is contributed by its users and checked by a volunteer editor
+          before it appears. That check is not a guarantee: an entry, recording or note can still be
+          wrong, offensive, infringing, or about a real person. We do not monitor the site
+          continuously, and we are not responsible for what a contributor submits, but we will act on
+          what we are told about.
+        </p>
+        <p>
+          If you see something that breaks these terms, email{" "}
+          <a href={`mailto:${LEGAL_CONTACT}`} className="text-lacquer hover:underline">{LEGAL_CONTACT}</a>{" "}
+          with the address of the page and a sentence about what is wrong, or use the &ldquo;Report&rdquo;
+          link at the foot of the entry. We may remove or edit any contribution at any time, with or
+          without notice, for any reason or none, and we will remove content that is unlawful,
+          harassing, infringing, or inappropriate as soon as we reasonably can after it is reported.
+          Repeated or serious breaches can end an account.
+        </p>
+      </Section>
+
+      <Section n={6} title="Copyright complaints">
         <p>
           If you believe something on the site infringes your copyright, email{" "}
           <a href={`mailto:${LEGAL_CONTACT}`} className="text-lacquer hover:underline">{LEGAL_CONTACT}</a>{" "}
@@ -109,7 +128,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section n={6} title="No warranty">
+      <Section n={7} title="No warranty">
         <p>
           This is a volunteer project. The dictionary is offered as it is, with no promise that any
           entry is complete or correct, that the site will always be available, or that it will suit
@@ -119,7 +138,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section n={7} title="Limitation of liability">
+      <Section n={8} title="Limitation of liability">
         <p>
           To the fullest extent the law allows, we are not liable for any loss or damage arising from
           your use of the site or from anything on it, including other people&apos;s contributions.
@@ -128,7 +147,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section n={8} title="Changes and ending">
+      <Section n={9} title="Changes and ending">
         <p>
           We may change these terms; the date at the top changes when we do, and a change that
           matters is announced on the site. Continuing to contribute after a change means you accept
@@ -137,7 +156,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section n={9} title="Law">
+      <Section n={10} title="Law">
         <p>
           These terms are governed by the laws of the State of {GOVERNING_STATE}, United States, and
           any dispute will be heard in the courts there. If a court finds part of these terms

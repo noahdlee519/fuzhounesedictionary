@@ -8,7 +8,7 @@ import SavedNotice from "@/components/SavedNotice";
 import SubmitButton from "@/components/SubmitButton";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import Pager from "@/components/Pager";
-import { saveProfile } from "./actions";
+import { saveProfile, deleteAccount } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
 import { STATUS_STYLE } from "@/lib/status";
@@ -355,13 +355,59 @@ export default async function AccountPage({
               Save
             </SubmitButton>
             {searchParams.saved && show !== "recordings" && <SavedNotice />}
-            {searchParams.problem && show !== "recordings" && (
+            {searchParams.problem && searchParams.problem !== "confirm" && show !== "recordings" && (
               <span role="alert" className="text-sm text-lacquer">
                 Your changes could not be saved just now. Please try again.
               </span>
             )}
           </div>
         </form>
+      </section>
+
+      {/* ---- delete account ------------------------------------------------ */}
+      <section id="delete" className="scroll-mt-3 space-y-3 border-t border-rule pt-8">
+        <h2 className="font-display text-lg font-bold uppercase tracking-tight">Delete your account</h2>
+        <p className="max-w-2xl text-sm text-inkSoft">
+          This removes your profile, your email, your picture, and any words still waiting for
+          review or rejected. Words and meanings already published stay in the dictionary under its
+          licence, credited to &ldquo;a contributor&rdquo; instead of your name. Your recordings
+          stay too unless you tick the box. This cannot be undone.
+        </p>
+        {searchParams.problem === "confirm" && (
+          <p role="alert" className="text-sm text-lacquer">
+            Type the word &ldquo;delete&rdquo; in the box to confirm.
+          </p>
+        )}
+        <details className="group">
+          <summary className="inline-block cursor-pointer list-none border border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
+            Delete my account…
+          </summary>
+          <form action={deleteAccount} className="mt-3 max-w-md space-y-3 border border-lacquer bg-surface p-4">
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" name="recordings" className="mt-1 accent-lacquer" />
+              <span>
+                Also delete my recordings
+                <span className="block text-inkFaint">Every take, published or not, and the audio files.</span>
+              </span>
+            </label>
+            <label className="block text-sm">
+              <span className={labelCls}>Type &ldquo;delete&rdquo; to confirm</span>
+              <input
+                name="confirm"
+                required
+                autoComplete="off"
+                placeholder="delete"
+                className={inputCls}
+              />
+            </label>
+            <SubmitButton
+              pending="Deleting…"
+              className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+            >
+              Delete my account for good
+            </SubmitButton>
+          </form>
+        </details>
       </section>
     </div>
   );

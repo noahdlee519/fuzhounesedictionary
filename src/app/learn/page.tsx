@@ -4,6 +4,7 @@ import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { recordingCounts, toCard, toCards } from "@/lib/entries";
+import { filterTally } from "@/lib/public-stats";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
@@ -60,7 +61,7 @@ export const metadata: Metadata = {
   title: "Learn Fuzhounese",
   description: SHOW_GUIDE
     ? "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z."
-    : "How Fuzhounese works — its tones, tone sandhi, measure words and how it is written — and every word in the dictionary, A to Z.",
+    : "How Fuzhounese works—its tones, tone sandhi, measure words and how it is written—and every word in the dictionary, A to Z.",
   alternates: { canonical: "/learn" },
 };
 
@@ -111,15 +112,9 @@ export default async function BrowsePage({
 
   /* What each filter would actually return. Without this, every chip looks
      alike and clicking "adverb" on a dictionary with no adverbs is a dead end
-     with no warning. Same embed direction as the query above, so no new risk;
-     if it comes back empty we simply do not dim anything. */
-  const tallyQuery = supabase
-    .from("entries")
-    .select("origin_area, senses(part_of_speech)")
-    .eq("status", "approved")
-    .range(0, SORT_CAP - 1);
-
-  const [list, { data: tally }] = await Promise.all([listQuery, tallyQuery]);
+     with no warning. Cached for a minute across visitors (lib/public-stats);
+     if it is unavailable we simply do not dim anything. */
+  const [list, tally] = await Promise.all([listQuery, filterTally()]);
 
   if (lang === "fz") {
     const { data, count, error } = list;
@@ -147,16 +142,9 @@ export default async function BrowsePage({
     }));
   }
 
-  const posCounts = new Map<string, number>();
-  const originCounts = new Map<string, number>();
-  for (const row of (tally ?? []) as any[]) {
-    if (row.origin_area) originCounts.set(row.origin_area, (originCounts.get(row.origin_area) ?? 0) + 1);
-    // an entry counts once per part of speech, however many senses carry it
-    const seen = new Set<string>();
-    for (const s of row.senses ?? []) if (s?.part_of_speech) seen.add(s.part_of_speech);
-    for (const p of seen) posCounts.set(p, (posCounts.get(p) ?? 0) + 1);
-  }
-  const countsKnown = (tally?.length ?? 0) > 0;
+  const posCounts = new Map(Object.entries(tally.pos));
+  const originCounts = new Map(Object.entries(tally.origin));
+  const countsKnown = tally.known;
 
   /* One link builder for every chip and page link, so a sort survives a filter
      change and a filter survives a sort change. Any change resets to page 1. */

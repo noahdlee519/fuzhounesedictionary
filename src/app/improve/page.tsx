@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Improve the dictionary",
   description:
-    "Every word in the Fuzhounese Dictionary that is still missing something — a recording, IPA, an example sentence — so you can work straight down the list.",
+    "Every word in the Fuzhounese Dictionary that is still missing something—a recording, IPA, an example sentence—so you can work straight down the list.",
   alternates: { canonical: "/improve" },
 };
 
@@ -179,7 +179,7 @@ export default async function ImprovePage({
       {(sentLabel || searchParams.problem) && (
         <div className="flex flex-wrap items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-3">
           {sentLabel ? (
-            <SavedNotice message={`✓ ${sentLabel} — thank you`} />
+            <SavedNotice message={`✓ ${sentLabel}—thank you`} />
           ) : (
             <p role="alert" className="text-sm text-inkSoft">
               {searchParams.problem}

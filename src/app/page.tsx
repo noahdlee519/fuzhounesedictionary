@@ -5,13 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import type { SearchRow } from "@/lib/types";
 import { recordingCounts, toCards } from "@/lib/entries";
 import { getSessionUser } from "@/lib/auth";
+import { searchContributors, type ContributorHit } from "@/lib/contributors";
+import ContributorCard from "@/components/ContributorCard";
+import { approvedCount } from "@/lib/public-stats";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { q?: string; auth_error?: string };
+  searchParams: { q?: string; auth_error?: string; deleted?: string };
 }) {
   const q = (searchParams.q ?? "").trim();
   const supabase = createClient();
@@ -19,13 +22,20 @@ export default async function Home({
   const { user } = await getSessionUser();
 
   let results: CardProps[] = [];
+  let people: ContributorHit[] = [];
   let total: number | null = null;
   let errored = false;
 
   try {
     if (q) {
-      const { data, error } = await supabase.rpc("search_entries", { q });
+      // Words and people at once. A failed people search is not worth an
+      // error panel; the word results are the point of the page.
+      const [{ data, error }, found] = await Promise.all([
+        supabase.rpc("search_entries", { q }),
+        searchContributors(supabase, q).catch(() => [] as ContributorHit[]),
+      ]);
       if (error) throw error;
+      people = found;
       const rows = data as SearchRow[];
       const counts = await recordingCounts(supabase, rows.map((r) => r.id));
       results = rows.map((r) => ({
@@ -34,17 +44,17 @@ export default async function Home({
         recordings: (r.audio_url ? 1 : 0) + (counts.get(r.id) ?? 0),
       }));
     } else {
-      // The newest twelve, and the size of the whole dictionary (a HEAD count,
-      // no rows), fetched together.
-      const [{ data }, { count }] = await Promise.all([
+      // The newest twelve, and the size of the whole dictionary (cached for a
+      // minute across visitors), fetched together.
+      const [{ data }, count] = await Promise.all([
         supabase
           .from("entries")
           .select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)")
           .eq("status", "approved").order("created_at", { ascending: false }).limit(12),
-        supabase.from("entries").select("id", { count: "exact", head: true }).eq("status", "approved"),
+        approvedCount(),
       ]);
       results = await toCards(supabase, data ?? []);
-      total = count ?? null;
+      total = count;
     }
   } catch {
     errored = true;
@@ -52,6 +62,12 @@ export default async function Home({
 
   return (
     <div className="space-y-8">
+      {searchParams.deleted && (
+        <p role="status" className="border-l-2 border-lacquer bg-surface px-4 py-3 text-sm text-inkSoft">
+          Your account has been deleted. Thank you for everything you added.
+        </p>
+      )}
+
       {searchParams.auth_error && (
         <p
           role="alert"
@@ -80,8 +96,14 @@ export default async function Home({
         <section className="space-y-3">
           <p className="border-t border-rule pt-4 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
             {results.length} result{results.length === 1 ? "" : "s"} for &ldquo;{q}&rdquo;
+            {people.length > 0 && ` · ${people.length} contributor${people.length === 1 ? "" : "s"}`}
           </p>
-          {results.length === 0 && !errored && (
+          {people.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {people.map((c) => <ContributorCard key={c.id} c={c} />)}
+            </div>
+          )}
+          {results.length === 0 && people.length === 0 && !errored && (
             <div className="border border-rule bg-surface p-6 text-center">
               <p className="text-inkSoft">No match yet.</p>
               <Link href={`/submit?romanization=${encodeURIComponent(q)}`} className="mt-2 inline-block font-medium text-lacquer hover:underline">

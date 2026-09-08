@@ -1,15 +1,17 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Chivo, Newsreader, IBM_Plex_Mono } from "next/font/google";
+import { Schibsted_Grotesk, Petrona, IBM_Plex_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import PageFade from "@/components/PageFade";
 import { Analytics } from "@vercel/analytics/next";
 import { LICENSE } from "@/lib/constants";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 
-const display = Chivo({ subsets: ["latin"], variable: "--font-display", display: "swap", adjustFontFallback: false });
-const serif = Newsreader({ subsets: ["latin"], style: ["normal", "italic"], variable: "--font-serif", display: "swap", adjustFontFallback: false });
+// Faces chosen 8 Sep 2026 from a rendered four-way comparison (Chivo + Newsreader
+// → Schibsted Grotesk + Petrona): same roles, less-travelled faces.
+const display = Schibsted_Grotesk({ subsets: ["latin"], variable: "--font-display", display: "swap", adjustFontFallback: false });
+const serif = Petrona({ subsets: ["latin"], style: ["normal", "italic"], variable: "--font-serif", display: "swap", adjustFontFallback: false });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap", adjustFontFallback: false });
 
 

@@ -150,10 +150,10 @@ export default function SubmitForm({
     return (
       <div className="space-y-6">
         <div className="border-l-2 border-lacquer bg-surface p-4">
-          <p className="font-display text-lg font-semibold">Saved — it&apos;s in the review queue.</p>
+          <p className="font-display text-lg font-semibold">Saved—it&apos;s in the review queue.</p>
           <p className="mt-1 text-sm text-inkSoft">
             Now the best part: add your own voice. A real recording is the one thing a dictionary
-            can&apos;t fake, and it&apos;s optional — you can finish without it.
+            can&apos;t fake, and it&apos;s optional—you can finish without it.
           </p>
         </div>
 
@@ -261,7 +261,7 @@ export default function SubmitForm({
       <fieldset className="space-y-3 border border-rule p-4">
         <legend className="px-1 font-mono text-xs uppercase tracking-wide text-inkFaint">Pronunciation audio (optional)</legend>
         <p className="text-xs text-inkFaint">
-          Want to record straight from your microphone instead? Save the word first — the next step
+          Want to record straight from your microphone instead? Save the word first—the next step
           lets you record it on its own and inside your example sentences.
         </p>
         <label className="block text-sm">

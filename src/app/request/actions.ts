@@ -48,7 +48,7 @@ export async function requestWord(formData: FormData) {
       // got there first. That is not a failure worth alarming anyone about.
       const message =
         error.code === "23505"
-          ? "That word has already been requested — your vote has been added."
+          ? "That word has already been requested—your vote has been added."
           : /limit|short time/i.test(error.message)
             ? error.message
             : "That request could not be saved. Please try again.";
