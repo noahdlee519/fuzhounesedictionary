@@ -13,15 +13,16 @@ export default function SubmitButton({
   children,
   pending: pendingLabel,
   className,
+  ...rest
 }: {
   children: React.ReactNode;
   /** Label while the form is submitting. Defaults to the normal label. */
   pending?: React.ReactNode;
   className?: string;
-}) {
+} & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "type" | "disabled" | "className" | "children">) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} aria-busy={pending} className={className}>
+    <button type="submit" disabled={pending} aria-busy={pending} className={className} {...rest}>
       {pending ? pendingLabel ?? children : children}
     </button>
   );

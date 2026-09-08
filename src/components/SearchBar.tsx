@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Assistant from "./Assistant";
 
-const FULL = "Search for characters, romanizations, English or Chinese";
-const SHORT = "Search a word…";
+// Noah's wording, 9 Sep 2026. Short enough for every width.
+const FULL = "Search for words or users";
+const SHORT = "Search for words or users";
 
 const NARROW = "(max-width: 639px)";
 
@@ -45,7 +46,24 @@ export default function SearchBar({
 
   // "Ask the dictionary" — the sparkle button at the end of the box opens a
   // panel underneath. Closed on every visit; nothing is remembered.
-  const [askOpen, setAskOpen] = useState(false);
+  /* The assistant panel is open by default; the button folds it away, and
+     the choice is remembered on this device so it stays folded for someone
+     who folded it. localStorage can be missing or throw (private windows,
+     previews), so every touch is guarded and the default wins. Read after
+     mount so the server and the first client paint agree. */
+  const [askOpen, setAskOpen] = useState(true);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("ask-folded") === "1") setAskOpen(false);
+    } catch {}
+  }, []);
+  const toggleAsk = () =>
+    setAskOpen((o) => {
+      try {
+        localStorage.setItem("ask-folded", o ? "1" : "0");
+      } catch {}
+      return !o;
+    });
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -69,6 +87,7 @@ export default function SearchBar({
         id={id}
         type="search"
         name="q"
+        autoComplete="off"
         defaultValue={defaultValue}
         autoFocus={focusOnMount}
         placeholder={narrow ? SHORT : FULL}
@@ -82,7 +101,7 @@ export default function SearchBar({
       <span className="group relative grid shrink-0">
         <button
           type="button"
-          onClick={() => setAskOpen((o) => !o)}
+          onClick={toggleAsk}
           aria-pressed={askOpen}
           aria-controls="ask-panel"
           aria-label="Ask the dictionary"
@@ -92,7 +111,7 @@ export default function SearchBar({
             (askOpen ? "text-lacquer" : "text-inkFaint")
           }
         >
-          <SparkleSearch />
+          <Magnifier />
         </button>
         {!askOpen && (
           <span
@@ -100,7 +119,7 @@ export default function SearchBar({
             role="tooltip"
             className="pointer-events-none absolute right-0 top-full z-20 mt-1.5 whitespace-nowrap border border-rule bg-paper px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-inkSoft opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none"
           >
-            Try the Fuzhounese search assistant
+            Open the Fuzhounese search assistant
           </span>
         )}
       </span>
@@ -122,18 +141,12 @@ export default function SearchBar({
 }
 
 /* A magnifying glass with two four-point sparkles at its top right. */
-function SparkleSearch() {
-  const star = (cx: number, cy: number, r: number) =>
-    `M${cx} ${cy - r} Q${cx} ${cy} ${cx + r} ${cy} Q${cx} ${cy} ${cx} ${cy + r} Q${cx} ${cy} ${cx - r} ${cy} Q${cx} ${cy} ${cx} ${cy - r} Z`;
+function Magnifier() {
   return (
-    <svg width="24" height="22" viewBox="0 0 26 24" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
       <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <circle cx="10" cy="12" r="6.5" />
-        <path d="M15 17l5.5 5.5" />
-      </g>
-      <g fill="currentColor">
-        <path d={star(19.5, 5, 4)} />
-        <path d={star(24, 11, 2)} />
+        <circle cx="10.5" cy="10.5" r="6.5" />
+        <path d="M15.5 15.5l5.5 5.5" />
       </g>
     </svg>
   );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatOrigin } from "@/lib/origins";
 import DeleteRecording from "./DeleteRecording";
 import RecordingNoteEditor from "./RecordingNoteEditor";
+import VoteButtons, { type VoteState } from "./VoteButtons";
 
 /* One player per recording, labelled with who said it and where their
    Fuzhounese is from. This is the point of the recordings table: the same word
@@ -26,6 +27,7 @@ export default function RecordingList({
   canDelete = false,
   back,
   viewerId,
+  votes,
 }: {
   recordings: RecordingRow[];
   compact?: boolean;
@@ -35,6 +37,8 @@ export default function RecordingList({
   back?: string;
   /** The signed-in viewer: their own rows get an add/edit-note control. */
   viewerId?: string | null;
+  /** Thumbs up/down counts and the viewer's own vote, by recording id. */
+  votes?: Map<string, VoteState>;
 }) {
   if (!recordings.length) return null;
 
@@ -77,6 +81,14 @@ export default function RecordingList({
                 </span>
               )}
             </span>
+            {votes && (
+              <VoteButtons
+                id={r.id}
+                state={votes.get(r.id) ?? { up: 0, down: 0, mine: null }}
+                back={back ?? "/"}
+                signedIn={Boolean(viewerId)}
+              />
+            )}
             {canDelete && <DeleteRecording id={r.id} back={back ?? "/admin"} />}
             {/* The speaker's own line about the take — the sentence they read,
                 or how they would put it. Sits under the player, full width.

@@ -15,6 +15,7 @@ import SignInButton from "@/components/SignInButton";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
 import DeleteEntry from "@/components/DeleteEntry";
 import SavedNotice from "@/components/SavedNotice";
+import type { VoteState } from "@/components/VoteButtons";
 import BackLink from "@/components/BackLink";
 import EditLink from "@/components/EditLink";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
@@ -83,6 +84,24 @@ export default async function EntryPage({
     ...r,
     contributor: one(r.contributor),
   }));
+
+  // Thumbs up/down: public totals from the view, plus the viewer's own votes.
+  // Both tolerate the table not existing yet (supabase/recording_votes.sql).
+  const recIds = recordings.map((r) => r.id);
+  const votes = new Map<string, VoteState>();
+  if (recIds.length) {
+    const [{ data: totals }, { data: mine }] = await Promise.all([
+      supabase.from("recording_vote_totals").select("recording_id, up, down").in("recording_id", recIds),
+      user
+        ? supabase.from("recording_votes").select("recording_id, value").eq("user_id", user.id).in("recording_id", recIds)
+        : Promise.resolve({ data: null as { recording_id: string; value: number }[] | null }),
+    ]);
+    for (const t of (totals ?? []) as any[]) votes.set(t.recording_id, { up: Number(t.up), down: Number(t.down), mine: null });
+    for (const v of (mine ?? []) as any[]) {
+      const cur = votes.get(v.recording_id) ?? { up: 0, down: 0, mine: null };
+      votes.set(v.recording_id, { ...cur, mine: v.value === 1 ? 1 : -1 });
+    }
+  }
   const headwordRecs = recordings.filter((r) => r.kind === "headword");
   const exampleRecs = (senseId: string) =>
     recordings.filter((r) => r.kind === "example" && r.sense_id === senseId);
@@ -153,7 +172,7 @@ export default async function EntryPage({
           </audio>
         )}
 
-        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} />
+        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} />
 
         {user ? (
           <div className="border border-dashed border-rule p-4">
@@ -214,7 +233,7 @@ export default async function EntryPage({
             )}
             {s.example && (
               <div className="mt-2 space-y-2">
-                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} viewerId={user?.id} />
+                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} />
                 {user && !capped && (
                   <Recorder
                     userId={user.id}
