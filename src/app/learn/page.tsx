@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
+import SearchBar from "@/components/SearchBar";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { one, toCards } from "@/lib/entries";
@@ -245,6 +246,10 @@ export default async function BrowsePage({
           {origin ? ` from ${originArea(origin)!.label}` : ""}
         </span>
       </div>
+
+      {/* The same search as the home page, here because this is where people
+          arrive looking for a word. It submits to the home page's results. */}
+      <SearchBar focus={false} assistant={false} id="learn-search" />
 
       <div className="space-y-2">
         <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Part of speech</p>

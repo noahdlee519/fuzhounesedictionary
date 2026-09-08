@@ -11,9 +11,19 @@ const NARROW = "(max-width: 639px)";
 export default function SearchBar({
   defaultValue = "",
   signedIn = false,
+  focus = true,
+  assistant = true,
+  id = "site-search",
 }: {
   defaultValue?: string;
   signedIn?: boolean;
+  /** Focus the box on arrival (the home page). Off where the box is one
+   *  thing among many, as on the word list. */
+  focus?: boolean;
+  /** Show the assistant button and panel. Off outside the home page. */
+  assistant?: boolean;
+  /** Element id, so two boxes on one page never share one. */
+  id?: string;
 }) {
   // Two reads of the same media query, for two different reasons.
   //
@@ -22,7 +32,7 @@ export default function SearchBar({
   // keyboard had already opened on every visit. React never renders autoFocus
   // as an attribute, so a server/client difference here is harmless.
   const [focusOnMount] = useState(
-    () => !(typeof window !== "undefined" && window.matchMedia(NARROW).matches)
+    () => focus && !(typeof window !== "undefined" && window.matchMedia(NARROW).matches)
   );
 
   // The placeholder IS an attribute, and React does not patch attributes that
@@ -52,11 +62,11 @@ export default function SearchBar({
       method="get"
       className="flex border-2 border-ruleStrong bg-surface focus-within:border-lacquer"
     >
-      <label htmlFor="site-search" className="sr-only">
+      <label htmlFor={id} className="sr-only">
         Search the dictionary
       </label>
       <input
-        id="site-search"
+        id={id}
         type="search"
         name="q"
         defaultValue={defaultValue}
@@ -68,6 +78,7 @@ export default function SearchBar({
           rather than a title attribute: it appears at once instead of after
           the browser's delay, and reads the same in every browser. Hidden
           once the panel is open — the hint has done its job. */}
+      {assistant && (
       <span className="group relative grid shrink-0">
         <button
           type="button"
@@ -93,6 +104,7 @@ export default function SearchBar({
           </span>
         )}
       </span>
+      )}
       <button
         type="submit"
         className="shrink-0 bg-lacquer px-7 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90"
@@ -100,9 +112,11 @@ export default function SearchBar({
         Search
       </button>
     </form>
-    <div id="ask-panel">
-      <Assistant open={askOpen} signedIn={signedIn} />
-    </div>
+    {assistant && (
+      <div id="ask-panel">
+        <Assistant open={askOpen} signedIn={signedIn} />
+      </div>
+    )}
     </div>
   );
 }
