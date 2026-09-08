@@ -1,5 +1,15 @@
 /**
- * Bulk-import your own words from a CSV, straight to "approved".
+ * Bulk-import words from a CSV.
+ *
+ * Flags (after the file):
+ *   --status pending|approved   where the words land (default: approved).
+ *                               "pending" puts them in the moderation queue.
+ *   --limit N                   import only the first N entries (a trial run)
+ *   --dry                       parse and report, insert nothing
+ *
+ * Entries whose characters already exist in the dictionary (any status but
+ * rejected) are skipped and listed, so re-running a file, or importing a
+ * source that overlaps what speakers have added, never makes duplicates.
  *
  * CSV columns (header row required; any subset, but definition_en plus one of
  * hanzi/romanization is needed):
@@ -33,13 +43,25 @@ const clean = (v?: string) => {
   return s.length ? s : null;
 };
 
+function flag(name: string): string | null {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] ?? "" : null;
+}
+
 async function main() {
   loadEnv();
   const file = process.argv[2];
-  if (!file) {
-    console.error("Usage: npm run import -- path/to/words.csv");
+  if (!file || file.startsWith("--")) {
+    console.error("Usage: npm run import -- path/to/words.csv [--status pending|approved] [--limit N] [--dry]");
     process.exit(1);
   }
+  const status = flag("status") ?? "approved";
+  if (status !== "pending" && status !== "approved") {
+    console.error("--status must be pending or approved");
+    process.exit(1);
+  }
+  const limit = flag("limit") ? parseInt(flag("limit")!, 10) : Infinity;
+  const dry = process.argv.includes("--dry");
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
@@ -63,13 +85,44 @@ async function main() {
     groups.get(g)!.push(r);
   }
 
+  // What the dictionary already holds, by characters, so an import never
+  // duplicates a word a speaker has added (or an earlier run of this file).
+  const existing = new Set<string>();
+  {
+    let from = 0;
+    for (;;) {
+      const { data, error } = await supabase
+        .from("entries")
+        .select("hanzi")
+        .neq("status", "rejected")
+        .not("hanzi", "is", null)
+        .range(from, from + 999);
+      if (error) {
+        console.error("Could not read existing entries:", error.message);
+        process.exit(1);
+      }
+      for (const e of data ?? []) if (e.hanzi) existing.add(e.hanzi.trim());
+      if (!data || data.length < 1000) break;
+      from += 1000;
+    }
+  }
+
   let entriesDone = 0;
   let sensesDone = 0;
   let skipped = 0;
+  let duplicates = 0;
+  const dupList: string[] = [];
 
   for (const [, groupRows] of groups) {
+    if (entriesDone >= limit) break;
     const head = groupRows[0];
     const headword = clean(head.romanization) ?? clean(head.hanzi);
+    const hanzi = clean(head.hanzi);
+    if (hanzi && existing.has(hanzi)) {
+      duplicates++;
+      if (dupList.length < 40) dupList.push(hanzi);
+      continue;
+    }
     const senses = groupRows
       .map((r, i) => {
         const def = clean(r.definition_en);
@@ -90,6 +143,13 @@ async function main() {
       continue;
     }
 
+    if (dry) {
+      entriesDone++;
+      sensesDone += senses.length;
+      if (hanzi) existing.add(hanzi);
+      continue;
+    }
+
     const { data: entry, error: eErr } = await supabase
       .from("entries")
       .insert({
@@ -100,7 +160,9 @@ async function main() {
         audio_url: clean(head.audio_url),
         variety: clean(head.variety),
         notes: clean(head.notes),
-        status: "approved",
+        status,
+        // An approved import is reviewed by definition; a pending one waits.
+        reviewed_at: status === "approved" ? new Date().toISOString() : null,
       })
       .select("id")
       .single();
@@ -117,12 +179,18 @@ async function main() {
       process.exit(1);
     }
 
+    if (hanzi) existing.add(hanzi);
     entriesDone++;
     sensesDone += senses.length;
     if (entriesDone % 50 === 0) console.log(`  …${entriesDone} entries`);
   }
 
-  console.log(`Done. Imported ${entriesDone} entries / ${sensesDone} senses. Skipped ${skipped} incomplete group(s).`);
+  console.log(
+    `${dry ? "Dry run. Would import" : "Done. Imported"} ${entriesDone} entries / ${sensesDone} senses as ${status}. ` +
+      `Skipped ${skipped} incomplete group(s) and ${duplicates} already in the dictionary` +
+      (dupList.length ? ` (${dupList.join(" ")}${duplicates > dupList.length ? " …" : ""})` : "") +
+      "."
+  );
 }
 
 main();

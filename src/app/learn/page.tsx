@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
-import { recordingCounts, toCard, toCards } from "@/lib/entries";
+import { one, toCards } from "@/lib/entries";
 import { filterTally } from "@/lib/public-stats";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -22,10 +22,12 @@ const SHOW_GUIDE: boolean = false;
 /* ---------------------------------------------------------------------------
    Sorting.
 
-   Fuzhounese sorts run in the database on entries.headword, so they stay
-   paginated and cheap. English sorts cannot: the gloss lives on senses, a
-   to-many relation, and PostgREST will not order a parent by a child column.
-   Those are sorted in memory instead — fine at this size, but see SORT_CAP.
+   Fuzhounese sorts run in the database on entries.headword. English sorts
+   run there too, from the other side: PostgREST will not order a parent by
+   a child column, so the query starts from `senses` — each entry's FIRST
+   sense (sort = 0), ordered by its definition, with the entry embedded — and
+   pages that. Every entry has a first sense at 0 (the submit RPC, the
+   importer and the editor all number from 0), so nothing is lost.
    --------------------------------------------------------------------------- */
 const SORTS = {
   "fz-az": { label: "Fuzhounese A–Z", lang: "fz", asc: true },
@@ -38,13 +40,6 @@ type SortKey = keyof typeof SORTS;
 const DEFAULT_SORT: SortKey = "fz-az";
 const SORT_KEYS = Object.keys(SORTS) as SortKey[];
 
-/* An English sort has to hold every matching entry in memory at once. Supabase
-   caps a request at 1000 rows anyway, so that is the honest ceiling. Past it,
-   the fix is a database view carrying each entry's primary gloss as a column,
-   which restores server-side ordering. Not worth building at 117 entries. */
-const SORT_CAP = 1000;
-
-const collator = new Intl.Collator("en", { sensitivity: "base" });
 
 /* Two of the parts of speech mean nothing to most English speakers, and they
    are exactly the ones a Fuzhounese learner most needs explained. Each gets a
@@ -105,10 +100,20 @@ export default async function BrowsePage({
 
   /* The word list and the filter-chip tally are independent, so they are
      requested together rather than one after the other. */
+  const englishQuery = () => {
+    let q = supabase
+      .from("senses")
+      .select("definition_en, part_of_speech, entry:entries!inner(id, hanzi, romanization, headword, audio_url, origin_area)", { count: "exact" })
+      .eq("sort", 0)
+      .eq("entry.status", "approved");
+    if (pos) q = q.eq("part_of_speech", pos);
+    if (origin) q = q.eq("entry.origin_area", origin);
+    // Entries with no gloss sort last in both directions rather than flipping
+    // to the top on Z–A, where they would be pure noise.
+    return q.order("definition_en", { ascending: asc, nullsFirst: false }).range(from, to);
+  };
   const listQuery =
-    lang === "fz"
-      ? base().order("headword", { ascending: asc }).range(from, to)
-      : base().range(0, SORT_CAP - 1);
+    lang === "fz" ? base().order("headword", { ascending: asc }).range(from, to) : englishQuery();
 
   /* What each filter would actually return. Without this, every chip looks
      alike and clicking "adverb" on a dictionary with no adverbs is a dead end
@@ -122,24 +127,14 @@ export default async function BrowsePage({
     entries = await toCards(supabase, data ?? []);
     total = count ?? 0;
   } else {
-    const { data, error } = list;
+    const { data, count, error } = list;
     if (error) failed = true;
-    const all = (data ?? []).map((r: any) => toCard(r));
-    // Entries with no gloss sort last in both directions rather than flipping
-    // to the top on Z–A, where they would be pure noise.
-    const withGloss = all.filter((e) => e.gloss);
-    const without = all.filter((e) => !e.gloss);
-    withGloss.sort((a, b) => collator.compare(a.gloss ?? "", b.gloss ?? ""));
-    if (!asc) withGloss.reverse();
-    const ordered = [...withGloss, ...without];
-    total = ordered.length;
-    const pageRows = ordered.slice(from, from + PAGE_SIZE);
-    // Only the 30 cards on screen need a count, not all 165 sorted rows.
-    const counts = await recordingCounts(supabase, pageRows.map((r) => r.id));
-    entries = pageRows.map((r) => ({
-      ...r,
-      recordings: (r.recordings ?? 0) + (counts.get(r.id) ?? 0),
-    }));
+    // Turn each first-sense row back into the entry shape the cards expect.
+    const rows = ((data ?? []) as any[])
+      .map((r) => ({ ...one<any>(r.entry), senses: [{ definition_en: r.definition_en, part_of_speech: r.part_of_speech, sort: 0 }] }))
+      .filter((e) => e.id);
+    entries = await toCards(supabase, rows);
+    total = count ?? 0;
   }
 
   const posCounts = new Map(Object.entries(tally.pos));

@@ -45,12 +45,19 @@ export const filterTally = unstable_cache(
     const empty: FilterTally = { pos: {}, origin: {}, known: false };
     const db = anon();
     if (!db) return empty;
-    const { data, error } = await db
-      .from("entries")
-      .select("origin_area, senses(part_of_speech)")
-      .eq("status", "approved")
-      .range(0, 999);
-    if (error || !data?.length) return empty;
+    // Supabase returns at most 1,000 rows per request; page through them.
+    const data: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error } = await db
+        .from("entries")
+        .select("origin_area, senses(part_of_speech)")
+        .eq("status", "approved")
+        .range(from, from + 999);
+      if (error) return empty;
+      data.push(...(page ?? []));
+      if (!page || page.length < 1000) break;
+    }
+    if (!data.length) return empty;
     const pos: Record<string, number> = {};
     const origin: Record<string, number> = {};
     for (const row of data as any[]) {

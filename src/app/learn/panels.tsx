@@ -211,7 +211,16 @@ const orthography = (
       </P>
       <P>
         <b>Bàng-uâ-cê</b> <Han>平話字</Han> is the older one, and most headwords use it. American
-        missionaries began it in the 1850s and settled it by the 1890s. Two things trip people up:{" "}
+        missionaries began it in the 1850s and settled it by the 1890s in their{" "}
+        <a
+          href="https://en.wikisource.org/wiki/Dictionary_of_the_Foochow_Dialect"
+          target="_blank"
+          rel="noreferrer"
+          className="text-lacquer hover:underline"
+        >
+          Dictionary of the Foochow Dialect
+        </a>
+        , listed under Further reading. Two things trip people up:{" "}
         <Rom>b d g c</Rom> are the <i>un</i>aspirated sounds and <Rom>p t k ch</Rom> the aspirated
         ones. So <Rom>b</Rom> is not voiced like an English b: it is the p of &ldquo;spin&rdquo;,
         without the puff of air that the p of &ldquo;pin&rdquo; has. In the same way <Rom>d</Rom> is
@@ -303,6 +312,16 @@ const orthography = (
 /* ------------------------------------------------------------------------ */
 
 const READING: { href: string; title: string; note: string }[] = [
+  {
+    href: "https://en.wikisource.org/wiki/Dictionary_of_the_Foochow_Dialect",
+    title: "Dictionary of the Foochow Dialect (Maclay, Baldwin & Leger, 3rd ed., 1929)",
+    note: "the missionary dictionary that fixed Bàng-uâ-cê; public domain. It records Fuzhou speech as heard a century ago, and some sounds have shifted since, so the recordings here are the better guide to how a word is said today",
+  },
+  {
+    href: "https://en.wiktionary.org/wiki/Category:Eastern_Min_lemmas",
+    title: "Wiktionary: Eastern Min lemmas",
+    note: "thousands of words with Fuzhou readings in Bàng-uâ-cê and IPA, CC BY-SA. Many entries in this dictionary were imported from here and say so in their notes",
+  },
   { href: "https://www.fulingo.com/", title: "Fulingo", note: "Duolingo-style Fuzhounese lessons with native audio" },
   { href: "https://seedict.com/", title: "Seedict", note: "Fuzhounese word list" },
   { href: "https://en.wiktionary.org/wiki/Fuzhounese", title: "Wiktionary: Fuzhounese", note: "Dictionary entry for Fuzhounese" },

@@ -19,14 +19,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const supabase = createClient(url, key);
-    const { data } = await supabase
-      .from("entries")
-      .select("id, created_at, reviewed_at")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(10000);
+    // Supabase serves at most 1,000 rows per request; page until short.
+    const data: any[] = [];
+    for (let from = 0; from < 50000; from += 1000) {
+      const { data: page, error } = await supabase
+        .from("entries")
+        .select("id, created_at, reviewed_at")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .range(from, from + 999);
+      if (error) break;
+      data.push(...(page ?? []));
+      if (!page || page.length < 1000) break;
+    }
 
-    const entries = (data ?? []).map((e: any) => ({
+    const entries = data.map((e: any) => ({
       url: `${SITE_URL}/entry/${e.id}`,
       lastModified: new Date(e.reviewed_at ?? e.created_at),
       changeFrequency: "monthly" as const,

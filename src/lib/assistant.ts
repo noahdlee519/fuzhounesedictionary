@@ -54,11 +54,15 @@ const BURST_PER_MINUTE = 6; // and no more than this many questions a minute
    https://www.anthropic.com/pricing when changing the model. */
 const PRICE_USD_PER_M = { input: 1.0, cacheWrite: 1.25, cacheRead: 0.1, output: 5.0 };
 
-/* Past this many entries the compact index stops fitting comfortably in the
-   prompt; the fix then is to send only search matches (the search_entries
-   RPC) instead of the whole list. Not a concern at 165. */
+/* Up to this many entries, the model gets the whole dictionary as a compact
+   index and can answer "do you have any words for food?" from it. Past it
+   (the Wiktionary import took the dictionary to ~3,800 words), the index would
+   be most of the prompt, so the model instead gets a wider set of entries
+   matched to the question and is told the index is partial. */
 const INDEX_CAP = 600;
 const DETAIL_LIMIT = 12;
+const DETAIL_LIMIT_LARGE = 40;
+const ENTRY_FETCH_CAP = 10000;
 const MAX_QUESTION_CHARS = 500;
 const MAX_HISTORY_TURNS = 6;
 const MAX_OUTPUT_TOKENS = 450;
@@ -142,18 +146,28 @@ interface Entry {
 
 async function loadEntries(): Promise<Entry[]> {
   const db = adminClient();
-  const [{ data, error }, { data: recs }] = await Promise.all([
-    db
-      .from("entries")
-      .select(
-        "id, headword, hanzi, romanization, ipa, notes, origin_area, origin_locality, audio_url, contributor:profiles(id, display_name), senses(id, definition_en, part_of_speech, gloss_zh, example, example_gloss, sort)"
-      )
-      .eq("status", "approved")
-      .order("headword")
-      .limit(INDEX_CAP),
+  // Supabase serves at most 1,000 rows per request; page until short.
+  const pageEntries = async () => {
+    const out: any[] = [];
+    for (let from = 0; from < ENTRY_FETCH_CAP; from += 1000) {
+      const { data, error } = await db
+        .from("entries")
+        .select(
+          "id, headword, hanzi, romanization, ipa, notes, origin_area, origin_locality, audio_url, contributor:profiles(id, display_name), senses(id, definition_en, part_of_speech, gloss_zh, example, example_gloss, sort)"
+        )
+        .eq("status", "approved")
+        .order("headword")
+        .range(from, from + 999);
+      if (error) throw new Error(error.message);
+      out.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return out;
+  };
+  const [data, { data: recs }] = await Promise.all([
+    pageEntries(),
     db.from("recordings").select("entry_id").eq("status", "approved"),
   ]);
-  if (error) throw new Error(error.message);
   const counts = new Map<string, number>();
   for (const r of (recs ?? []) as { entry_id: string }[]) counts.set(r.entry_id, (counts.get(r.entry_id) ?? 0) + 1);
   return ((data ?? []) as any[]).map((e) => ({
@@ -241,7 +255,7 @@ function relevant(entries: Entry[], question: string): Entry[] {
   return scored
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, DETAIL_LIMIT)
+    .slice(0, entries.length > INDEX_CAP ? DETAIL_LIMIT_LARGE : DETAIL_LIMIT)
     .map((s) => s.e);
 }
 
@@ -356,8 +370,17 @@ export async function ask(question: string, history: unknown): Promise<Answer> {
   const ids = shortIds(entries);
   const contributors = people.map(contributorLine).join("\n");
   const back = new Map([...ids].map(([s, full]) => [full, s]));
-  const index = entries.map((e) => indexLine(e, back.get(e.id)!)).join("\n");
-  const details = relevant(entries, question).map((e) => detailBlock(e, back.get(e.id)!)).join("\n\n");
+  const matched = relevant(entries, question);
+  const details = matched.map((e) => detailBlock(e, back.get(e.id)!)).join("\n\n");
+  // Small dictionary: the whole index. Large: just the matched entries' lines,
+  // so the model still has short ids to link with, plus a note that it is a
+  // selection and the search page has the rest.
+  const large = entries.length > INDEX_CAP;
+  const indexed = large ? matched : entries;
+  const index = indexed.map((e) => indexLine(e, back.get(e.id)!)).join("\n");
+  const indexNote = large
+    ? ` note="the dictionary has ${entries.length} entries; these are the ones matching the question. For anything else, point the person at the search page (/?q=...)"`
+    : "";
 
   const body = {
     model: ASSISTANT_MODEL,
@@ -367,8 +390,9 @@ export async function ask(question: string, history: unknown): Promise<Answer> {
       { type: "text", text: `<learn_page>\n${buildLearnText()}\n</learn_page>`, cache_control: { type: "ephemeral" } },
       {
         type: "text",
-        text: `<dictionary_index columns="shortid | characters | romanization | meanings | origin | recordings" entries="${entries.length}">\n${index}\n</dictionary_index>`,
-        cache_control: { type: "ephemeral" },
+        text: `<dictionary_index columns="shortid | characters | romanization | meanings | origin | recordings" entries="${indexed.length}"${indexNote}>\n${index}\n</dictionary_index>`,
+        // Only worth caching when it is the same for every question.
+        ...(large ? {} : { cache_control: { type: "ephemeral" } }),
       },
     ],
     messages: [
