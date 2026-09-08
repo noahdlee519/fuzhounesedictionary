@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import Avatar from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { formatOrigin } from "@/lib/origins";
 import { one, toCards } from "@/lib/entries";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
+import Pager from "@/components/Pager";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
 
@@ -31,8 +32,19 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function ContributorPage({ params }: { params: { id: string } }) {
+const REC_PAGE = 20;
+
+export default async function ContributorPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { page?: string };
+}) {
   const supabase = createClient();
+  // Recordings are paged; words are not (yet).
+  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
+  const recFrom = (page - 1) * REC_PAGE;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -67,7 +79,7 @@ export default async function ContributorPage({ params }: { params: { id: string
       .eq("contributor_id", params.id)
       .eq("status", "approved")
       .order("created_at", { ascending: false })
-      .limit(60),
+      .range(recFrom, recFrom + REC_PAGE - 1),
   ]);
 
   // Same card, same recording count, as everywhere else on the site.
@@ -85,6 +97,11 @@ export default async function ContributorPage({ params }: { params: { id: string
   const origin = formatOrigin(profile.origin_area, profile.origin_locality);
   const total = count ?? 0;
   const totalRecs = recCount ?? 0;
+  const recPages = Math.max(1, Math.ceil(totalRecs / REC_PAGE));
+  // A typed page past the end lands on the last page rather than an empty one.
+  if (!recError && page > recPages) {
+    redirect(`/contributor/${params.id}${recPages > 1 ? `?page=${recPages}` : ""}#recordings`);
+  }
   const since = new Date(profile.created_at).toLocaleDateString("en-GB", {
     year: "numeric",
     month: "long",
@@ -129,7 +146,7 @@ export default async function ContributorPage({ params }: { params: { id: string
         )}
       </section>
 
-      <section className="space-y-3">
+      <section id="recordings" className="scroll-mt-3 space-y-3">
         <h2 className="border-t border-rule pt-5 font-display text-lg font-bold uppercase tracking-tight">
           Recordings
         </h2>
@@ -138,10 +155,11 @@ export default async function ContributorPage({ params }: { params: { id: string
         ) : recordings.length === 0 ? (
           <p className="text-inkSoft">No published recordings yet.</p>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {recordings.map((r) => <RecordingByRow key={r.id} recording={r} />)}
           </div>
         )}
+        <Pager page={page} totalPages={recPages} basePath={`/contributor/${params.id}`} anchor="recordings" />
       </section>
 
       <p className="border-t border-rule pt-5">

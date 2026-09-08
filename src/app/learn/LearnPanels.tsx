@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* Three buttons above the word list — Features, Orthography, Further reading —
    each opening one panel. One panel at a time; the first is open on arrival;
@@ -25,6 +25,21 @@ export default function LearnPanels({
 }) {
   const [open, setOpen] = useState<string | null>(panels[0]?.key ?? null);
   const current = panels.find((p) => p.key === open) ?? null;
+  const index = panels.findIndex((p) => p.key === open);
+  const prev = index > 0 ? panels[index - 1] : null;
+  const next = index >= 0 && index < panels.length - 1 ? panels[index + 1] : null;
+  const top = useRef<HTMLElement>(null);
+
+  /* The arrows at the foot of a panel. The panel element is keyed on its
+     panel, so switching remounts it and the fade-in plays again; and since
+     the arrows sit at the bottom of what may be a long panel, the view is
+     brought back up to the tabs so the new panel is read from its start. */
+  const go = (key: string) => {
+    setOpen(key);
+    requestAnimationFrame(() => {
+      top.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  };
 
   /* A link to an id inside a closed panel has nothing to scroll to. Watch the
      hash: if it names a known anchor, open its panel, then scroll once the
@@ -46,7 +61,7 @@ export default function LearnPanels({
   }, [anchors]);
 
   return (
-    <section className="space-y-4">
+    <section ref={top} className="scroll-mt-3 space-y-4">
       <div role="tablist" aria-label="About Fuzhounese" className="flex flex-wrap gap-2">
         {panels.map((p) => {
           const active = p.key === open;
@@ -82,6 +97,36 @@ export default function LearnPanels({
           className="page-fade space-y-5 border border-rule bg-surface p-5 sm:p-6"
         >
           {current.body}
+
+          {(prev || next) && (
+            <nav
+              aria-label="Neighbouring sections"
+              className="flex items-center justify-between gap-4 border-t border-rule pt-4 font-mono text-xs uppercase tracking-[0.1em]"
+            >
+              {prev ? (
+                <button
+                  type="button"
+                  onClick={() => go(prev.key)}
+                  className="text-inkSoft transition-colors hover:text-lacquer"
+                >
+                  ← {prev.label}
+                </button>
+              ) : (
+                <span />
+              )}
+              {next ? (
+                <button
+                  type="button"
+                  onClick={() => go(next.key)}
+                  className="text-inkSoft transition-colors hover:text-lacquer"
+                >
+                  {next.label} →
+                </button>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
         </div>
       )}
     </section>

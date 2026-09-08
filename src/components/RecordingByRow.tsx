@@ -31,11 +31,14 @@ export default function RecordingByRow({
   recording: r,
   showStatus = false,
   editableNote = false,
+  back = "/account?show=recordings",
 }: {
   recording: RecordingByRowProps;
   showStatus?: boolean;
   /** On the owner's own account page: a small form to add or change the note. */
   editableNote?: boolean;
+  /** Where the note form returns to; the page (and list page) it sits on. */
+  back?: string;
 }) {
   const note = (r.note ?? "").trim();
   const w = r.entry;
@@ -72,7 +75,7 @@ export default function RecordingByRow({
       </div>
       <audio controls src={r.audio_url} className="mt-2 h-9 w-full max-w-sm" />
       {note && !editableNote && <p className="romanization mt-2 text-sm text-inkSoft">{note}</p>}
-      {editableNote && <RecordingNoteEditor id={r.id} note={note} back="/account?show=recordings" />}
+      {editableNote && <RecordingNoteEditor id={r.id} note={note} back={back} />}
     </div>
   );
 }

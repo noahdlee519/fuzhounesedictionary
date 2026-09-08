@@ -7,6 +7,7 @@ import AvatarUpload from "@/components/AvatarUpload";
 import SavedNotice from "@/components/SavedNotice";
 import SubmitButton from "@/components/SubmitButton";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
+import Pager from "@/components/Pager";
 import { saveProfile } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -27,7 +28,7 @@ const inputCls =
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: { saved?: string; problem?: string; show?: string };
+  searchParams: { saved?: string; problem?: string; show?: string; page?: string };
 }) {
   const { user } = await getSessionUser();
 
@@ -78,6 +79,14 @@ export default async function AccountPage({
   // Which list the tiles are showing. The tiles are links, so this survives a
   // refresh and needs no JavaScript.
   const show = (["words", "meanings", "recordings"] as const).find((k) => k === searchParams.show) ?? "words";
+
+  // The recordings tab is paged in memory: the rows are already here for the
+  // tile count, and a person's own list is bounded by the recording caps.
+  const REC_PAGE = 20;
+  const recPages = Math.max(1, Math.ceil(recordings.length / REC_PAGE));
+  const recPage = Math.min(recPages, Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1));
+  const recRows = recordings.slice((recPage - 1) * REC_PAGE, recPage * REC_PAGE);
+  const recBack = `/account?show=recordings${recPage > 1 ? `&page=${recPage}` : ""}`;
 
   const since = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString("en-GB", { year: "numeric", month: "long" })
@@ -240,10 +249,19 @@ export default async function AccountPage({
               </Link>
             </div>
           ) : (
-            <div className="grid gap-3">
-              {recordings.map((r) => (
-                <RecordingByRow key={r.id} recording={r} showStatus editableNote />
-              ))}
+            <div id="recordings" className="scroll-mt-3 space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {recRows.map((r) => (
+                  <RecordingByRow key={r.id} recording={r} showStatus editableNote back={recBack} />
+                ))}
+              </div>
+              <Pager
+                page={recPage}
+                totalPages={recPages}
+                basePath="/account"
+                params={{ show: "recordings" }}
+                anchor="recordings"
+              />
             </div>
           )
         )}
