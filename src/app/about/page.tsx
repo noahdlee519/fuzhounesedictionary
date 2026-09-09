@@ -71,7 +71,7 @@ export default function AboutPage() {
           <figure>
             <img
               src="/diaspora-map.svg"
-              alt="World map of where Fuzhounese is spoken—eastern Fujian in China, and diaspora communities in New York, Malaysia, Singapore, Indonesia, Japan, the UK, Canada, and Australia."
+              alt="World map of where Fuzhounese is spoken—Fuzhou in eastern Fujian, China, and diaspora communities in New York, Toronto, London, Tokyo, Kuala Lumpur, Singapore, Sibu, Jakarta and Sydney."
               width={520}
               height={264}
               className="w-full"

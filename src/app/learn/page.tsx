@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import SearchBar from "@/components/SearchBar";
+import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { one, toCards } from "@/lib/entries";
@@ -83,6 +84,9 @@ export default async function BrowsePage({
   const { lang, asc } = SORTS[sort];
 
   const supabase = createClient();
+  // For the assistant's sign-in gate under the search box; cache() shares
+  // the lookup with the header, so this costs nothing extra.
+  const { user } = await getSessionUser();
   const senseCols = "definition_en, part_of_speech, sort";
   const cols = `id, hanzi, romanization, headword, audio_url, senses${pos ? "!inner" : ""}(${senseCols})`;
 
@@ -249,7 +253,7 @@ export default async function BrowsePage({
 
       {/* The same search as the home page, here because this is where people
           arrive looking for a word. It submits to the home page's results. */}
-      <SearchBar focus={false} assistant={false} id="learn-search" />
+      <SearchBar focus={false} id="learn-search" signedIn={Boolean(user)} />
 
       <div className="space-y-2">
         <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Part of speech</p>

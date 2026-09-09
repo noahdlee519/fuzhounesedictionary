@@ -10,6 +10,9 @@ export interface CardProps {
   /** How many recordings this word has: the legacy audio_url counts as one,
    *  plus every approved row in the recordings table. */
   recordings?: number;
+  /** How many meanings the word has. Above one, the card says so, because
+   *  the gloss it shows is only the meaning that matched the search. */
+  senses?: number;
 }
 
 /* Capped so one very popular word cannot stretch the card. */
@@ -75,7 +78,16 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
           </span>
         )}
       </div>
-      {entry.gloss && <p className="mt-1 text-inkSoft">{entry.gloss}</p>}
+      {entry.gloss && (
+        <p className="mt-1 text-inkSoft">
+          {entry.gloss}
+          {(entry.senses ?? 0) > 1 && (
+            <span className="ml-2 whitespace-nowrap font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+              {entry.senses} meanings
+            </span>
+          )}
+        </p>
+      )}
     </Link>
   );
 }

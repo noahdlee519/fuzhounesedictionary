@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Assistant from "./Assistant";
 
 // Noah's wording, 9 Sep 2026. Short enough for every width.
-const FULL = "Search for words or users";
-const SHORT = "Search for words or users";
+const FULL = "Search for words or users...";
+const SHORT = "Search for words or users...";
 
 const NARROW = "(max-width: 639px)";
 
@@ -75,7 +75,7 @@ export default function SearchBar({
         defaultValue={defaultValue}
         autoFocus={focusOnMount}
         placeholder={narrow ? SHORT : FULL}
-        className="w-full bg-transparent px-5 pt-[18px] pb-[14px] text-lg leading-none outline-none placeholder:text-inkFaint"
+        className="w-full bg-transparent px-5 pt-[17px] pb-[15px] text-lg leading-none outline-none placeholder:text-inkFaint"
       />
       <button
         type="submit"
@@ -93,7 +93,7 @@ export default function SearchBar({
           type="button"
           onClick={toggleAsk}
           aria-expanded={askOpen}
-          aria-controls="ask-panel"
+          aria-controls={`${id}-ask`}
           className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer"
         >
           Ask the Fuzhounese search assistant
@@ -101,7 +101,7 @@ export default function SearchBar({
             &#9656;
           </span>
         </button>
-        <div id="ask-panel" className={askOpen ? "mt-3" : ""}>
+        <div id={`${id}-ask`} className={askOpen ? "mt-3" : ""}>
           <Assistant open={askOpen} signedIn={signedIn} />
         </div>
       </div>

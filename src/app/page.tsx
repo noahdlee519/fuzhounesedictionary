@@ -40,7 +40,7 @@ export default async function Home({
       const counts = await recordingCounts(supabase, rows.map((r) => r.id));
       results = rows.map((r) => ({
         id: r.id, hanzi: r.hanzi, romanization: r.romanization, headword: r.headword,
-        pos: r.pos, gloss: r.short_gloss,
+        pos: r.pos, gloss: r.short_gloss, senses: r.sense_count ?? 0,
         recordings: (r.audio_url ? 1 : 0) + (counts.get(r.id) ?? 0),
       }));
     } else {

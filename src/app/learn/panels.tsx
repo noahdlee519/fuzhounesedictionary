@@ -318,8 +318,8 @@ const READING: { href: string; title: string; note: string }[] = [
     note: "the missionary dictionary that fixed Bàng-uâ-cê; public domain. It records Fuzhou speech as heard a century ago, and some sounds have shifted since, so the recordings here are the better guide to how a word is said today",
   },
   {
-    href: "https://en.wiktionary.org/wiki/Category:Eastern_Min_lemmas",
-    title: "Wiktionary: Eastern Min lemmas",
+    href: "https://en.wiktionary.org/",
+    title: "Wiktionary",
     note: "thousands of words with Fuzhou readings in Bàng-uâ-cê and IPA, CC BY-SA. Many entries in this dictionary were imported from here and say so in their notes",
   },
   { href: "https://www.fulingo.com/", title: "Fulingo", note: "Duolingo-style Fuzhounese lessons with native audio" },

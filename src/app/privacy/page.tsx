@@ -54,7 +54,7 @@ export default function PrivacyPage() {
           <b>Your contributions:</b> the words, meanings, example sentences, pronunciations, requests
           and votes you submit, and any audio you record or upload. When you contribute, we also
           record the time and, if you have set it on your profile, where your Fuzhounese is from, so
-          that a recording from Changle stays labelled Changle even if you later change your profile.
+          that a recording from Changle stays labeled Changle even if you later change your profile.
         </p>
         <p>
           <b>Suggestions and reviews:</b> if you suggest an improvement to a word, we keep the

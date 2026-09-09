@@ -94,7 +94,7 @@ export default function TermsPage() {
         <Ul>
           <li>anything you do not have the right to share (see above);</li>
           <li>personal information about other people;</li>
-          <li>slurs, harassment, or content meant to demean a group of people—with the obvious exception that a dictionary records offensive words as words, labelled as such;</li>
+          <li>slurs, harassment, or content meant to demean a group of people—with the obvious exception that a dictionary records offensive words as words, labeled as such;</li>
           <li>spam, advertising, or content unrelated to Fuzhounese;</li>
           <li>deliberately false entries.</li>
         </Ul>

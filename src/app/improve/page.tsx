@@ -168,7 +168,7 @@ export default async function ImprovePage({
           appears on the site.
         </p>
         <p className="max-w-[68ch] text-sm text-inkSoft">
-          Your contributions are labelled with where your Fuzhounese is from, which you can set on{" "}
+          Your contributions are labeled with where your Fuzhounese is from, which you can set on{" "}
           <Link href="/account" className="whitespace-nowrap text-lacquer hover:underline">your account page</Link>.
         </p>
       </section>

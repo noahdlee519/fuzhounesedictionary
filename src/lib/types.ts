@@ -61,6 +61,8 @@ export interface SearchRow {
   pos: string | null;
   origin_area: string | null;
   origin_locality: string | null;
+  /** How many meanings the word has. The gloss shown is the one that matched. */
+  sense_count: number;
 }
 
 export interface Recording {
