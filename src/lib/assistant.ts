@@ -7,6 +7,7 @@ import { publicContributors, type ContributorHit } from "@/lib/contributors";
 import { createElement, isValidElement } from "react";
 import { learnPanels } from "@/app/learn/panels";
 import Guide from "@/app/learn/Guide";
+import { SHOW_GUIDE } from "@/app/learn/config";
 
 /* ---------------------------------------------------------------------------
    "Ask the dictionary" — the server half.
@@ -279,9 +280,10 @@ How to answer:
 8. Finish with exactly one line on its own: "GAP: <what was asked for that the dictionary lacks>" if something was missing, or "GAP: none" if not. This line is removed before display.`;
 
 /* The learn page, as text. Walked from the same React elements the page
-   renders (the three panels, and the long guide even while it is hidden
-   behind SHOW_GUIDE), so the assistant always knows exactly what the page
-   says. Next.js does not allow react-dom/server in a route, so this is a small
+   renders (the three panels, plus the long guide only while SHOW_GUIDE shows
+   it — a hidden guide would have the assistant quoting text, and a "still to
+   come" phrasebook, that no visitor can see), so the assistant always knows
+   exactly what the page says. Next.js does not allow react-dom/server in a route, so this is a small
    walker of its own: host tags become line breaks or cell separators, plain
    function components are called, and anything that needs a real renderer
    (next/link, which uses hooks) falls back to its children. Built once per
@@ -317,8 +319,7 @@ export function buildLearnText(): string {
   if (learnText) return learnText;
   const raw =
     learnPanels.map((p) => `## ${p.label}\n` + nodeText(p.body)).join("\n\n") +
-    "\n\n## The full guide\n" +
-    nodeText(createElement(Guide));
+    (SHOW_GUIDE ? "\n\n## The full guide\n" + nodeText(createElement(Guide)) : "");
   learnText = raw
     .replace(/[ \t]+\n/g, "\n")
     .replace(/ \|\s*\n/g, "\n")

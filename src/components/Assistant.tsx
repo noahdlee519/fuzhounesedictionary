@@ -8,7 +8,8 @@ import SignInButton from "./SignInButton";
 
    A short exchange with an assistant that answers only from this dictionary
    (see src/lib/assistant.ts for the rules it is held to). Nothing here is
-   clever: the panel keeps the conversation in memory, posts each question to
+   clever: the panel keeps the conversation in sessionStorage (so it survives
+   moving between pages, and ends with the tab), posts each question to
    /api/ask with the last few turns, and renders the reply. Links in the reply
    are only ever to pages on this site. */
 
@@ -19,6 +20,31 @@ interface Turn {
 
 const STARTERS = ["How do you say house?", "What is a measure word?", "Which words are from Changle?"];
 
+/* One conversation per browser tab. Kept small (the last 40 turns) and read
+   inside try/catch: private windows and some embedded views throw on access. */
+const STORE = "ask-history";
+const KEEP = 40;
+function loadTurns(): Turn[] {
+  try {
+    const raw = sessionStorage.getItem(STORE);
+    if (!raw) return [];
+    const v = JSON.parse(raw);
+    return Array.isArray(v)
+      ? v.filter((t) => (t?.role === "user" || t?.role === "assistant") && typeof t.content === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+function storeTurns(turns: Turn[]) {
+  try {
+    if (turns.length) sessionStorage.setItem(STORE, JSON.stringify(turns.slice(-KEEP)));
+    else sessionStorage.removeItem(STORE);
+  } catch {
+    /* storage unavailable: the panel still works for this page view */
+  }
+}
+
 export default function Assistant({ open, signedIn }: { open: boolean; signedIn: boolean }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
@@ -26,6 +52,20 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
   const [notice, setNotice] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const loaded = useRef(false);
+
+  // Save on every change — but not before the restore below has run, or the
+  // empty first render would wipe the stored conversation. Effects run in
+  // declaration order, so this one sees loaded=false on the mount pass.
+  useEffect(() => {
+    if (loaded.current) storeTurns(turns);
+  }, [turns]);
+  // Restore after mount, not in useState's initialiser: the server renders an
+  // empty panel and the two must agree at hydration.
+  useEffect(() => {
+    setTurns(loadTurns());
+    loaded.current = true;
+  }, []);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -121,6 +161,21 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
               <Answer text={t.content} />
             </div>
           )
+        )}
+
+        {turns.length > 0 && !busy && (
+          <p className="!mt-2 text-right">
+            <button
+              type="button"
+              onClick={() => {
+                setTurns([]);
+                setNotice(null);
+              }}
+              className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer"
+            >
+              Clear conversation
+            </button>
+          </p>
         )}
 
         {busy && (

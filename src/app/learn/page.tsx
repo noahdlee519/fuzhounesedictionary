@@ -10,16 +10,13 @@ import { filterTally } from "@/lib/public-stats";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
+import { SHOW_GUIDE } from "./config";
 import LearnPanels from "./LearnPanels";
 import { learnPanels, panelAnchors } from "./panels";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
-/* Guide temporarily hidden while Noah edits the teaching content — 2026-09-01.
-   Flip this back to true to restore the contents list, all ten sections and the
-   sources block. Nothing was deleted; Guide.tsx is untouched. */
-const SHOW_GUIDE: boolean = false;
 
 /* ---------------------------------------------------------------------------
    Sorting.
@@ -30,17 +27,38 @@ const SHOW_GUIDE: boolean = false;
    sense (sort = 0), ordered by its definition, with the entry embedded — and
    pages that. Every entry has a first sense at 0 (the submit RPC, the
    importer and the editor all number from 0), so nothing is lost.
+
+   Date sorts use entries.created_at and entries.updated_at (the latter kept
+   by triggers in supabase/updated_at.sql). The key (what to sort by) and the
+   direction are separate: `?sort=` picks the key and `?dir=` flips it, and
+   one chip shows the current order and reverses it when clicked. Each key
+   has its own natural direction — A–Z for text, newest first for dates —
+   which is what you get on choosing it.
    --------------------------------------------------------------------------- */
 const SORTS = {
-  "fz-az": { label: "Fuzhounese A–Z", lang: "fz", asc: true },
-  "fz-za": { label: "Fuzhounese Z–A", lang: "fz", asc: false },
-  "en-az": { label: "English A–Z", lang: "en", asc: true },
-  "en-za": { label: "English Z–A", lang: "en", asc: false },
+  fz: { label: "Fuzhounese", kind: "text", column: "headword", natural: "asc" },
+  en: { label: "English", kind: "text", column: "definition_en", natural: "asc" },
+  added: { label: "Date added", kind: "date", column: "created_at", natural: "desc" },
+  edited: { label: "Date edited", kind: "date", column: "updated_at", natural: "desc" },
 } as const;
 
 type SortKey = keyof typeof SORTS;
-const DEFAULT_SORT: SortKey = "fz-az";
+type Dir = "asc" | "desc";
+const DEFAULT_SORT: SortKey = "fz";
 const SORT_KEYS = Object.keys(SORTS) as SortKey[];
+
+/* The direction chip's wording. Text sorts read as letters, date sorts as
+   time, so "reverse" means something a reader can picture in both. */
+function dirLabel(kind: "text" | "date", dir: Dir) {
+  if (kind === "text") return dir === "asc" ? "A–Z" : "Z–A";
+  return dir === "desc" ? "Newest first" : "Oldest first";
+}
+
+/* Links from before 2026-09-09 carried the key and direction in one word
+   ("fz-za", "en-az"). They still work. */
+const LEGACY_SORT: Record<string, [SortKey, Dir]> = {
+  "fz-az": ["fz", "asc"], "fz-za": ["fz", "desc"], "en-az": ["en", "asc"], "en-za": ["en", "desc"],
+};
 
 
 /* Two of the parts of speech mean nothing to most English speakers, and they
@@ -65,7 +83,7 @@ export const metadata: Metadata = {
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: { page?: string; pos?: string; origin?: string; sort?: string };
+  searchParams: { page?: string; pos?: string; origin?: string; sort?: string; dir?: string };
 }) {
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
@@ -78,10 +96,17 @@ export default async function BrowsePage({
   const origin = originArea(originParam) ? originParam : "";
 
   const sortParam = (searchParams.sort ?? "").trim();
-  const sort: SortKey = SORT_KEYS.includes(sortParam as SortKey)
-    ? (sortParam as SortKey)
-    : DEFAULT_SORT;
-  const { lang, asc } = SORTS[sort];
+  const legacy = LEGACY_SORT[sortParam];
+  const sort: SortKey = legacy
+    ? legacy[0]
+    : SORT_KEYS.includes(sortParam as SortKey)
+      ? (sortParam as SortKey)
+      : DEFAULT_SORT;
+  const { kind, column, natural } = SORTS[sort];
+  const dirParam = (searchParams.dir ?? "").trim();
+  const dir: Dir = legacy ? legacy[1] : dirParam === "asc" || dirParam === "desc" ? dirParam : natural;
+  const asc = dir === "asc";
+  const lang = sort === "en" ? "en" : "fz";
 
   const supabase = createClient();
   // For the assistant's sign-in gate under the search box; cache() shares
@@ -117,8 +142,12 @@ export default async function BrowsePage({
     // to the top on Z–A, where they would be pure noise.
     return q.order("definition_en", { ascending: asc, nullsFirst: false }).range(from, to);
   };
+  // Date sorts tie-break on headword so a batch imported in one second still
+  // has a stable order across pages.
   const listQuery =
-    lang === "fz" ? base().order("headword", { ascending: asc }).range(from, to) : englishQuery();
+    lang === "fz"
+      ? base().order(column, { ascending: asc }).order("headword", { ascending: true }).range(from, to)
+      : englishQuery();
 
   /* What each filter would actually return. Without this, every chip looks
      alike and clicking "adverb" on a dictionary with no adverbs is a dead end
@@ -148,11 +177,12 @@ export default async function BrowsePage({
 
   /* One link builder for every chip and page link, so a sort survives a filter
      change and a filter survives a sort change. Any change resets to page 1. */
-  const hrefWith = (over: Partial<Record<"pos" | "origin" | "sort" | "page", string>>) => {
+  const hrefWith = (over: Partial<Record<"pos" | "origin" | "sort" | "dir" | "page", string>>) => {
     const next: Record<string, string> = {
       pos,
       origin,
       sort: sort === DEFAULT_SORT ? "" : sort,
+      dir: dir === natural ? "" : dir,
       page: "",
       ...over,
     };
@@ -298,7 +328,19 @@ export default async function BrowsePage({
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Sort</p>
-          {SORT_KEYS.map((k) => chip(SORTS[k].label, hrefWith({ sort: k }), sort === k))}
+          {/* Choosing a key resets the direction to that key's natural one. */}
+          {SORT_KEYS.map((k) => chip(SORTS[k].label, hrefWith({ sort: k, dir: "" }), sort === k))}
+          {/* One chip for the order. It names the current order and flips it
+              when clicked, so there is never a second, near-identical chip. */}
+          <Link
+            href={hrefWith({ dir: asc ? "desc" : "asc" })}
+            aria-label={`Order: ${dirLabel(kind, dir)}. Reverse to ${dirLabel(kind, asc ? "desc" : "asc")}`}
+            title="Reverse the order"
+            className="ml-1 inline-flex items-center gap-1.5 border border-rule px-2.5 py-1 text-[13px] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
+          >
+            <span aria-hidden className="font-mono text-[12px] leading-none">&#8645;</span>
+            {dirLabel(kind, dir)}
+          </Link>
         </div>
         <p className="text-sm text-inkFaint">Click any word for the full entry.</p>
       </div>
@@ -344,6 +386,7 @@ export default async function BrowsePage({
             {pos && <input type="hidden" name="pos" value={pos} />}
             {origin && <input type="hidden" name="origin" value={origin} />}
             {sort !== DEFAULT_SORT && <input type="hidden" name="sort" value={sort} />}
+            {dir !== natural && <input type="hidden" name="dir" value={dir} />}
             <label htmlFor="page-jump">Page</label>
             <input
               id="page-jump"
