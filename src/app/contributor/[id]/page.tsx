@@ -112,7 +112,7 @@ export default async function ContributorPage({
       <section className="flex items-start justify-between gap-6 border-b border-rule pb-6">
         <div className="min-w-0">
           <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Contributor</p>
-          <h1 className="mt-2 font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+          <h1 className="mt-2 font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
             {profile.display_name || "Anonymous contributor"}
           </h1>
           {origin && (

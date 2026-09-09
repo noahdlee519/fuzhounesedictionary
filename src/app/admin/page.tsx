@@ -36,7 +36,7 @@ export default async function AdminPage() {
   if (!user) {
     return (
       <div className="mx-auto max-w-lg space-y-4 text-center">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Editor sign-in</h1>
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Editor sign-in</h1>
         <p className="text-inkSoft">Sign in with the account marked as an editor to review submissions.</p>
         <div className="flex justify-center"><SignInButton next="/admin" /></div>
       </div>
@@ -46,7 +46,7 @@ export default async function AdminPage() {
   if (!profile?.is_editor) {
     return (
       <div className="mx-auto max-w-lg space-y-3 text-center">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Editors only</h1>
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Editors only</h1>
         <p className="text-inkSoft">
           This account ({profile?.display_name}) is not an editor. Ask the site owner to set
           <code className="mx-1 font-mono text-sm">is_editor = true</code> on your profile in Supabase.
@@ -118,7 +118,7 @@ export default async function AdminPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-4">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
           Moderation queue
         </h1>
         <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">

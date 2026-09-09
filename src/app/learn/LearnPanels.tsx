@@ -62,7 +62,7 @@ export default function LearnPanels({
 
   return (
     <section ref={top} className="scroll-mt-3 space-y-4">
-      <div role="tablist" aria-label="About Fuzhounese" className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label="About Fuzhounese" className="flex flex-wrap gap-1.5 sm:gap-2">
         {panels.map((p) => {
           const active = p.key === open;
           return (
@@ -76,7 +76,8 @@ export default function LearnPanels({
               aria-controls={`panel-${p.key}`}
               onClick={() => setOpen(active ? null : p.key)}
               className={
-                "border px-4 py-1.5 font-mono text-xs uppercase tracking-[0.1em] transition-colors " +
+                // Tighter on a phone so the three sit in one row on a 360px screen.
+                "whitespace-nowrap border px-2 py-1.5 font-mono text-[10px] uppercase tracking-[0.04em] transition-colors sm:px-4 sm:text-xs sm:tracking-[0.1em] " +
                 (active
                   ? "border-lacquer bg-lacquer text-paper"
                   : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer")

@@ -12,7 +12,7 @@ export default function AboutPage() {
   return (
     <article className="space-y-12">
       <section className="border-b border-rule pb-6">
-        <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
           About this project
         </h1>
       </section>

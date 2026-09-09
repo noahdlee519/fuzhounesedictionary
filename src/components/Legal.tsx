@@ -22,7 +22,7 @@ export function LegalPage({
   return (
     <article className="space-y-10">
       <section className="border-b border-rule pb-6">
-        <h1 className="font-display text-3xl font-extrabold uppercase leading-none tracking-tight sm:text-4xl">
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
           {title}
         </h1>
         <p className="mt-3 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">

@@ -36,7 +36,7 @@ export default async function AccountPage({
   if (!user) {
     return (
       <div className="mx-auto max-w-lg space-y-4 text-center">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">My account</h1>
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">My account</h1>
         <p className="text-inkSoft">Sign in to see the words you&apos;ve contributed.</p>
         <div className="flex justify-center"><SignInButton next="/account" /></div>
       </div>
@@ -107,7 +107,7 @@ export default async function AccountPage({
             className="ring-1 ring-rule"
           />
           <div className="min-w-0">
-            <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+            <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
               {profile?.display_name || "My account"}
             </h1>
             <p className="truncate text-sm text-inkFaint">{user.email}</p>

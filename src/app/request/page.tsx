@@ -65,10 +65,12 @@ export default async function WantedPage({
         <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
           Request a word
         </h1>
-        <p className="mt-4 max-w-2xl text-inkSoft">
-          Ask for a word that is missing, or for a recording of a word that has no voice yet. Upvote
-          the requests you want filled first. A speaker can then write the entry or record it.
-        </p>
+        {user && (
+          <p className="mt-4 max-w-2xl text-inkSoft">
+            Ask for a word that is missing, or for a recording of a word that has no voice yet. Upvote
+            the requests you want filled first. A speaker can then write the entry or record it.
+          </p>
+        )}
       </section>
 
       {notice && (
@@ -103,7 +105,7 @@ export default async function WantedPage({
 
       <section className="space-y-3">
         <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          {error ? "Open requests" : `${requests.length} open request${requests.length === 1 ? "" : "s"}`}
+          {error || !user ? "Open requests" : `${requests.length} open request${requests.length === 1 ? "" : "s"}`}
         </h2>
 
         {error && (

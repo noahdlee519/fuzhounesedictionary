@@ -24,7 +24,7 @@ export default async function SubmitPage({
   if (searchParams.success) {
     return (
       <div className="mx-auto max-w-lg space-y-4 border-l-2 border-lacquer bg-surface p-8 text-center">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Thank you</h1>
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Thank you</h1>
         <p className="text-inkSoft">
           Your word was submitted and is now in the review queue. An editor will look at it before it goes live.
         </p>
@@ -39,7 +39,7 @@ export default async function SubmitPage({
   if (!user) {
     return (
       <div className="mx-auto max-w-lg space-y-4 border border-rule bg-surface p-8 text-center">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Add a word</h1>
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Add a word</h1>
         <p className="text-inkSoft">
           Please sign in to contribute. This helps us keep the dictionary trustworthy and credit your contributions.
         </p>
@@ -67,7 +67,7 @@ export default async function SubmitPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="border-b border-rule pb-4">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">Add a word</h1>
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Add a word</h1>
         <p className="mt-2 text-inkSoft">
           Fill in whatever you know. Only the word, as characters or romanization, and at least one English
           meaning are required. Submissions are reviewed before they appear.

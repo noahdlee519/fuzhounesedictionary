@@ -53,6 +53,33 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
+/* Notes are plain text, but imported entries carry a source URL (Wiktionary
+   requires the link). Bare URLs become links that may break anywhere, so a
+   long one wraps inside a phone screen instead of running off it. */
+function linkifyNotes(text: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  const re = /https?:\/\/[^\s]+?(?=[.,;)]?(?:\s|$))/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const url = m[0];
+    let label = url;
+    try {
+      const u = new URL(url);
+      label = u.hostname.replace(/^www\./, "") + decodeURIComponent(u.pathname).replace(/#.*$/, "");
+    } catch {}
+    out.push(
+      <a key={m.index} href={url} target="_blank" rel="noreferrer" className="break-all text-lacquer hover:underline">
+        {label}
+      </a>
+    );
+    last = m.index + url.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 export default async function EntryPage({
   params,
   searchParams,
@@ -250,9 +277,9 @@ export default async function EntryPage({
       </ol>
 
       {entry.notes && (
-        <div className="bg-surface p-4 text-sm text-inkSoft">
+        <div className="bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
           <span className="font-mono text-xs uppercase tracking-wide text-inkFaint">Notes </span>
-          {entry.notes}
+          {linkifyNotes(entry.notes)}
         </div>
       )}
 

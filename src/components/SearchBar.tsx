@@ -79,7 +79,8 @@ export default function SearchBar({
       />
       <button
         type="submit"
-        className="shrink-0 bg-lacquer px-7 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90"
+        // Hidden on a phone: the keyboard's own Search/Go key submits the form.
+        className="hidden shrink-0 bg-lacquer px-7 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90 sm:block"
       >
         Search
       </button>

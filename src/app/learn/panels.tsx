@@ -343,8 +343,10 @@ const reading = (
             className="font-medium text-lacquer hover:underline"
           >
             {r.title}
-          </a>{" "}
-          <span className="text-inkFaint">— {r.note}</span>
+          </a>
+          <span className="block text-sm text-inkFaint">
+            {r.note.charAt(0).toUpperCase() + r.note.slice(1)}
+          </span>
         </li>
       ))}
     </ul>

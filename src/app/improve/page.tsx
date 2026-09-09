@@ -36,7 +36,7 @@ export default async function ImprovePage({
   if (!user) {
     return (
       <div className="mx-auto max-w-lg space-y-4 text-center">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
           Improve the dictionary
         </h1>
         <p className="text-inkSoft">
@@ -155,7 +155,7 @@ export default async function ImprovePage({
     <div className="space-y-8">
       <section className="space-y-3 border-b border-rule pb-5">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="font-display text-2xl font-bold uppercase tracking-tight sm:text-3xl">
+          <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
             Improve the dictionary
           </h1>
           <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
