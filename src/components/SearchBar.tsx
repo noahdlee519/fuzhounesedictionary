@@ -44,26 +44,10 @@ export default function SearchBar({
   // switched in an effect.
   const [narrow, setNarrow] = useState(false);
 
-  // "Ask the dictionary" — the sparkle button at the end of the box opens a
-  // panel underneath. Closed on every visit; nothing is remembered.
-  /* The assistant panel is open by default; the button folds it away, and
-     the choice is remembered on this device so it stays folded for someone
-     who folded it. localStorage can be missing or throw (private windows,
-     previews), so every touch is guarded and the default wins. Read after
-     mount so the server and the first client paint agree. */
-  const [askOpen, setAskOpen] = useState(true);
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("ask-folded") === "1") setAskOpen(false);
-    } catch {}
-  }, []);
-  const toggleAsk = () =>
-    setAskOpen((o) => {
-      try {
-        localStorage.setItem("ask-folded", o ? "1" : "0");
-      } catch {}
-      return !o;
-    });
+  // "Ask the dictionary" — a button under the box opens a panel beneath it.
+  // Closed on every visit; nothing is remembered.
+  const [askOpen, setAskOpen] = useState(false);
+  const toggleAsk = () => setAskOpen((o) => !o);
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -93,37 +77,6 @@ export default function SearchBar({
         placeholder={narrow ? SHORT : FULL}
         className="w-full bg-transparent px-5 pt-[18px] pb-[14px] text-lg leading-none outline-none placeholder:text-inkFaint"
       />
-      {/* The sparkle button, with a hover hint beneath it. A styled tooltip
-          rather than a title attribute: it appears at once instead of after
-          the browser's delay, and reads the same in every browser. Hidden
-          once the panel is open — the hint has done its job. */}
-      {assistant && (
-      <span className="group relative grid shrink-0">
-        <button
-          type="button"
-          onClick={toggleAsk}
-          aria-pressed={askOpen}
-          aria-controls="ask-panel"
-          aria-label="Ask the dictionary"
-          aria-describedby={askOpen ? undefined : "ask-hint"}
-          className={
-            "grid h-full place-items-center px-3 transition-colors hover:text-lacquer " +
-            (askOpen ? "text-lacquer" : "text-inkFaint")
-          }
-        >
-          <Magnifier />
-        </button>
-        {!askOpen && (
-          <span
-            id="ask-hint"
-            role="tooltip"
-            className="pointer-events-none absolute right-0 top-full z-20 mt-1.5 whitespace-nowrap border border-rule bg-paper px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-inkSoft opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none"
-          >
-            Open the Fuzhounese search assistant
-          </span>
-        )}
-      </span>
-      )}
       <button
         type="submit"
         className="shrink-0 bg-lacquer px-7 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90"
@@ -132,22 +85,26 @@ export default function SearchBar({
       </button>
     </form>
     {assistant && (
-      <div id="ask-panel">
-        <Assistant open={askOpen} signedIn={signedIn} />
+      <div className="mt-2">
+        {/* The same fold-out idiom as the Origin filter on /learn: a small
+            mono label with a triangle that turns when open. */}
+        <button
+          type="button"
+          onClick={toggleAsk}
+          aria-expanded={askOpen}
+          aria-controls="ask-panel"
+          className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer"
+        >
+          Ask the Fuzhounese search assistant
+          <span aria-hidden className={"text-[10px] transition-transform " + (askOpen ? "rotate-90" : "")}>
+            &#9656;
+          </span>
+        </button>
+        <div id="ask-panel" className={askOpen ? "mt-3" : ""}>
+          <Assistant open={askOpen} signedIn={signedIn} />
+        </div>
       </div>
     )}
     </div>
-  );
-}
-
-/* A magnifying glass with two four-point sparkles at its top right. */
-function Magnifier() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <circle cx="10.5" cy="10.5" r="6.5" />
-        <path d="M15.5 15.5l5.5 5.5" />
-      </g>
-    </svg>
   );
 }

@@ -20,7 +20,6 @@ interface Turn {
 const STARTERS = ["How do you say house?", "What is a measure word?", "Which words are from Changle?"];
 
 export default function Assistant({ open, signedIn }: { open: boolean; signedIn: boolean }) {
-  const wasClosed = useRef(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -29,11 +28,7 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Focus the box when the panel is opened by hand, not on arrival: the
-    // panel is open by default, and the search box is what should have focus
-    // then.
-    if (open && wasClosed.current) inputRef.current?.focus();
-    wasClosed.current = !open;
+    if (open) inputRef.current?.focus();
   }, [open]);
 
   useEffect(() => {

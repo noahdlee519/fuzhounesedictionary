@@ -8,6 +8,7 @@ import SavedNotice from "@/components/SavedNotice";
 import SubmitButton from "@/components/SubmitButton";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import Pager from "@/components/Pager";
+import ThemeToggle from "@/components/ThemeToggle";
 import { saveProfile, deleteAccount } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -118,12 +119,16 @@ export default async function AccountPage({
               </Link>
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-4">
+          {/* self-start + a small top offset: the sign-out link sits on the
+              line of the name, not the vertical middle of the block. The
+              light/dark switch goes underneath it. */}
+          <div className="ml-auto flex flex-col items-end gap-2 self-start pt-[6px]">
             <form action="/auth/signout" method="post">
               <button className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer">
                 Sign out
               </button>
             </form>
+            <ThemeToggle />
           </div>
         </div>
         <AvatarUpload userId={user.id} hasAvatar={!!profile?.avatar_url} />

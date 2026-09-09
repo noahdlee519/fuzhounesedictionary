@@ -72,7 +72,18 @@ const siteJsonLd = JSON.stringify({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${serif.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${serif.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Stamp the theme before first paint so a chosen dark or light mode
+            never flashes the other. Stored choice first, system preference
+            otherwise. Tiny and synchronous on purpose. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=t}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <div aria-hidden className="site-margin site-margin-left" />
         <div aria-hidden className="site-margin site-margin-right" />

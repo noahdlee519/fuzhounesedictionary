@@ -16,8 +16,14 @@
   --lacquer-soft: #EFE1DB;
 }
 
+/* Dark tokens, written once and used twice: for the system preference when
+   nobody has chosen, and for an explicit choice (the switch on /account),
+   which is stored on the device and stamped onto <html data-theme> before
+   first paint by the inline script in layout.tsx. An explicit "light" wins
+   over a dark system preference by re-declaring nothing: the light values on
+   :root already apply, and the media block is guarded against it. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper:        #14180F;
     --surface:      #1C2018;
     --ink:          #ECEBE0;
@@ -29,6 +35,19 @@
     --lacquer-soft: #2A1712;
   }
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper:        #14180F;
+  --surface:      #1C2018;
+  --ink:          #ECEBE0;
+  --ink-soft:     #A6A594;
+  --ink-faint:    #8A8974;
+  --rule:         #2E322A;
+  --rule-strong:  #ECEBE0;
+  --lacquer:      #E4614F;
+  --lacquer-soft: #2A1712;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 body {
   background-color: var(--paper);
@@ -201,4 +220,13 @@ input[type="search"]::-webkit-search-cancel-button,
 input[type="search"]::-webkit-search-decoration {
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* ---------------------------------------------------------------------------
+   On a phone the header is sticky (two rows, about 6.5rem), so anything a
+   link scrolls to must stop below it rather than under it. Above `md` the
+   header scrolls away and the utilities' own small offsets apply.
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  html [id] { scroll-margin-top: 7rem; }
 }

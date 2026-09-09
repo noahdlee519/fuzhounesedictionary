@@ -34,7 +34,7 @@ export function HeaderView({ user, profile }: SessionShape) {
   const navLink = "transition-colors";
 
   return (
-    <header className="relative z-10 border-b border-rule bg-paper">
+    <header className="sticky top-0 z-30 border-b border-rule bg-paper md:relative md:z-10">
       <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 px-5 py-3 sm:py-4 md:gap-x-5 lg:gap-x-6">
         {/* 1. Wordmark — a touch smaller on a phone so the buttons fit beside it. */}
         <NavLink
