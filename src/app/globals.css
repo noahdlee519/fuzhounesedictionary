@@ -2,76 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   Tokens. Adopted 9 Sep 2026 from the "type-focused" mock-up: white ground,
+   near-black type, two greys for hierarchy, hairline rules, one red. The old
+   names (paper, ink, ink-soft, rule, lacquer…) are kept so every page keeps
+   working; only the values changed. `ink-faint` stays at the darker grey
+   (4.6:1 on white) because it is used on 11–12px labels; `ink-mute` is the
+   mock-up's lighter grey, for decoration and text of 14px and up only.
+   --------------------------------------------------------------------------- */
 :root {
   color-scheme: light dark;
 
-  --paper:        #E7E8E1;
-  --surface:      #F4F5EE;
-  --ink:          #16150F;
-  --ink-soft:     #4C4A40;
-  --ink-faint:    #67665E;  /* 4.7:1 on paper — was #86847A at 3.0, below WCAG AA */
-  --rule:         #CFD0C4;
-  --rule-strong:  #16150F;
-  --lacquer:      #C22E1B;
-  --lacquer-soft: #EFE1DB;
+  --paper:        #FFFFFF;
+  --surface:      #F5F5F7;
+  --surface2:     #FAFAFC;
+  --ink:          #1D1D1F;
+  --ink-soft:     #6E6E73;
+  --ink-faint:    #6E6E73;
+  --ink-mute:     #8E8E93;
+  --rule:         rgba(0, 0, 0, .08);
+  --rule-strong:  rgba(0, 0, 0, .14);
+  --lacquer:      #C5311D;
+  --lacquer-ink:  #FFFFFF;
+  --lacquer-soft: rgba(197, 49, 29, .10);
+  --green:        #2E7D4F;
+  --amber:        #B7791F;
+  --header-bg:    rgba(255, 255, 255, .72);
+  --shadow:       0 12px 40px rgba(0, 0, 0, .12);
 }
 
 /* Dark tokens, written once and used twice: for the system preference when
    nobody has chosen, and for an explicit choice (the switch on /account),
    which is stored on the device and stamped onto <html data-theme> before
-   first paint by the inline script in layout.tsx. An explicit "light" wins
-   over a dark system preference by re-declaring nothing: the light values on
-   :root already apply, and the media block is guarded against it. */
+   first paint by the inline script in layout.tsx. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper:        #14180F;
-    --surface:      #1C2018;
-    --ink:          #ECEBE0;
-    --ink-soft:     #A6A594;
-    --ink-faint:    #8A8974;  /* 5.1:1 on paper — was #71705F at 3.6 */
-    --rule:         #2E322A;
-    --rule-strong:  #ECEBE0;
-    --lacquer:      #E4614F;
-    --lacquer-soft: #2A1712;
+    --paper:        #0B0B0C;
+    --surface:      #161618;
+    --surface2:     #121214;
+    --ink:          #F5F5F7;
+    --ink-soft:     #9C9CA3;
+    --ink-faint:    #9C9CA3;
+    --ink-mute:     #7A7A80;
+    --rule:         rgba(255, 255, 255, .10);
+    --rule-strong:  rgba(255, 255, 255, .18);
+    --lacquer:      #E8503A;
+    --lacquer-ink:  #0B0B0C;
+    --lacquer-soft: rgba(232, 80, 58, .14);
+    --green:        #4FB37B;
+    --amber:        #D9A13C;
+    --header-bg:    rgba(11, 11, 12, .72);
+    --shadow:       0 12px 40px rgba(0, 0, 0, .6);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper:        #14180F;
-  --surface:      #1C2018;
-  --ink:          #ECEBE0;
-  --ink-soft:     #A6A594;
-  --ink-faint:    #8A8974;
-  --rule:         #2E322A;
-  --rule-strong:  #ECEBE0;
-  --lacquer:      #E4614F;
-  --lacquer-soft: #2A1712;
+  --paper:        #0B0B0C;
+  --surface:      #161618;
+  --surface2:     #121214;
+  --ink:          #F5F5F7;
+  --ink-soft:     #9C9CA3;
+  --ink-faint:    #9C9CA3;
+  --ink-mute:     #7A7A80;
+  --rule:         rgba(255, 255, 255, .10);
+  --rule-strong:  rgba(255, 255, 255, .18);
+  --lacquer:      #E8503A;
+  --lacquer-ink:  #0B0B0C;
+  --lacquer-soft: rgba(232, 80, 58, .14);
+  --green:        #4FB37B;
+  --amber:        #D9A13C;
+  --header-bg:    rgba(11, 11, 12, .72);
+  --shadow:       0 12px 40px rgba(0, 0, 0, .6);
 }
 :root[data-theme="light"] { color-scheme: light; }
 
 body {
   background-color: var(--paper);
   color: var(--ink);
-  font-family: var(--font-serif), Georgia, "Songti SC", serif;
+  font-family: var(--font-display), "SF Pro Display", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   font-size: 17px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+@media (max-width: 760px) {
+  body { font-size: 16px; }
 }
 
-.romanization { font-variant-ligatures: none; }
+/* Chinese characters: a serif face for them alone, the way the mock-up sets
+   them. Loaded from Google Fonts (layout.tsx); the fallbacks are what Apple
+   and Android devices have. */
+.han {
+  font-family: var(--font-han), "Songti TC", "Source Han Serif TC", "Noto Serif CJK TC", "PingFang TC", serif;
+}
+.romanization { font-variant-ligatures: none; font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace; }
 
-/* Page fade. Driven by PageFade, which re-keys its wrapper on every
-   navigation — and on a click of the link for the page you are already on.
-   Opacity only, deliberately: the earlier version also drifted upward, and the
-   movement is what made it feel templated. */
-@keyframes page-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.page-fade {
-  animation: page-fade-in 180ms ease-out both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .page-fade { animation: none; }
+:focus-visible { outline: 2px solid var(--lacquer); outline-offset: 3px; border-radius: 6px; }
+
+/* ---------------------------------------------------------------------------
+   The mock-up's components, as classes, so server and client components share
+   one definition and old pages can pick them up one at a time.
+   --------------------------------------------------------------------------- */
+@layer components {
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 760px) { .wrap { padding: 0 20px; } }
+  .read { max-width: 640px; }
+  .sec { padding-top: 72px; padding-bottom: 72px; }
+  .sec-sm { padding-top: 48px; padding-bottom: 48px; }
+  @media (max-width: 760px) { .sec { padding-top: 52px; padding-bottom: 52px; } }
+  /* a hairline that spans the whole viewport from inside a constrained column */
+  .rule-bleed { height: 1px; border: 0; margin: 0; background: var(--rule); width: 100vw; margin-left: calc(50% - 50vw); }
+
+  .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--ink-soft); }
+  .display { font-weight: 800; font-size: clamp(38px, 6.2vw, 64px); line-height: 1.03; letter-spacing: -.03em; }
+  .h1 { font-weight: 700; font-size: clamp(30px, 4.4vw, 40px); line-height: 1.08; letter-spacing: -.025em; }
+  .h2 { font-weight: 700; font-size: 28px; line-height: 1.15; letter-spacing: -.02em; }
+  .h3 { font-weight: 600; font-size: 21px; line-height: 1.25; letter-spacing: -.015em; }
+  .lede { font-size: 21px; line-height: 1.45; color: var(--ink-soft); letter-spacing: -.01em; }
+  @media (max-width: 760px) { .lede { font-size: 18px; } }
+  .footnote { font-size: 12px; color: var(--ink-mute); line-height: 1.5; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 22px;
+    border-radius: 999px; border: 1px solid transparent; font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+    cursor: pointer; background: none; white-space: nowrap; text-align: center;
+    transition: transform .12s ease, background .16s ease, opacity .16s ease, border-color .16s ease; }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--lacquer); color: var(--lacquer-ink); }
+  .btn-primary:hover { opacity: .9; }
+  .btn-ghost { border-color: var(--rule-strong); color: var(--ink); }
+  .btn-ghost:hover { background: var(--surface); }
+  .btn-sm { min-height: 36px; padding: 0 14px; font-size: 13px; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .link { color: var(--lacquer); font-weight: 500; }
+  .link:hover { text-decoration: underline; }
+  .linkq { color: var(--ink-soft); font-weight: 500; font-size: 15px; }
+  .linkq:hover { color: var(--ink); }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px;
+    border: 1px solid var(--rule-strong); background: none; font-size: 13px; font-weight: 500; color: var(--ink-soft);
+    letter-spacing: -.005em; white-space: nowrap; cursor: pointer; transition: color .12s ease, border-color .12s ease; }
+  .chip:hover { color: var(--ink); border-color: var(--ink-mute); }
+  .chip-on, .chip[aria-pressed="true"], .chip[aria-current] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip-on:hover { color: var(--paper); }
+
+  .field-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+  .field-input { width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--rule-strong); background: var(--surface);
+    padding: 10px 14px; font-size: 15px; color: var(--ink); }
+  .field-input::placeholder { color: var(--ink-mute); }
+  .field-input:focus { outline: none; border-color: var(--lacquer); background: var(--paper); }
+
+  .mini { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .mini:last-child { border-bottom: 0; }
 }
 
 /* Information tooltip on a filter chip.
@@ -140,15 +223,40 @@ body {
   text-align: left;
   text-transform: none;
   letter-spacing: normal;
+  white-space: normal; /* the chip it sits in is nowrap; the tip must wrap */
+  font-weight: 400;
   box-shadow: 0 2px 10px rgb(0 0 0 / .09);
   opacity: 0;
   visibility: hidden;
   transition: opacity 120ms ease-out;
 }
 .info-dot:hover ~ .info-tip,
-.has-info:focus-visible .info-tip {
+.has-info:focus-visible .info-tip,
+.has-info:hover ~ .info-tip,
+.has-info:focus-visible ~ .info-tip {
   opacity: 1;
   visibility: visible;
+}
+/* In running text (InfoTip): a smaller, raised dot with an upright "i", and
+   the panel in the paragraph's own size rather than the chip's small caps.
+   Narrow screens: the panel hangs below the paragraph at its left. Wide
+   screens: it sits to the right of the paragraph, level with its top, in
+   the empty column beside the lede. */
+.has-info .info-dot {
+  width: 12px;
+  height: 12px;
+  margin-left: 3px;
+  margin-right: 1px;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 600;
+  padding-right: 0;
+  /* .45em raised it to superscript height; Noah wanted it ~5px higher still. */
+  vertical-align: calc(.45em + 5px);
+}
+.info-tip-left { left: 0; right: auto; font-size: 14px; letter-spacing: -.005em; }
+@media (min-width: 900px) {
+  .info-tip-left { top: 0; left: calc(100% + 16px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .info-tip { transition: none; }
@@ -173,24 +281,21 @@ body {
   .nav-strip { -webkit-mask-image: none; mask-image: none; }
 }
 
-/* tighten the display face wherever it is used for big headings */
-.font-display { letter-spacing: -0.015em; }
-
 /* ---------------------------------------------------------------------------
-   Lattice pattern in the left/right margins. Painted with mask-image so it
-   picks up --ink and therefore works in both light and dark. Wide screens
-   only: below 1120px the content column fills the viewport and there is no
-   margin to decorate.
+   Lattice pattern in the margins either side of the content column — the
+   texture of the first design, kept at 4% so it reads as paper grain rather
+   than decoration. Painted with mask-image so it takes --ink and works in
+   both themes. Wide screens only: below 1200px there is no margin to fill.
    --------------------------------------------------------------------------- */
 .site-margin {
   position: fixed;
   top: 0;
   bottom: 0;
-  width: calc((100vw - 56rem) / 2);
+  width: calc((100vw - 1040px) / 2 - 24px);
   pointer-events: none;
   z-index: 0;
   background-color: var(--ink);
-  opacity: 0.05;
+  opacity: 0.045;
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2772%27%20height%3D%2772%27%20viewBox%3D%270%200%2072%2072%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%3E%3Cpath%20d%3D%27M36%200v18M36%2054v18M0%2036h18M54%2036h18%27%2F%3E%3Crect%20x%3D%2718%27%20y%3D%2718%27%20width%3D%2736%27%20height%3D%2736%27%2F%3E%3Crect%20x%3D%2729%27%20y%3D%2729%27%20width%3D%2714%27%20height%3D%2714%27%2F%3E%3C%2Fsvg%3E");
           mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2772%27%20height%3D%2772%27%20viewBox%3D%270%200%2072%2072%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%3E%3Cpath%20d%3D%27M36%200v18M36%2054v18M0%2036h18M54%2036h18%27%2F%3E%3Crect%20x%3D%2718%27%20y%3D%2718%27%20width%3D%2736%27%20height%3D%2736%27%2F%3E%3Crect%20x%3D%2729%27%20y%3D%2729%27%20width%3D%2714%27%20height%3D%2714%27%2F%3E%3C%2Fsvg%3E");
   -webkit-mask-size: 72px 72px;
@@ -199,13 +304,10 @@ body {
           mask-repeat: repeat;
 }
 .site-margin-left  { left: 0; }
-
-/* Mirrored along the vertical axis so the tiling starts from the screen's right
-   edge instead of the content edge — otherwise the two margins run out of phase
-   and the partial tile lands on opposite sides. */
+/* Mirrored so the tiling starts from the screen's right edge and both
+   margins run in phase. */
 .site-margin-right { right: 0; transform: scaleX(-1); }
-
-@media (max-width: 1120px) {
+@media (max-width: 1200px) {
   .site-margin { display: none; }
 }
 

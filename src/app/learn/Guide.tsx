@@ -77,7 +77,7 @@ function Section({
         >
           &#9656;
         </span>
-        <h2 className="font-display text-xl font-bold uppercase tracking-tight group-hover:text-lacquer sm:text-2xl">
+        <h2 className="font-display text-xl font-bold tracking-tight group-hover:text-lacquer sm:text-2xl">
           {title}
         </h2>
       </summary>

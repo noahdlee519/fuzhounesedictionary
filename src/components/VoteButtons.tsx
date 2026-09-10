@@ -10,7 +10,12 @@ export interface VoteState {
 
 /* Thumbs up and down with counts. Two tiny forms, so they work without
    JavaScript and disable themselves while a vote is in flight. Signed-out
-   visitors see the counts and a hint; the buttons do nothing for them. */
+   visitors see the counts and a hint; the buttons do nothing for them.
+
+   The question the thumbs ask is about the pronunciation, not the word:
+   "Sounds right to me" / "Sounds different where I'm from". That wording is
+   the tooltip and the screen-reader label, so a thumbs-down is an invitation
+   to record your own variant rather than a verdict on the speaker. */
 export default function VoteButtons({
   id,
   state,
@@ -41,7 +46,7 @@ export default function VoteButtons({
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="value" value={value} />
         <input type="hidden" name="back" value={back} />
-        <SubmitButton pending="…" className={cls} aria-pressed={active} title={active ? `Withdraw your ${label}` : label}>
+        <SubmitButton pending="…" className={cls} aria-pressed={active} title={active ? `Withdraw: ${label}` : label}>
           <span aria-hidden="true">{glyph}</span> {n}
           <span className="sr-only">{label}</span>
         </SubmitButton>
@@ -50,8 +55,8 @@ export default function VoteButtons({
   };
   return (
     <span className="inline-flex items-center gap-1">
-      {btn(1, "👍", "thumbs up", state.up)}
-      {btn(-1, "👎", "thumbs down", state.down)}
+      {btn(1, "👍", "Sounds right to me", state.up)}
+      {btn(-1, "👎", "Sounds different where I'm from", state.down)}
     </span>
   );
 }

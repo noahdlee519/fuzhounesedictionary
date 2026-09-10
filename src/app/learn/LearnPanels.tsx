@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/* Three buttons above the word list — Features, Orthography, Further reading —
-   each opening one panel. One panel at a time; the first is open on arrival;
+/* Three chips under "How it works" — Features, Orthography, Sources — each
+   opening one panel. One panel at a time; the first is open on arrival;
    pressing the open one folds it away. The panel bodies are server-rendered
    and handed in as children, so this file holds only the switch. */
 
@@ -18,12 +18,31 @@ export interface Panel {
 export default function LearnPanels({
   panels,
   anchors = NO_ANCHORS,
+  initial,
 }: {
   panels: Panel[];
   /** id inside a panel body → that panel's key, so "#tones" can open it. */
   anchors?: Record<string, string>;
+  /** The panel named by ?tab= in the address, so /learn?tab=orthography
+   *  opens on Orthography (server-rendered, so it is right before any
+   *  JavaScript runs). */
+  initial?: string;
 }) {
-  const [open, setOpen] = useState<string | null>(panels[0]?.key ?? null);
+  const known = (k?: string | null) => (k && panels.some((p) => p.key === k) ? k : null);
+  const [open, setOpen] = useState<string | null>(known(initial) ?? panels[0]?.key ?? null);
+
+  /* Keep the address in step, so the panel someone is reading is what they
+     copy and share. replaceState rather than a navigation: no history entry,
+     no re-render, and the hash is dropped since it named the old panel. */
+  const choose = (key: string | null) => {
+    setOpen(key);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (key && key !== panels[0]?.key) url.searchParams.set("tab", key);
+    else url.searchParams.delete("tab");
+    url.hash = "";
+    window.history.replaceState(window.history.state, "", url);
+  };
   const current = panels.find((p) => p.key === open) ?? null;
   const index = panels.findIndex((p) => p.key === open);
   const prev = index > 0 ? panels[index - 1] : null;
@@ -35,7 +54,7 @@ export default function LearnPanels({
      the arrows sit at the bottom of what may be a long panel, the view is
      brought back up to the tabs so the new panel is read from its start. */
   const go = (key: string) => {
-    setOpen(key);
+    choose(key);
     requestAnimationFrame(() => {
       top.current?.scrollIntoView({ block: "start", behavior: "smooth" });
     });
@@ -47,9 +66,11 @@ export default function LearnPanels({
   useEffect(() => {
     const follow = () => {
       const id = window.location.hash.slice(1);
-      const key = anchors[id];
+      // "#orthography" names a panel; "#tones" names an id inside one.
+      const key = known(id) ?? anchors[id];
       if (!key) return;
       setOpen(key);
+      if (key === id) return;
       // After React has painted the newly opened panel.
       requestAnimationFrame(() => {
         document.getElementById(id)?.scrollIntoView({ block: "start" });
@@ -61,8 +82,8 @@ export default function LearnPanels({
   }, [anchors]);
 
   return (
-    <section ref={top} className="scroll-mt-3 space-y-4">
-      <div role="tablist" aria-label="About Fuzhounese" className="flex flex-wrap gap-1.5 sm:gap-2">
+    <section ref={top} className="scroll-mt-20 space-y-6">
+      <div role="tablist" aria-label="About Fuzhounese" className="flex flex-wrap gap-2">
         {panels.map((p) => {
           const active = p.key === open;
           return (
@@ -74,14 +95,8 @@ export default function LearnPanels({
               aria-selected={active}
               aria-expanded={active}
               aria-controls={`panel-${p.key}`}
-              onClick={() => setOpen(active ? null : p.key)}
-              className={
-                // Tighter on a phone so the three sit in one row on a 360px screen.
-                "whitespace-nowrap border px-2 py-1.5 font-mono text-[10px] uppercase tracking-[0.04em] transition-colors sm:px-4 sm:text-xs sm:tracking-[0.1em] " +
-                (active
-                  ? "border-lacquer bg-lacquer text-paper"
-                  : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer")
-              }
+              onClick={() => choose(active ? null : p.key)}
+              className={"chip" + (active ? " chip-on" : "")}
             >
               {p.label}
             </button>
@@ -95,14 +110,14 @@ export default function LearnPanels({
           role="tabpanel"
           id={`panel-${current.key}`}
           aria-labelledby={`tab-${current.key}`}
-          className="page-fade space-y-5 border border-rule bg-surface p-5 sm:p-6"
+          className="page-fade space-y-5 rounded-xl border border-rule bg-surface p-5 sm:p-7"
         >
           {current.body}
 
           {(prev || next) && (
             <nav
               aria-label="Neighbouring sections"
-              className="flex items-center justify-between gap-4 border-t border-rule pt-4 font-mono text-xs uppercase tracking-[0.1em]"
+              className="flex items-center justify-between gap-4 border-t border-rule pt-4 text-sm font-medium"
             >
               {prev ? (
                 <button

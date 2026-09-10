@@ -112,7 +112,7 @@ export default async function ContributorPage({
       <section className="flex items-start justify-between gap-6 border-b border-rule pb-6">
         <div className="min-w-0">
           <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Contributor</p>
-          <h1 className="mt-2 font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
+          <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
             {profile.display_name || "Anonymous contributor"}
           </h1>
           {origin && (
@@ -134,20 +134,20 @@ export default async function ContributorPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-display text-lg font-bold uppercase tracking-tight">Words</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight">Words</h2>
         {entriesError ? (
           unavailable
         ) : entries.length === 0 ? (
           <p className="text-inkSoft">No published words yet.</p>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-px border-y border-rule bg-rule sm:grid-cols-2 lg:grid-cols-3">
             {entries.map((e) => <EntryCard key={e.id} entry={e} />)}
           </div>
         )}
       </section>
 
       <section id="recordings" className="scroll-mt-3 space-y-3">
-        <h2 className="border-t border-rule pt-5 font-display text-lg font-bold uppercase tracking-tight">
+        <h2 className="border-t border-rule pt-5 font-display text-lg font-bold tracking-tight">
           Recordings
         </h2>
         {recError ? (

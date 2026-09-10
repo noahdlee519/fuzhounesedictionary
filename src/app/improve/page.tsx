@@ -4,6 +4,9 @@ import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
+import { translator } from "@/lib/i18n";
+import { getLang } from "@/lib/lang";
+import ContributeTabs from "@/components/ContributeTabs";
 import Recorder from "@/components/Recorder";
 import SavedNotice from "@/components/SavedNotice";
 import SuggestBox, { type SenseOption } from "@/components/SuggestBox";
@@ -29,22 +32,25 @@ const PAGE_SIZE = 25;
 export default async function ImprovePage({
   searchParams,
 }: {
-  searchParams: { page?: string; origin?: string; sent?: string; problem?: string };
+  searchParams: { page?: string; origin?: string; need?: string; sent?: string; problem?: string };
 }) {
   const { user } = await getSessionUser();
 
   if (!user) {
+    const recording = searchParams.need === "recording";
     return (
-      <div className="mx-auto max-w-lg space-y-4 text-center">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
-          Improve the dictionary
-        </h1>
-        <p className="text-inkSoft">
-          Sign in and this page becomes a list of every word still missing something, with a record
-          button beside each one and a place to add its pronunciation or an example sentence.
-        </p>
-        <div className="flex justify-center">
-          <SignInButton next="/improve" />
+      <div className="space-y-8">
+        <ContributeTabs active="improve" />
+        <div className="mx-auto max-w-lg space-y-4 rounded-xl border border-rule bg-surface p-8 text-center">
+          <p className="h3">{recording ? "Sign in to record a word" : "Sign in to improve a word"}</p>
+          <p className="text-inkSoft">
+            {recording
+              ? "Pick a word that has no recording yet and say it into your phone or laptop. It takes about thirty seconds, and where your Fuzhounese is from is saved with it."
+              : "This page is a list of every word still missing something—a recording, IPA, an example sentence—with a record button beside each one."}
+          </p>
+          <div className="flex justify-center">
+            <SignInButton next={recording ? "/improve?need=recording" : "/improve"} label={translator(getLang())("signin.google")} />
+          </div>
         </div>
       </div>
     );
@@ -56,6 +62,9 @@ export default async function ImprovePage({
 
   const originParam = (searchParams.origin ?? "").trim();
   const origin = originArea(originParam) ? originParam : "";
+  // ?need=recording narrows the list to one kind of gap — the Contribute
+  // hub's "Record a word" lands here with only the silent words showing.
+  const need = (["recording", "ipa", "example"] as const).find((k) => k === searchParams.need) ?? "";
 
   const supabase = createClient();
   let query = supabase
@@ -66,6 +75,7 @@ export default async function ImprovePage({
     )
     .or("needs_recording.eq.true,needs_ipa.eq.true,needs_example.eq.true");
   if (origin) query = query.eq("origin_area", origin);
+  if (need) query = query.eq(`needs_${need}`, true);
 
   const { data, count, error } = await query
     .order("votes", { ascending: false })
@@ -78,7 +88,7 @@ export default async function ImprovePage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   // A typed page past the end lands on the last page rather than an empty one.
   if (!error && page > totalPages) {
-    redirect(`/improve?${new URLSearchParams({ ...(origin ? { origin } : {}), ...(totalPages > 1 ? { page: String(totalPages) } : {}) })}#worklist`);
+    redirect(`/improve?${new URLSearchParams({ ...(origin ? { origin } : {}), ...(need ? { need } : {}), ...(totalPages > 1 ? { page: String(totalPages) } : {}) })}#worklist`);
   }
 
   const ids = rows.map((r: any) => r.id);
@@ -125,21 +135,11 @@ export default async function ImprovePage({
     }
   }
 
-  const href = (o: string, p = 1) =>
-    `/improve?${new URLSearchParams({ ...(o ? { origin: o } : {}), ...(p > 1 ? { page: String(p) } : {}) })}`;
+  const href = (o: string, p = 1, n: string = need) =>
+    `/improve?${new URLSearchParams({ ...(o ? { origin: o } : {}), ...(n ? { need: n } : {}), ...(p > 1 ? { page: String(p) } : {}) })}`;
 
   const chip = (label: string, to: string, active: boolean) => (
-    <Link
-      key={label}
-      href={to}
-      aria-current={active ? "true" : undefined}
-      className={
-        "border px-2.5 py-1 text-[13px] transition-colors " +
-        (active
-          ? "border-lacquer bg-lacquer text-paper"
-          : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer")
-      }
-    >
+    <Link key={label} href={to} aria-current={active ? "true" : undefined} className={"chip" + (active ? " chip-on" : "")}>
       {label}
     </Link>
   );
@@ -153,20 +153,31 @@ export default async function ImprovePage({
 
   return (
     <div className="space-y-8">
-      <section className="space-y-3 border-b border-rule pb-5">
+      <ContributeTabs active="improve" />
+      <section className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
-            Improve the dictionary
-          </h1>
-          <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-            {total.toLocaleString()} word{total === 1 ? "" : "s"} need{total === 1 ? "s" : ""} work
-          </span>
+          <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
+            {need === "recording" ? (
+              <>
+                None of the words listed here has a recording yet. Press the button beside one and
+                say it—about thirty seconds—and an editor will check it before it appears.
+              </>
+            ) : (
+              <>
+                Each word listed here is missing something. Fill in what you can—a recording, the
+                pronunciation, a sentence—and an editor will check it before it appears.
+              </>
+            )}{" "}
+            Words people are waiting for are under{" "}
+            <Link href="/request" className="text-lacquer hover:underline">Wanted</Link>.
+          </p>
+          {!error && (
+            <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+              {total.toLocaleString()} word{total === 1 ? "" : "s"}{" "}
+              {need === "recording" ? "without a recording" : need ? "missing this" : `need${total === 1 ? "s" : ""} work`}
+            </span>
+          )}
         </div>
-        <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
-          Each word listed here is missing something. Feel free to fill in the gaps. Everything you
-          upload (recordings, pronunciations, sentences, etc.) will be sent to the editors before it
-          appears on the site.
-        </p>
         <p className="max-w-[68ch] text-sm text-inkSoft">
           Your contributions are labeled with where your Fuzhounese is from, which you can set on{" "}
           <Link href="/account" className="whitespace-nowrap text-lacquer hover:underline">your account page</Link>.
@@ -185,17 +196,26 @@ export default async function ImprovePage({
         </div>
       )}
 
-      <section className="space-y-2">
-        <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          Limit to words from
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {chip("Anywhere", href(""), !origin)}
-          {ORIGIN_GROUPS.flatMap((g) =>
-            ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
-              chip(`${a.label} ${a.hanzi}`, href(a.code), origin === a.code)
-            )
-          )}
+      <section className="space-y-5">
+        <div className="space-y-2">
+          <p className="eyebrow">Missing</p>
+          <div className="flex flex-wrap gap-2">
+            {chip("Anything", href(origin, 1, ""), !need)}
+            {chip("A recording", href(origin, 1, "recording"), need === "recording")}
+            {chip("The pronunciation (IPA)", href(origin, 1, "ipa"), need === "ipa")}
+            {chip("An example sentence", href(origin, 1, "example"), need === "example")}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="eyebrow">Words from</p>
+          <div className="flex flex-wrap gap-2">
+            {chip("Anywhere", href(""), !origin)}
+            {ORIGIN_GROUPS.flatMap((g) =>
+              ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
+                chip(`${a.label} ${a.hanzi}`, href(a.code), origin === a.code)
+              )
+            )}
+          </div>
         </div>
       </section>
 
@@ -263,7 +283,7 @@ export default async function ImprovePage({
                 {(r.needs_ipa || r.needs_example) && (
                   <div className="mt-2 flex flex-wrap items-start gap-2">
                     {r.needs_ipa && (
-                      <SuggestBox kind="ipa" entryId={r.id} pending={mine[r.id]?.ipa} page={page} origin={origin} />
+                      <SuggestBox kind="ipa" entryId={r.id} pending={mine[r.id]?.ipa} page={page} origin={origin} need={need} />
                     )}
                     {r.needs_example && (senses[r.id]?.length ?? 0) > 0 && (
                       <SuggestBox
@@ -273,6 +293,7 @@ export default async function ImprovePage({
                         pending={mine[r.id]?.example}
                         page={page}
                         origin={origin}
+                        need={need}
                       />
                     )}
                   </div>
@@ -311,6 +332,7 @@ export default async function ImprovePage({
               fields, the fragment keeps the scroll at the list. */}
           <form action="/improve#worklist" method="get" className="flex items-center gap-1.5 text-inkFaint">
             {origin && <input type="hidden" name="origin" value={origin} />}
+            {need && <input type="hidden" name="need" value={need} />}
             <label htmlFor="page-jump">Page</label>
             <input
               id="page-jump"

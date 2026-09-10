@@ -36,7 +36,7 @@ export default async function AccountPage({
   if (!user) {
     return (
       <div className="mx-auto max-w-lg space-y-4 text-center">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">My account</h1>
+        <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">My account</h1>
         <p className="text-inkSoft">Sign in to see the words you&apos;ve contributed.</p>
         <div className="flex justify-center"><SignInButton next="/account" /></div>
       </div>
@@ -107,7 +107,7 @@ export default async function AccountPage({
             className="ring-1 ring-rule"
           />
           <div className="min-w-0">
-            <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
+            <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
               {profile?.display_name || "My account"}
             </h1>
             <p className="truncate text-sm text-inkFaint">{user.email}</p>
@@ -275,7 +275,7 @@ export default async function AccountPage({
       {/* ------------------------------------------------------------------ */}
       <section className="space-y-4 border-t border-rule pt-8">
         <div>
-          <h2 className="font-display text-lg font-bold uppercase tracking-tight">Your Fuzhounese</h2>
+          <h2 className="font-display text-lg font-bold tracking-tight">Your Fuzhounese</h2>
           <p className="mt-1 max-w-2xl text-sm text-inkSoft">
             Fuzhounese changes from county to county and village to village, so knowing where a word
             comes from is part of the record. Tell us where yours is from and it will be offered as
@@ -371,7 +371,7 @@ export default async function AccountPage({
 
       {/* ---- delete account ------------------------------------------------ */}
       <section id="delete" className="scroll-mt-3 space-y-3 border-t border-rule pt-8">
-        <h2 className="font-display text-lg font-bold uppercase tracking-tight">Delete your account</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight">Delete your account</h2>
         <p className="max-w-2xl text-sm text-inkSoft">
           This removes your profile, your email, your picture, and any words still waiting for
           review or rejected. Words and meanings already published stay in the dictionary under its

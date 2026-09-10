@@ -59,10 +59,63 @@ export async function recordingCounts(
   return counts;
 }
 
-/** Rows with senses joined → cards with live recording counts, in one round trip. */
+export interface RecordingSummary {
+  /** Approved recordings in the recordings table. */
+  count: number;
+  /** The one to play from a card: the best-liked reading of the word
+   *  itself (up minus down votes), the earliest when tied. */
+  top: string | null;
+}
+
+/** For each entry, how many approved recordings it has and which one a card
+ *  should play. Two round trips (recordings, then their vote totals); both
+ *  tolerate their table not existing yet. */
+export async function recordingSummary(
+  supabase: { from: (t: string) => any },
+  ids: string[]
+): Promise<Map<string, RecordingSummary>> {
+  const out = new Map<string, RecordingSummary>();
+  if (!ids.length) return out;
+
+  const { data, error } = await supabase
+    .from("recordings")
+    .select("id, entry_id, kind, audio_url, created_at")
+    .eq("status", "approved")
+    .in("entry_id", ids)
+    .order("created_at", { ascending: true });
+  if (error || !data?.length) return out;
+  const rows = data as { id: string; entry_id: string; kind: string; audio_url: string; created_at: string }[];
+
+  const score = new Map<string, number>();
+  const { data: totals } = await supabase
+    .from("recording_vote_totals")
+    .select("recording_id, up, down")
+    .in("recording_id", rows.map((r) => r.id));
+  for (const t of (totals ?? []) as any[]) score.set(t.recording_id, Number(t.up) - Number(t.down));
+
+  const byEntry = new Map<string, typeof rows>();
+  for (const r of rows) byEntry.set(r.entry_id, [...(byEntry.get(r.entry_id) ?? []), r]);
+  for (const [entryId, recs] of byEntry) {
+    // Readings of the word itself before example sentences; then the votes;
+    // then age (the rows arrive oldest first, and sort is stable).
+    const best = [...recs].sort(
+      (a, b) =>
+        Number(b.kind === "headword") - Number(a.kind === "headword") ||
+        (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0)
+    )[0];
+    out.set(entryId, { count: recs.length, top: best?.audio_url ?? null });
+  }
+  return out;
+}
+
+/** Rows with senses joined → cards with live recording counts and the
+ *  recording each card plays, in two round trips for the whole page. */
 export async function toCards(supabase: { from: (t: string) => any }, rows: any[]): Promise<CardProps[]> {
-  const counts = await recordingCounts(supabase, rows.map((r) => r.id));
-  return rows.map((r) => toCard(r, counts.get(r.id) ?? 0));
+  const summary = await recordingSummary(supabase, rows.map((r) => r.id));
+  return rows.map((r) => {
+    const s = summary.get(r.id);
+    return { ...toCard(r, s?.count ?? 0), audio: s?.top ?? r.audio_url ?? null };
+  });
 }
 
 /** "福州 · Hók-ciŭ" — the word as a human would name it in a page title. */

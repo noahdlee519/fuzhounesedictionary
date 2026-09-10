@@ -17,7 +17,7 @@ export default function Error({
   return (
     <div className="mx-auto max-w-lg space-y-4 py-10 text-center">
       <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Error</p>
-      <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
+      <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
         Something went wrong
       </h1>
       <p className="text-inkSoft">

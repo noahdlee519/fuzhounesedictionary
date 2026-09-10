@@ -33,7 +33,7 @@ export default function NotFound() {
 
       <p className="flex flex-wrap gap-5 font-mono text-xs uppercase tracking-[0.1em]">
         <Link href="/" className="text-lacquer hover:underline">Home</Link>
-        <Link href="/learn#words" className="text-lacquer hover:underline">Browse all words</Link>
+        <Link href="/browse" className="text-lacquer hover:underline">Browse all words</Link>
         <Link href="/request" className="text-lacquer hover:underline">Request a word</Link>
       </p>
     </div>

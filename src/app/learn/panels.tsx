@@ -3,7 +3,7 @@ import { ToneChart, Table } from "./Guide";
 
 /* The three short panels above the word list. Digests of the longer guide in
    Guide.tsx, and held to the same rule: every claim traces to a source named
-   in Further reading, or to an entry in this dictionary. Nothing from memory.
+   in Sources, or to an entry in this dictionary. Nothing from memory.
    Voice: plain and short. */
 
 const P = ({ children }: { children: React.ReactNode }) => (
@@ -220,7 +220,7 @@ const orthography = (
         >
           Dictionary of the Foochow Dialect
         </a>
-        , listed under Further reading. Two things trip people up:{" "}
+        , listed under Sources. Two things trip people up:{" "}
         <Rom>b d g c</Rom> are the <i>un</i>aspirated sounds and <Rom>p t k ch</Rom> the aspirated
         ones. So <Rom>b</Rom> is not voiced like an English b: it is the p of &ldquo;spin&rdquo;,
         without the puff of air that the p of &ldquo;pin&rdquo; has. In the same way <Rom>d</Rom> is
@@ -301,7 +301,7 @@ const orthography = (
         ]}
       />
       <p className="text-sm text-inkFaint">
-        Sounds after the Bàng-uâ-cê tables on Wikipedia, listed under Further reading. Some speakers
+        Sounds after the Bàng-uâ-cê tables on Wikipedia, listed under Sources. Some speakers
         say <Rom>a̤</Rom> closer to <i>e</i> in <i>bed</i>, and <Rom>o̤</Rom> closer to <i>o</i>; the
         values given are the traditional ones the spelling was built on.
       </p>
@@ -356,5 +356,5 @@ const reading = (
 export const learnPanels: Panel[] = [
   { key: "features", label: "Features", body: features },
   { key: "orthography", label: "Orthography", body: orthography },
-  { key: "reading", label: "Further reading", body: reading },
+  { key: "reading", label: "Sources", body: reading },
 ];

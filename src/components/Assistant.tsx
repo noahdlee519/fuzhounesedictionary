@@ -20,6 +20,23 @@ interface Turn {
 
 const STARTERS = ["How do you say house?", "What is a measure word?", "Which words are from Changle?"];
 
+/* Shown to signed-out visitors in place of a live answer. Kept to things the
+   dictionary is sure of. */
+export const SAMPLES = [
+  {
+    q: "How do you say house?",
+    a: "厝 chuó is the everyday word for a house or home. The entry has recordings you can play, and a note from a speaker on how they use it.",
+  },
+  {
+    q: "Does 八 only mean eight?",
+    a: "No. 八 báik is the number eight, and a separate entry 八 báik is the verb to know or recognise, as in a speaker's note \u201cI already know\u201d. Search results show which meaning matched.",
+  },
+  {
+    q: "Which words are from Changle?",
+    a: "Every word and recording carries where its contributor's Fuzhounese is from. The Browse page can be filtered to Changle 長樂, and each entry page names the district beside each recording.",
+  },
+];
+
 /* One conversation per browser tab. Kept small (the last 40 turns) and read
    inside try/catch: private windows and some embedded views throw on access. */
 const STORE = "ask-history";
@@ -79,12 +96,25 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
 
   if (!signedIn) {
     return (
-      <section aria-label="Ask the dictionary" className="page-fade space-y-3 border border-rule bg-surface p-5">
+      <section aria-label="Ask the dictionary" className="page-fade space-y-4 border border-rule bg-surface p-5">
         <p className="text-sm text-inkSoft">
-          Ask about a word, a meaning or how the language works. Answers come from data
-          composing the dictionary. It is not a perfect tool and has limitations, especially with
-          translating sentences. Sign in to use it—each account gets a small
-          daily share, so the cost stays sane.
+          Ask about a word, a meaning or how the language works. Answers come from the dictionary
+          itself, so it is only as good as the entries. It is not a perfect tool and has limitations,
+          especially with translating sentences.
+        </p>
+        {/* Two exchanges of the kind it handles, so the value shows before the
+            sign-in. Fixed text, not live answers. */}
+        <div className="space-y-3 border-l-2 border-rule pl-4">
+          {SAMPLES.map((ex) => (
+            <div key={ex.q} className="space-y-1">
+              <p className="font-display font-semibold text-ink">{ex.q}</p>
+              <p className="text-sm leading-relaxed text-inkSoft">{ex.a}</p>
+            </div>
+          ))}
+          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Example answers</p>
+        </div>
+        <p className="text-sm text-inkSoft">
+          Sign in to ask your own—each account gets a small daily share, so the cost stays sane.
         </p>
         <SignInButton next="/" label="Sign in with Google" />
       </section>
@@ -229,7 +259,7 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
 /* The reply is plain text with [label](/path) links to entries and pages on
    this site. Paragraphs split on blank lines; anything else is shown as
    written. External links are not followed — they are rendered as text. */
-function Answer({ text }: { text: string }) {
+export function Answer({ text }: { text: string }) {
   const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   return (
     <>

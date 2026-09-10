@@ -2,6 +2,7 @@ import Link from "next/link";
 import { STATUS_STYLE } from "@/lib/status";
 import { sortSenses } from "@/lib/entries";
 import RecordingNoteEditor from "./RecordingNoteEditor";
+import PlayButton from "./PlayButton";
 
 /* One recording in a person's list — on their public profile and on their own
    account page. Reads: word · its first English meaning · the player · (status,
@@ -73,9 +74,13 @@ export default function RecordingByRow({
           </span>
         )}
       </div>
-      <audio controls src={r.audio_url} className="mt-2 h-9 w-full max-w-sm" />
-      {note && !editableNote && <p className="romanization mt-2 text-sm text-inkSoft">{note}</p>}
-      {editableNote && <RecordingNoteEditor id={r.id} note={note} back={back} />}
+      <div className="mt-3 flex items-start gap-3">
+        <PlayButton src={r.audio_url} label={`${name}${note ? `: ${note}` : ""}`} />
+        <div className="min-w-0 flex-1">
+          {note && !editableNote && <p className="romanization text-[15px] leading-snug">{note}</p>}
+          {editableNote && <RecordingNoteEditor id={r.id} note={note} back={back} compact />}
+        </div>
+      </div>
     </div>
   );
 }

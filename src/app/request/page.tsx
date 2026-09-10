@@ -3,6 +3,9 @@ import SubmitButton from "@/components/SubmitButton";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
+import { translator } from "@/lib/i18n";
+import { getLang } from "@/lib/lang";
+import ContributeTabs from "@/components/ContributeTabs";
 import { requestWord, voteRequest, fulfillRequest } from "./actions";
 import VoteButton from "./VoteButton";
 import type { Metadata } from "next";
@@ -10,9 +13,9 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Request a word",
+  title: "Wanted words",
   description:
-    "Ask for a Fuzhounese word that is missing from the dictionary, or for a recording of one that has no voice yet.",
+    "Ask for a Fuzhounese word that is missing from the dictionary, or for a recording of one that has none yet.",
   alternates: { canonical: "/request" },
 };
 
@@ -36,6 +39,7 @@ export default async function WantedPage({
 }) {
   const notice = (searchParams.notice ?? "").trim().slice(0, 300);
   const { user, profile } = await getSessionUser();
+  const t = translator(getLang());
   const isEd = Boolean(profile?.is_editor);
   const supabase = createClient();
 
@@ -61,17 +65,14 @@ export default async function WantedPage({
 
   return (
     <div className="space-y-9">
-      <section className="border-b border-rule pb-6">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
-          Request a word
-        </h1>
-        {user && (
-          <p className="mt-4 max-w-2xl text-inkSoft">
-            Ask for a word that is missing, or for a recording of a word that has no voice yet. Upvote
-            the requests you want filled first. A speaker can then write the entry or record it.
-          </p>
-        )}
-      </section>
+      <ContributeTabs active="wanted" />
+      {user && (
+        <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
+          Words people are waiting for. Ask for one that is missing, or for a recording of one that
+          has no recording yet, and upvote the ones you want filled first. A speaker can then write the
+          entry or record it.
+        </p>
+      )}
 
       {notice && (
         <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">{notice}</p>
@@ -97,8 +98,8 @@ export default async function WantedPage({
           </form>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-inkSoft">Sign in to request a word or to upvote.</p>
-            <SignInButton next="/request" label="Sign in" className="border border-rule px-4 py-2 font-mono text-xs uppercase tracking-wide text-inkSoft hover:border-lacquer hover:text-lacquer" />
+            <p className="text-sm text-inkSoft">{t("wanted.signin")}</p>
+            <SignInButton next="/request" label={t("nav.signin")} className="btn btn-ghost btn-sm" />
           </div>
         )}
       </section>
@@ -152,7 +153,7 @@ export default async function WantedPage({
                       <span className="romanization font-display text-lg font-semibold text-ink">{display}</span>
                     )}
                     <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint ring-1 ring-rule px-2 py-0.5">
-                      {needsVoice ? "needs a voice" : "needs an entry"}
+                      {needsVoice ? "needs a recording" : "needs an entry"}
                     </span>
                     {audioLanded && (
                       <span className="font-mono text-[11px] uppercase tracking-wide text-lacquer ring-1 ring-lacquer px-2 py-0.5">audio added</span>

@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 /* A nav link that knows whether it is the page you are on.
 
    Two jobs:
-   1. Colour itself lacquer when it is the current page, and set aria-current
-      so it is not only a colour cue.
+   1. Set itself in ink and semibold when it is the current page (grey
+      otherwise), and set aria-current so it is not only a colour cue.
    2. When you click the link for the page you are ALREADY on, Next does not
       re-render — same route, nothing to do — so PageFade would never replay.
       This fires an event for that case only. A click that really does change
@@ -29,6 +29,7 @@ export default function NavLink({
   className,
   plain = false,
   announce = true,
+  also,
   ...rest
 }: {
   href: string;
@@ -41,15 +42,18 @@ export default function NavLink({
    *  second element claiming aria-current and a screen reader would say
    *  "current page" twice. It still fades on click; it just does not announce. */
   announce?: boolean;
+  /** Other routes that count as this link's page — Contribute is "here" on
+   *  /submit, /improve, /request and /admin as well as on /contribute. */
+  also?: string[];
 } & Omit<React.ComponentProps<typeof Link>, "href" | "className">) {
   const pathname = usePathname();
-  const current = isCurrent(pathname, href);
+  const current = isCurrent(pathname, href) || (also ?? []).some((h) => isCurrent(pathname, h));
 
   const colour = plain
     ? ""
     : current
-      ? " text-lacquer"
-      : " text-inkSoft hover:text-lacquer";
+      ? " text-ink font-semibold"
+      : " text-inkSoft hover:text-ink";
 
   return (
     <Link

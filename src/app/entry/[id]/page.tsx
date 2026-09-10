@@ -12,6 +12,8 @@ import { LEGAL_CONTACT } from "@/components/Legal";
 import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
 import SignInButton from "@/components/SignInButton";
+import PlayButton from "@/components/PlayButton";
+import { formatDate } from "@/lib/dates";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
 import DeleteEntry from "@/components/DeleteEntry";
 import SavedNotice from "@/components/SavedNotice";
@@ -80,6 +82,40 @@ function linkifyNotes(text: string): React.ReactNode[] {
   return out;
 }
 
+/* Words that share a character with this one: 鼎邊 finds 鼎邊糊, 愛 finds
+   愛情, 龍 finds the dragon compounds. Whole-word containment first (the
+   compound built on this word), then shorter words before longer, so the
+   list reads from nearest to furthest. Up to eight. */
+interface RelatedWord {
+  id: string;
+  hanzi: string | null;
+  romanization: string | null;
+  headword: string;
+}
+async function relatedWords(
+  supabase: ReturnType<typeof createClient>,
+  id: string,
+  hanzi: string | null
+): Promise<RelatedWord[]> {
+  const chars = Array.from(new Set(Array.from(hanzi ?? "").filter((c) => /\p{Script=Han}/u.test(c)))).slice(0, 4);
+  if (!chars.length) return [];
+  const { data } = await supabase
+    .from("entries")
+    .select("id, hanzi, romanization, headword")
+    .eq("status", "approved")
+    .neq("id", id)
+    .or(chars.map((c) => `hanzi.ilike.%${c}%`).join(","))
+    .limit(40);
+  const whole = hanzi ?? "";
+  return ((data ?? []) as RelatedWord[])
+    .sort((a, b) => {
+      const ac = whole.length > 1 && (a.hanzi ?? "").includes(whole) ? 0 : 1;
+      const bc = whole.length > 1 && (b.hanzi ?? "").includes(whole) ? 0 : 1;
+      return ac - bc || (a.hanzi ?? "").length - (b.hanzi ?? "").length || (a.hanzi ?? "").localeCompare(b.hanzi ?? "");
+    })
+    .slice(0, 8);
+}
+
 export default async function EntryPage({
   params,
   searchParams,
@@ -102,6 +138,8 @@ export default async function EntryPage({
   ]);
 
   if (!entry) notFound();
+
+  const related = await relatedWords(supabase, entry.id, entry.hanzi);
 
   // Editors can remove a recording from here, without a trip to the queue.
   const canDelete = Boolean(profile?.is_editor);
@@ -169,7 +207,7 @@ export default async function EntryPage({
             and drew an empty bordered pill on every entry with no origin. */}
         {wordOrigin && entry.origin_area ? (
           <Link
-            href={`/learn?origin=${encodeURIComponent(entry.origin_area)}`}
+            href={`/browse?origin=${encodeURIComponent(entry.origin_area)}`}
             className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
           >
             {wordOrigin}
@@ -191,12 +229,15 @@ export default async function EntryPage({
         </p>
       )}
 
-      <section className="space-y-3">
+      <section id="recordings" className="scroll-mt-20 space-y-3">
         {/* the legacy single-file column still plays, if it holds anything */}
         {entry.audio_url && (
-          <audio controls src={entry.audio_url} className="w-full max-w-sm">
-            Your browser does not support audio playback.
-          </audio>
+          <div className="flex items-center gap-3">
+            <PlayButton src={entry.audio_url} label={`${entryTitle(entry)}, the original recording`} />
+            <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+              submitted with the word
+            </span>
+          </div>
         )}
 
         <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} />
@@ -222,21 +263,26 @@ export default async function EntryPage({
           !entry.audio_url &&
           headwordRecs.length === 0 && (
             <div className="border border-dashed border-rule p-4">
-              <p className="text-sm text-inkSoft">No pronunciation yet. Know how this is said?</p>
-              <form action={requestWord} className="mt-3">
-                <input type="hidden" name="entry_id" value={entry.id} />
-                <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
-                <input type="hidden" name="back" value={`/entry/${entry.id}`} />
-                <button className="border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">
-                  Ask for a recording
-                </button>
-              </form>
-              <div className="mt-3">
+              <p className="text-sm text-inkSoft">
+                No recording yet. If you know how this is said, your recording is the one thing this
+                page is missing.
+              </p>
+              {/* Recording it is the valuable act, so it gets the filled button;
+                  asking someone else to is the fallback, as a text link. */}
+              <div className="mt-3 flex flex-wrap items-center gap-4">
                 <SignInButton
                   next={`/entry/${entry.id}`}
-                  label="Or sign in and record it yourself →"
-                  className="text-sm text-lacquer hover:underline"
+                  label="Sign in and record it"
+                  className="inline-flex items-center gap-2 border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer [&>svg]:hidden"
                 />
+                <form action={requestWord}>
+                  <input type="hidden" name="entry_id" value={entry.id} />
+                  <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
+                  <input type="hidden" name="back" value={`/entry/${entry.id}`} />
+                  <button className="text-sm text-lacquer hover:underline">
+                    Can&apos;t? Ask for a recording →
+                  </button>
+                </form>
               </div>
             </div>
           )
@@ -276,6 +322,25 @@ export default async function EntryPage({
         ))}
       </ol>
 
+      {related.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Related words</h2>
+          <ul className="flex flex-wrap gap-2">
+            {related.map((r) => (
+              <li key={r.id}>
+                <Link
+                  href={`/entry/${r.id}`}
+                  className="inline-flex items-baseline gap-1.5 border border-rule px-2.5 py-1 text-[13px] transition-colors hover:border-lacquer hover:text-lacquer"
+                >
+                  {r.hanzi && <span className="font-display font-semibold">{r.hanzi}</span>}
+                  <span className="romanization text-inkSoft">{r.romanization || r.headword}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {entry.notes && (
         <div className="bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
           <span className="font-mono text-xs uppercase tracking-wide text-inkFaint">Notes </span>
@@ -307,7 +372,7 @@ export default async function EntryPage({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          Added {new Date(entry.created_at).toLocaleDateString()}
+          Added {formatDate(entry.created_at)}
           {contributor && (
             <>
               {" · contributed by "}
@@ -317,9 +382,15 @@ export default async function EntryPage({
             </>
           )}
         </p>
-        <span className="flex flex-wrap items-center gap-3">
+        <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
           {/* Anyone can flag an entry; the terms say what happens next. The
               subject carries the page so the report is usable as sent. */}
+          <a
+            href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Suggested edit: ${entryTitle(entry)} (${SITE_URL}${here})`)}&body=${encodeURIComponent("What should change, and why:\n\n")}`}
+            className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"
+          >
+            Suggest an edit
+          </a>
           <a
             href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Report: ${entryTitle(entry)} (${SITE_URL}${here})`)}`}
             className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"

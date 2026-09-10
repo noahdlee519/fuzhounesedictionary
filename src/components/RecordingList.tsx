@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { formatOrigin } from "@/lib/origins";
 import DeleteRecording from "./DeleteRecording";
+import PlayButton from "./PlayButton";
 import RecordingNoteEditor from "./RecordingNoteEditor";
 import VoteButtons, { type VoteState } from "./VoteButtons";
 
-/* One player per recording, labelled with who said it and where their
-   Fuzhounese is from. This is the point of the recordings table: the same word
+/* One row per recording: a play button, the speaker's note, who read it and
+   where their Fuzhounese is from, and the thumbs. This is the point of the recordings table: the same word
    said in Changle and in Gulou are both correct and both worth hearing. */
 
 export interface RecordingRow {
@@ -43,67 +44,69 @@ export default function RecordingList({
   if (!recordings.length) return null;
 
   return (
-    <ul className={compact ? "space-y-1.5" : "space-y-2"}>
+    <ul className={compact ? "space-y-2" : "space-y-3"}>
       {recordings.map((r) => {
         const origin = formatOrigin(r.origin_area, r.origin_locality);
         const who = r.contributor?.display_name;
         const note = (r.note ?? "").trim();
         const mine = Boolean(viewerId && r.contributor?.id === viewerId);
+        const label = `${note || (r.kind === "example" ? "example sentence" : "the word")}${who ? `, read by ${who}` : ""}`;
         return (
-          <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <audio
-              controls
-              src={r.audio_url}
-              className={compact ? "h-8 max-w-[15rem]" : "h-9 w-full max-w-sm"}
-            />
-            <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
-              {origin ? (
-                <Link
-                  href={`/learn?origin=${encodeURIComponent(r.origin_area!)}`}
-                  className="hover:text-lacquer"
-                >
-                  {origin}
-                </Link>
-              ) : (
-                "origin not given"
-              )}
-              {who && r.contributor?.id && (
-                <>
-                  {" · "}
-                  <Link href={`/contributor/${r.contributor.id}`} className="hover:text-lacquer">
-                    {who}
-                  </Link>
-                </>
-              )}
-              {r.status !== "approved" && (
-                <span className="ml-2 border border-rule px-1.5 py-0.5 text-inkFaint">
-                  {r.status === "pending" ? "awaiting review" : r.status}
-                </span>
-              )}
-            </span>
-            {votes && (
-              <VoteButtons
-                id={r.id}
-                state={votes.get(r.id) ?? { up: 0, down: 0, mine: null }}
-                back={back ?? "/"}
-                signedIn={Boolean(viewerId)}
-              />
-            )}
-            {canDelete && <DeleteRecording id={r.id} back={back ?? "/admin"} />}
-            {/* The speaker's own line about the take — the sentence they read,
-                or how they would put it. Sits under the player, full width.
-                On your own recording it is editable in place. */}
-            {mine ? (
-              <div className="basis-full">
+          <li key={r.id} className="flex flex-wrap items-start gap-x-3 gap-y-2">
+            <div className="pt-0.5">
+              <PlayButton src={r.audio_url} label={label} size={compact ? "sm" : "md"} />
+            </div>
+
+            <div className="min-w-[11rem] flex-1 space-y-1">
+              {/* The speaker's line about the take — the sentence they read,
+                  or how they would put it. On your own recording it is
+                  editable in place. */}
+              {mine ? (
                 <RecordingNoteEditor id={r.id} note={note} back={back ?? "/account?show=recordings"} compact />
-              </div>
-            ) : (
-              note && (
-                <p className="basis-full text-sm text-inkSoft">
-                  <span className="romanization">{note}</span>
-                </p>
-              )
-            )}
+              ) : (
+                note && <p className="romanization text-[15px] leading-snug text-ink">{note}</p>
+              )}
+              <p className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                {who && r.contributor?.id ? (
+                  <>
+                    read by{" "}
+                    <Link href={`/contributor/${r.contributor.id}`} className="hover:text-lacquer">
+                      {who}
+                    </Link>
+                  </>
+                ) : (
+                  "read by a contributor"
+                )}
+                {origin && (
+                  <>
+                    {" · "}
+                    <Link
+                      href={`/browse?origin=${encodeURIComponent(r.origin_area!)}`}
+                      className="hover:text-lacquer"
+                    >
+                      {origin}
+                    </Link>
+                  </>
+                )}
+                {r.status !== "approved" && (
+                  <span className="ml-2 inline-block whitespace-nowrap border border-rule px-1.5 py-0.5 text-inkFaint">
+                    {r.status === "pending" ? "awaiting review" : r.status}
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <div className="ml-auto flex shrink-0 items-center gap-2 pt-0.5">
+              {votes && (
+                <VoteButtons
+                  id={r.id}
+                  state={votes.get(r.id) ?? { up: 0, down: 0, mine: null }}
+                  back={back ?? "/"}
+                  signedIn={Boolean(viewerId)}
+                />
+              )}
+              {canDelete && <DeleteRecording id={r.id} back={back ?? "/admin"} />}
+            </div>
           </li>
         );
       })}

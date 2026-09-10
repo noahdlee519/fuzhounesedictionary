@@ -53,7 +53,7 @@ export default async function EditEntryPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-baseline justify-between">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Edit entry</h1>
+        <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">Edit entry</h1>
         <Link href={back} className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer hover:underline">
           {backLabel}
         </Link>

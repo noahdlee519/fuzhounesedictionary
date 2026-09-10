@@ -2,10 +2,15 @@ import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
 import DeleteRecording from "@/components/DeleteRecording";
 import DeleteEntry from "@/components/DeleteEntry";
+import PlayButton from "@/components/PlayButton";
 import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
+import { translator } from "@/lib/i18n";
+import { getLang } from "@/lib/lang";
+import ContributeTabs from "@/components/ContributeTabs";
+import { formatDateTime } from "@/lib/dates";
 import {
   approve,
   reject,
@@ -21,7 +26,7 @@ import { one, sortSenses } from "@/lib/entries";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Moderation queue",
+  title: "Review",
   robots: { index: false, follow: false },
 };
 
@@ -33,25 +38,30 @@ const btn =
 export default async function AdminPage() {
   const { user, profile } = await getSessionUser();
 
+  const t = translator(getLang());
+
   if (!user) {
     return (
-      <div className="mx-auto max-w-lg space-y-4 text-center">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Editor sign-in</h1>
-        <p className="text-inkSoft">Sign in with the account marked as an editor to review submissions.</p>
-        <div className="flex justify-center"><SignInButton next="/admin" /></div>
+      <div className="space-y-8">
+        <ContributeTabs active="review" />
+        <div className="mx-auto max-w-lg space-y-4 rounded-xl border border-rule bg-surface p-8 text-center">
+          <p className="h3">{t("admin.signin.h")}</p>
+          <p className="text-inkSoft">{t("admin.signin.p")}</p>
+          <div className="flex justify-center"><SignInButton next="/admin" label={t("signin.google")} /></div>
+        </div>
       </div>
     );
   }
 
   if (!profile?.is_editor) {
     return (
-      <div className="mx-auto max-w-lg space-y-3 text-center">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">Editors only</h1>
-        <p className="text-inkSoft">
-          This account ({profile?.display_name}) is not an editor. Ask the site owner to set
-          <code className="mx-1 font-mono text-sm">is_editor = true</code> on your profile in Supabase.
-        </p>
-        <Link href="/" className="text-lacquer hover:underline">← Home</Link>
+      <div className="space-y-8">
+        <ContributeTabs active="add" />
+        <div className="mx-auto max-w-lg space-y-3 rounded-xl border border-rule bg-surface p-8 text-center">
+          <p className="h3">{t("admin.only.h")}</p>
+          <p className="text-inkSoft">{t("admin.only.p", { name: profile?.display_name ?? "" })}</p>
+          <Link href="/submit" className="link">{t("admin.only.link")}</Link>
+        </div>
       </div>
     );
   }
@@ -117,10 +127,11 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-4">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
-          Moderation queue
-        </h1>
+      <ContributeTabs active="review" />
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
+          What people have sent in, oldest first. Publish what is right, send back what is not.
+        </p>
         <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
           {waiting} waiting
         </span>
@@ -152,7 +163,7 @@ export default async function AdminPage() {
                     <span className={chip}>{s.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
-                      {new Date(s.created_at).toLocaleString()}
+                      {formatDateTime(s.created_at)}
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
                   </div>
@@ -219,11 +230,11 @@ export default async function AdminPage() {
                     <span className={chip}>{r.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
-                      {new Date(r.created_at).toLocaleString()}
+                      {formatDateTime(r.created_at)}
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
                   </div>
-                  <audio controls src={r.audio_url} className="mt-3 h-9 w-full max-w-sm" />
+                  <div className="mt-3"><PlayButton src={r.audio_url} label={`${e?.romanization || e?.headword || "recording"}${c?.display_name ? `, read by ${c.display_name}` : ""}`} /></div>
                   {r.note && (
                     <p className="romanization mt-2 text-sm text-inkSoft">{r.note}</p>
                   )}
@@ -280,7 +291,7 @@ export default async function AdminPage() {
                   {e.ipa && <span className="font-mono text-sm text-inkFaint">/{e.ipa}/</span>}
                   {origin && <span className={chip}>{origin}</span>}
                   <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
-                    {new Date(e.created_at).toLocaleString()}
+                    {formatDateTime(e.created_at)}
                     {" · "}
                     {e.contributor?.id ? (
                       <Link href={`/contributor/${e.contributor.id}`} className="hover:text-lacquer">
@@ -292,7 +303,7 @@ export default async function AdminPage() {
                   </span>
                 </div>
 
-                {e.audio_url && <audio controls src={e.audio_url} className="mt-3 h-9 w-full max-w-xs" />}
+                {e.audio_url && <div className="mt-3"><PlayButton src={e.audio_url} label={`${e.romanization || e.headword}, submitted recording`} /></div>}
 
                 <ol className="mt-3 space-y-1">
                   {senses.map((s, i) => (

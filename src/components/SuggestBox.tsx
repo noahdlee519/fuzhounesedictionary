@@ -29,6 +29,7 @@ export default function SuggestBox({
   pending = false,
   page,
   origin,
+  need,
 }: {
   kind: "ipa" | "example";
   entryId: string;
@@ -37,6 +38,7 @@ export default function SuggestBox({
   /** Current list position, echoed back so the redirect lands on the same page. */
   page?: number;
   origin?: string;
+  need?: string;
 }) {
   const isIpa = kind === "ipa";
 
@@ -64,6 +66,7 @@ export default function SuggestBox({
         <input type="hidden" name="entry_id" value={entryId} />
         {page && page > 1 && <input type="hidden" name="page" value={page} />}
         {origin && <input type="hidden" name="origin" value={origin} />}
+        {need && <input type="hidden" name="need" value={need} />}
 
         {isIpa ? (
           <label className="block">

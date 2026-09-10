@@ -28,7 +28,7 @@ export default function PageFade({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div key={`${pathname}#${nudge}`} className="page-fade">
+    <div key={`${pathname}#${nudge}`} className="page-fade flex flex-1 flex-col">
       {children}
     </div>
   );

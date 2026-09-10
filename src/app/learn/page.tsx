@@ -1,254 +1,83 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import EntryCard, { type CardProps } from "@/components/EntryCard";
-import SearchBar from "@/components/SearchBar";
-import { getSessionUser } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { PARTS_OF_SPEECH } from "@/lib/constants";
-import { one, toCards } from "@/lib/entries";
-import { filterTally } from "@/lib/public-stats";
-import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
 import { SHOW_GUIDE } from "./config";
 import LearnPanels from "./LearnPanels";
 import { learnPanels, panelAnchors } from "./panels";
+import { starterWords, type StarterSection } from "./starter";
+import PlayButton from "@/components/PlayButton";
+import { translator } from "@/lib/i18n";
+import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
-const PAGE_SIZE = 30;
-
-
-/* ---------------------------------------------------------------------------
-   Sorting.
-
-   Fuzhounese sorts run in the database on entries.headword. English sorts
-   run there too, from the other side: PostgREST will not order a parent by
-   a child column, so the query starts from `senses` — each entry's FIRST
-   sense (sort = 0), ordered by its definition, with the entry embedded — and
-   pages that. Every entry has a first sense at 0 (the submit RPC, the
-   importer and the editor all number from 0), so nothing is lost.
-
-   Date sorts use entries.created_at and entries.updated_at (the latter kept
-   by triggers in supabase/updated_at.sql). The key (what to sort by) and the
-   direction are separate: `?sort=` picks the key and `?dir=` flips it, and
-   one chip shows the current order and reverses it when clicked. Each key
-   has its own natural direction — A–Z for text, newest first for dates —
-   which is what you get on choosing it.
-   --------------------------------------------------------------------------- */
-const SORTS = {
-  fz: { label: "Fuzhounese", kind: "text", column: "headword", natural: "asc" },
-  en: { label: "English", kind: "text", column: "definition_en", natural: "asc" },
-  added: { label: "Date added", kind: "date", column: "created_at", natural: "desc" },
-  edited: { label: "Date edited", kind: "date", column: "updated_at", natural: "desc" },
-} as const;
-
-type SortKey = keyof typeof SORTS;
-type Dir = "asc" | "desc";
-const DEFAULT_SORT: SortKey = "fz";
-const SORT_KEYS = Object.keys(SORTS) as SortKey[];
-
-/* The direction chip's wording. Text sorts read as letters, date sorts as
-   time, so "reverse" means something a reader can picture in both. */
-function dirLabel(kind: "text" | "date", dir: Dir) {
-  if (kind === "text") return dir === "asc" ? "A–Z" : "Z–A";
-  return dir === "desc" ? "Newest first" : "Oldest first";
-}
-
-/* Links from before 2026-09-09 carried the key and direction in one word
-   ("fz-za", "en-az"). They still work. */
-const LEGACY_SORT: Record<string, [SortKey, Dir]> = {
-  "fz-az": ["fz", "asc"], "fz-za": ["fz", "desc"], "en-az": ["en", "asc"], "en-za": ["en", "desc"],
-};
-
-
-/* Two of the parts of speech mean nothing to most English speakers, and they
-   are exactly the ones a Fuzhounese learner most needs explained. Each gets a
-   hover note on its filter chip. Grounded in words actually in the dictionary:
-   the particles are 賣, 各, 未; the measure words are 隻 and 本. */
-const POS_NOTES: Record<string, string> = {
-  particle:
-    "A short word that carries no meaning on its own but does grammatical work\u2014turning a statement into a question, marking a plural, or showing that something has already happened.",
-  "measure word":
-    "A counting word that goes between a number and a noun, like the \u201csheets\u201d in \u201cthree sheets of paper\u201d. Fuzhounese needs one, and which word you use depends on the kind of thing being counted.",
-};
 
 export const metadata: Metadata = {
   title: "Learn Fuzhounese",
   description: SHOW_GUIDE
     ? "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z."
-    : "How Fuzhounese works—its tones, tone sandhi, measure words and how it is written—and every word in the dictionary, A to Z.",
+    : "Fifty everyday Fuzhounese words with recordings, and how the language works—its tones, tone sandhi, measure words and how it is written—with the sources to read next.",
   alternates: { canonical: "/learn" },
 };
 
-export default async function BrowsePage({
+/* The word list that used to sit under these panels is now /browse. Links
+   from before the move carried its filters here; send them on. */
+const LIST_PARAMS = ["page", "pos", "origin", "sort", "dir"] as const;
+
+/* The Learn page, in the 9 Sep 2026 design: a hero, "How it works" as three
+   chips that open the panels, then "Basic lessons" — the starter words in
+   groups (the mock-up's phrasebook, drawn from the dictionary itself). */
+
+export default async function LearnPage({
   searchParams,
 }: {
-  searchParams: { page?: string; pos?: string; origin?: string; sort?: string; dir?: string };
+  searchParams: { tab?: string } & Partial<Record<(typeof LIST_PARAMS)[number], string>>;
 }) {
-  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-
-  const posParam = (searchParams.pos ?? "").trim();
-  const pos = (PARTS_OF_SPEECH as readonly string[]).includes(posParam) ? posParam : "";
-
-  const originParam = (searchParams.origin ?? "").trim();
-  const origin = originArea(originParam) ? originParam : "";
-
-  const sortParam = (searchParams.sort ?? "").trim();
-  const legacy = LEGACY_SORT[sortParam];
-  const sort: SortKey = legacy
-    ? legacy[0]
-    : SORT_KEYS.includes(sortParam as SortKey)
-      ? (sortParam as SortKey)
-      : DEFAULT_SORT;
-  const { kind, column, natural } = SORTS[sort];
-  const dirParam = (searchParams.dir ?? "").trim();
-  const dir: Dir = legacy ? legacy[1] : dirParam === "asc" || dirParam === "desc" ? dirParam : natural;
-  const asc = dir === "asc";
-  const lang = sort === "en" ? "en" : "fz";
-
-  const supabase = createClient();
-  // For the assistant's sign-in gate under the search box; cache() shares
-  // the lookup with the header, so this costs nothing extra.
-  const { user } = await getSessionUser();
-  const senseCols = "definition_en, part_of_speech, sort";
-  const cols = `id, hanzi, romanization, headword, audio_url, senses${pos ? "!inner" : ""}(${senseCols})`;
-
-  const base = () => {
-    let q = supabase.from("entries").select(cols, { count: "exact" }).eq("status", "approved");
-    if (pos) q = q.eq("senses.part_of_speech", pos);
-    if (origin) q = q.eq("origin_area", origin);
-    return q;
-  };
-
-  let entries: CardProps[] = [];
-  let total = 0;
-  // A failed query must not read as "no words yet" — that is a lie with a
-  // call to action attached. Tracked and rendered as an unavailable panel.
-  let failed = false;
-
-  /* The word list and the filter-chip tally are independent, so they are
-     requested together rather than one after the other. */
-  const englishQuery = () => {
-    let q = supabase
-      .from("senses")
-      .select("definition_en, part_of_speech, entry:entries!inner(id, hanzi, romanization, headword, audio_url, origin_area)", { count: "exact" })
-      .eq("sort", 0)
-      .eq("entry.status", "approved");
-    if (pos) q = q.eq("part_of_speech", pos);
-    if (origin) q = q.eq("entry.origin_area", origin);
-    // Entries with no gloss sort last in both directions rather than flipping
-    // to the top on Z–A, where they would be pure noise.
-    return q.order("definition_en", { ascending: asc, nullsFirst: false }).range(from, to);
-  };
-  // Date sorts tie-break on headword so a batch imported in one second still
-  // has a stable order across pages.
-  const listQuery =
-    lang === "fz"
-      ? base().order(column, { ascending: asc }).order("headword", { ascending: true }).range(from, to)
-      : englishQuery();
-
-  /* What each filter would actually return. Without this, every chip looks
-     alike and clicking "adverb" on a dictionary with no adverbs is a dead end
-     with no warning. Cached for a minute across visitors (lib/public-stats);
-     if it is unavailable we simply do not dim anything. */
-  const [list, tally] = await Promise.all([listQuery, filterTally()]);
-
-  if (lang === "fz") {
-    const { data, count, error } = list;
-    if (error) failed = true;
-    entries = await toCards(supabase, data ?? []);
-    total = count ?? 0;
-  } else {
-    const { data, count, error } = list;
-    if (error) failed = true;
-    // Turn each first-sense row back into the entry shape the cards expect.
-    const rows = ((data ?? []) as any[])
-      .map((r) => ({ ...one<any>(r.entry), senses: [{ definition_en: r.definition_en, part_of_speech: r.part_of_speech, sort: 0 }] }))
-      .filter((e) => e.id);
-    entries = await toCards(supabase, rows);
-    total = count ?? 0;
+  const carried = LIST_PARAMS.filter((k) => searchParams[k]);
+  if (carried.length) {
+    const qs = new URLSearchParams(carried.map((k) => [k, searchParams[k] as string]));
+    redirect(`/browse?${qs}#words`);
   }
 
-  const posCounts = new Map(Object.entries(tally.pos));
-  const originCounts = new Map(Object.entries(tally.origin));
-  const countsKnown = tally.known;
-
-  /* One link builder for every chip and page link, so a sort survives a filter
-     change and a filter survives a sort change. Any change resets to page 1. */
-  const hrefWith = (over: Partial<Record<"pos" | "origin" | "sort" | "dir" | "page", string>>) => {
-    const next: Record<string, string> = {
-      pos,
-      origin,
-      sort: sort === DEFAULT_SORT ? "" : sort,
-      dir: dir === natural ? "" : dir,
-      page: "",
-      ...over,
-    };
-    const qs = new URLSearchParams(Object.entries(next).filter(([, v]) => v));
-    const s = qs.toString();
-    return `/learn${s ? `?${s}` : ""}#words`;
-  };
-
-  const hasNext = from + PAGE_SIZE < total;
-  // At least 1, so an empty filter never reads "page 1 of 0".
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  // A typed page past the end lands on the last page rather than an empty one.
-  if (!failed && page > totalPages) {
-    redirect(hrefWith({ page: totalPages > 1 ? String(totalPages) : "" }));
+  const lang = getLang();
+  const t = translator(lang);
+  let starter: StarterSection[] = [];
+  try {
+    starter = await starterWords();
+  } catch {
+    /* the section is simply left out */
   }
-
-  const chip = (label: string, href: string, active: boolean, empty = false) => {
-    const info = POS_NOTES[label];
-    const tipId = info ? `tip-${label.replace(/\s+/g, "-")}` : undefined;
-    return (
-      <Link
-        key={label}
-        href={href}
-        aria-current={active ? "true" : undefined}
-        aria-describedby={tipId}
-        title={empty ? `No ${label} in the dictionary yet` : undefined}
-        className={
-          "border px-2.5 py-1 text-[13px] transition-colors " +
-          (info ? "has-info " : "") +
-          (active
-            ? "border-lacquer bg-lacquer text-paper"
-            : "border-rule text-inkSoft hover:border-lacquer hover:text-lacquer") +
-          // Chips that carry an explanation are never dimmed, entries or not —
-          // the tooltip is the point of them, and a faded "i" reads as broken.
-          (empty && !active && !info ? " opacity-40" : "")
-        }
-      >
-        {label}
-        {info && (
-          <>
-            <span className="info-dot" aria-hidden="true">
-              i
-            </span>
-            <span id={tipId} role="tooltip" className="info-tip">
-              {info}
-            </span>
-          </>
-        )}
-      </Link>
-    );
-  };
+  const starterCount = starter.reduce((n, s) => n + s.words.length, 0);
 
   return (
-    <div className="space-y-10">
-      <section className="space-y-4">
-        <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight sm:text-4xl">
-          Learn Fuzhounese
+    <div className="-my-10">
+      <section className="pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+        <p className="eyebrow">{t("nav.learn")}</p>
+        <h1 className="display mt-2 max-w-[26ch]">
+          {t("learn.h1")}
+          <br />
+          {t("learn.h2")}
         </h1>
+        <p className="lede read mt-6">{t("learn.lede")}</p>
+        {/* Two chips to jump to the sections: the panels are long, and so is the word list. */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          <a href="#how" className="chip">
+            {t("learn.how.h")}
+          </a>
+          {starter.length > 0 && (
+            <a href="#start" className="chip">
+              {t("learn.start.h")}
+            </a>
+          )}
+        </div>
         {SHOW_GUIDE && (
           <>
-            <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
+            <p className="read mt-6 text-[17px] leading-relaxed text-inkSoft">
               A dictionary can tell you what a word means. It cannot tell you that the word changes
               shape when you put another one after it, which in Fuzhounese it almost always does.
               This page is for that. Open whichever section you need.
             </p>
-            <p className="max-w-[68ch] text-[17px] leading-relaxed text-inkSoft">
+            <p className="read mt-3 text-[17px] leading-relaxed text-inkSoft">
               Everything here is sourced, and the sources are listed at the bottom. Where something
               has not been confirmed by a speaker, it says so.
             </p>
@@ -257,167 +86,66 @@ export default async function BrowsePage({
       </section>
 
       {SHOW_GUIDE && <Contents />}
-
       {SHOW_GUIDE && <Guide />}
 
-      {/* Features · Orthography · Further reading — one panel at a time,
-          the first open on arrival. Content lives in panels.tsx. */}
-      <LearnPanels panels={learnPanels} anchors={panelAnchors} />
-
-      <div
-        id="words"
-        /* scroll-mt: how far below the top of the window the section's rule
-           lands when a link or the page-jump form targets #words. Nothing
-           sticky sits above it, so only a hairline of breathing room. */
-        className="flex scroll-mt-3 flex-wrap items-baseline justify-between gap-3 border-t border-rule pt-6"
-      >
-        <h2 className="font-display text-xl font-bold uppercase tracking-tight sm:text-2xl">
-          All words
-        </h2>
-        <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          {total.toLocaleString()} {pos ? pos : "entr"}
-          {pos ? (total === 1 ? "" : "s") : total === 1 ? "y" : "ies"}
-          {origin ? ` from ${originArea(origin)!.label}` : ""}
-        </span>
-      </div>
-
-      {/* The same search as the home page, here because this is where people
-          arrive looking for a word. It submits to the home page's results. */}
-      <SearchBar focus={false} id="learn-search" signedIn={Boolean(user)} />
-
-      <div className="space-y-2">
-        <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Part of speech</p>
-        {/* relative: the info panels are positioned against this row, so they
-            stay inside the content column however the chips wrap */}
-        <div className="relative flex flex-wrap gap-2">
-          {chip("All", hrefWith({ pos: "" }), !pos)}
-          {PARTS_OF_SPEECH.map((p) =>
-            chip(p, hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p))
-          )}
+      <hr className="rule-bleed" />
+      <section id="how" className="sec scroll-mt-16">
+        <h2 className="h2">{t("learn.how.h")}</h2>
+        {/* Features · Orthography · Sources — one panel at a time,
+            the first open on arrival. Content lives in panels.tsx. */}
+        <div className="mt-6">
+          <LearnPanels panels={learnPanels} anchors={panelAnchors} initial={searchParams.tab} />
         </div>
+      </section>
 
-        {/* Collapsible, open by default — the same <details> idiom as the guide
-            sections, so it needs no JavaScript. A chosen origin still shows in
-            the count line above even when this is folded away. */}
-        <details open className="group pt-2">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint marker:content-none hover:text-lacquer">
-            Origin
-            <span
-              aria-hidden
-              className="text-[10px] transition-transform group-open:rotate-90"
-            >
-              &#9656;
-            </span>
-          </summary>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
-            {ORIGIN_GROUPS.flatMap((g) =>
-              ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
-                chip(
-                  `${a.label} ${a.hanzi}`,
-                  hrefWith({ origin: a.code }),
-                  origin === a.code,
-                  countsKnown && !originCounts.get(a.code)
-                )
-              )
-            )}
-          </div>
-        </details>
-      </div>
+      {starter.length > 0 && (
+        <>
+          <hr className="rule-bleed" />
+          <section id="start" className="sec scroll-mt-16">
+            <h2 className="h2">{t("learn.start.h")}</h2>
+            <p className="read mt-3 text-inkSoft">{t("learn.start.lede", { n: starterCount })}</p>
+            <div className="mt-8 grid gap-x-8 gap-y-10 min-[480px]:grid-cols-2 lg:grid-cols-3">
+              {starter.map((g) => (
+                // min-w-0: a grid column must not grow to fit a long gloss that truncates.
+                <div key={g.key} className="min-w-0">
+                  <h3 className="h3 mb-2">{t(g.label)}</h3>
+                  {g.words.map((w) => (
+                    <div key={w.id} className="mini">
+                      {w.audio ? (
+                        <PlayButton src={w.audio} size="xs" label={`${t("mod.play")} ${w.hanzi}`} />
+                      ) : (
+                        <span
+                          className="inline-block h-9 w-9 shrink-0 rounded-full border border-dashed border-ruleStrong"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <Link href={`/entry/${w.id}`} className="group min-w-0 flex-1">
+                        <span className="han text-[19px] font-medium group-hover:text-lacquer">{w.hanzi}</span>{" "}
+                        <span className="romanization text-xs text-inkSoft">{w.romanization}</span>
+                        {(w.gloss || w.glossZh) && (
+                          <span className="block truncate text-xs leading-[1.35] text-inkSoft">
+                            {(lang === "zh" && w.glossZh) || w.gloss}
+                          </span>
+                        )}
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
 
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Sort</p>
-          {/* Choosing a key resets the direction to that key's natural one. */}
-          {SORT_KEYS.map((k) => chip(SORTS[k].label, hrefWith({ sort: k, dir: "" }), sort === k))}
-          {/* One chip for the order. It names the current order and flips it
-              when clicked, so there is never a second, near-identical chip. */}
-          <Link
-            href={hrefWith({ dir: asc ? "desc" : "asc" })}
-            aria-label={`Order: ${dirLabel(kind, dir)}. Reverse to ${dirLabel(kind, asc ? "desc" : "asc")}`}
-            title="Reverse the order"
-            className="ml-1 inline-flex items-center gap-1.5 border border-rule px-2.5 py-1 text-[13px] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
-          >
-            <span aria-hidden className="font-mono text-[12px] leading-none">&#8645;</span>
-            {dirLabel(kind, dir)}
+      <hr className="rule-bleed" />
+      <section className="sec-sm">
+        <p className="text-inkSoft">
+          {t("learn.browse")}{" "}
+          <Link href="/browse" className="link">
+            {t("learn.browse.link")}
           </Link>
-        </div>
-        <p className="text-sm text-inkFaint">Click any word for the full entry.</p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {entries.map((e) => (
-          <EntryCard key={e.id} entry={e} />
-        ))}
-        {failed && (
-          <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft sm:col-span-2">
-            The word list is unavailable at the moment. Please check back shortly.
-          </p>
-        )}
-        {!failed && entries.length === 0 && (
-          <p className="text-inkSoft sm:col-span-2">
-            {origin
-              ? `Nothing recorded from ${originArea(origin)!.label} yet.`
-              : pos
-                ? `No ${pos}s yet.`
-                : "No approved words yet. Be the first to add one."}
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between border-t border-rule pt-5 font-mono text-xs uppercase tracking-[0.1em]">
-        {page > 1 ? (
-          <Link
-            href={hrefWith({ page: page - 1 > 1 ? String(page - 1) : "" })}
-            className="text-inkSoft hover:text-lacquer"
-          >
-            ← Previous
-          </Link>
-        ) : (
-          <span />
-        )}
-        {/* "Page 3 of 12", where the 3 is a box you can type into. A plain GET
-            form, so it needs no JavaScript: the current filters ride along as
-            hidden fields, the fragment on the action keeps the scroll at the
-            list, and the server clamps whatever number arrives. With only one
-            page there is nothing to jump to, so it is plain text. */}
-        {totalPages > 1 ? (
-          <form action="/learn#words" method="get" className="flex items-center gap-1.5 text-inkFaint">
-            {pos && <input type="hidden" name="pos" value={pos} />}
-            {origin && <input type="hidden" name="origin" value={origin} />}
-            {sort !== DEFAULT_SORT && <input type="hidden" name="sort" value={sort} />}
-            {dir !== natural && <input type="hidden" name="dir" value={dir} />}
-            <label htmlFor="page-jump">Page</label>
-            <input
-              id="page-jump"
-              name="page"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={totalPages}
-              defaultValue={page}
-              aria-label={`Page number, 1 to ${totalPages}`}
-              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center font-mono text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <span>of {totalPages}</span>
-            <button
-              type="submit"
-              className="ml-1 border border-rule px-2 py-0.5 text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
-            >
-              Go
-            </button>
-          </form>
-        ) : (
-          <span className="text-inkFaint">Page 1 of 1</span>
-        )}
-        {hasNext ? (
-          <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
-            Next →
-          </Link>
-        ) : (
-          <span />
-        )}
-      </div>
+        </p>
+      </section>
 
       {SHOW_GUIDE && <Sources />}
     </div>
