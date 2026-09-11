@@ -114,7 +114,7 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
           <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Example answers</p>
         </div>
         <p className="text-sm text-inkSoft">
-          Sign in to ask your own—each account gets a small daily share, so the cost stays sane.
+          Sign in to ask your own.
         </p>
         <SignInButton next="/" label="Sign in with Google" />
       </section>

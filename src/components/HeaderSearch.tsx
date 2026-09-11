@@ -3,7 +3,7 @@
    as the big box on the home page. */
 export default function HeaderSearch({
   className = "",
-  placeholder = "Search—eat, 食, siah",
+  placeholder = "Search for anything",
   label = "Search the dictionary",
 }: {
   className?: string;

@@ -111,8 +111,15 @@ body {
   .sec { padding-top: 72px; padding-bottom: 72px; }
   .sec-sm { padding-top: 48px; padding-bottom: 48px; }
   @media (max-width: 760px) { .sec { padding-top: 52px; padding-bottom: 52px; } }
-  /* a hairline that spans the whole viewport from inside a constrained column */
-  .rule-bleed { height: 1px; border: 0; margin: 0; background: var(--rule); width: 100vw; margin-left: calc(50% - 50vw); }
+  /* A hairline drawn wider than the text column it sits in, but stopping
+     short of the lattice in the margins — 1040px of column plus the 24px of
+     clear paper either side of it, and the whole viewport on screens too
+     narrow for that. */
+  .rule-bleed {
+    height: 1px; border: 0; margin: 0; background: var(--rule);
+    width: min(100vw, 1088px);
+    margin-left: calc(50% - min(50vw, 544px));
+  }
 
   .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--ink-soft); }
   .display { font-weight: 800; font-size: clamp(38px, 6.2vw, 64px); line-height: 1.03; letter-spacing: -.03em; }
@@ -254,12 +261,34 @@ body {
   /* .45em raised it to superscript height; Noah wanted it ~5px higher still. */
   vertical-align: calc(.45em + 5px);
 }
-.info-tip-left { left: 0; right: auto; font-size: 14px; letter-spacing: -.005em; }
+.info-tip-left {
+  left: 0;
+  right: auto;
+  font-size: 14px;
+  letter-spacing: -.005em;
+  /* Whole pixels rather than .6rem, which is 9.6 and left the panel a fifth
+     of a pixel taller than the gap above the search box — enough for its
+     bottom border to sit a hair below the box's on a phone. */
+  padding-block: 10px 9px;
+}
 @media (min-width: 900px) {
   .info-tip-left { top: 0; left: calc(100% + 16px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .info-tip { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Pages arrive with a short fade. PageFade re-keys this wrapper on every
+   navigation — and on clicking the link for the page you are already on — so
+   the animation is already running at the first paint rather than being
+   started from an effect a frame later. LearnPanels uses it too, when one
+   panel replaces another.
+   --------------------------------------------------------------------------- */
+.page-fade { animation: page-fade 240ms cubic-bezier(.2, .6, .3, 1) both; }
+@keyframes page-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .page-fade { animation: none; }
 }
 
 ::selection { background: var(--lacquer); color: var(--paper); }

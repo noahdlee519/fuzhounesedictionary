@@ -28,10 +28,15 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   keywords: [
-    "Fuzhounese", "Fuzhou", "福州話", "Eastern Min", "Min Dong",
-    "Fuzhou dialect", "Bàng-uâ-cê", "Chinese dialect dictionary",
+    "Fuzhounese", "Fuzhounese dictionary", "Fuzhou", "福州話", "福州話字典",
+    "Eastern Min", "Min Dong", "Fuzhou dialect", "Foochow", "Hokchew",
+    "Bàng-uâ-cê", "Fuzhounese pronunciation", "Chinese dialect dictionary",
   ],
   alternates: { canonical: "/" },
+  /* The card that Slack, iMessage, WhatsApp and the rest draw from a link.
+     public/og.png is redrawn by scripts/make-brand-images.py; the ?v= is
+     what makes those services fetch it again rather than serve the picture
+     they cached from the old design. Bump it whenever the image changes. */
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
@@ -39,13 +44,13 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     locale: "en_US",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: SITE_NAME }],
+    images: [{ url: "/og.png?v=3", width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: ["/og.png"],
+    images: ["/og.png?v=3"],
   },
   robots: { index: true, follow: true },
   /* Icons declared here rather than by the app/ file convention, so the tags
@@ -118,8 +123,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               wraps cleanly on a phone; the small print underneath in two
               lines rather than one run-on. */}
           <Link href="/" className="inline-flex items-baseline gap-2 whitespace-nowrap font-bold tracking-tight">
-            <span className="han text-[17px] leading-none">福州話</span>
-            <span className="text-sm font-medium text-inkSoft">fuzhounese.org</span>
+            <span className="han text-[17px] leading-none">
+              <span className="text-lacquer">福州</span>話
+            </span>
+            <span className="text-sm font-medium text-inkSoft">
+              <span className="text-lacquer">fuzhou</span>nese.org
+            </span>
           </Link>
           <nav aria-label="Footer" className="mt-4 flex flex-wrap gap-x-7 gap-y-2">
             <Link href="/browse" className="linkq">{t("nav.browse")}</Link>
@@ -130,7 +139,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <p className="footnote mt-6 max-w-[60ch]">{t("footer.blurb")}</p>
           <p className="footnote mt-1.5">
             {t("footer.license")}{" "}
-            <a href={LICENSE.url} className="underline hover:text-ink" target="_blank" rel="noreferrer">
+            <a href={LICENSE.url} className="whitespace-nowrap underline hover:text-ink" target="_blank" rel="noreferrer">
               {LICENSE.name}
             </a>
             <span className="mx-2">·</span>

@@ -27,6 +27,7 @@ export default function SearchBar({
   signedIn = false,
   focus = true,
   assistant = false,
+  askOpen: askOpen0 = false,
   id = "site-search",
   hint,
   after,
@@ -41,6 +42,9 @@ export default function SearchBar({
   focus?: boolean;
   /** Show a small "Ask the assistant" button that unfolds the panel. */
   assistant?: boolean;
+  /** Start with the assistant panel unfolded — used when a search found
+   *  nothing, where asking in words is the obvious next move. */
+  askOpen?: boolean;
   /** Element id, so two boxes on one page never share one. */
   id?: string;
   /** A line under the box: how many entries, what to try. */
@@ -63,7 +67,7 @@ export default function SearchBar({
   // differ between server and client, so this one starts as the server
   // rendered it and is switched in an effect.
   const [narrow, setNarrow] = useState(false);
-  const [askOpen, setAskOpen] = useState(false);
+  const [askOpen, setAskOpen] = useState(askOpen0);
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);

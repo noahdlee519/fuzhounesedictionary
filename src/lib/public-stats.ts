@@ -33,6 +33,29 @@ export const approvedCount = unstable_cache(
   { revalidate: TTL_SECONDS }
 );
 
+/** Whether a column exists on a table — one cheap HEAD request, cached.
+ *
+ *  entries.updated_at is added by supabase/updated_at.sql, which has to be
+ *  run by hand in the Supabase SQL editor. Until it has been, sorting by
+ *  "date edited" fails and the whole word list reads as unavailable. So the
+ *  Browse page asks first, hides the chip while the answer is no, and picks
+ *  it up on its own within the minute once the migration is run. */
+const columnExists = unstable_cache(
+  async (table: string, column: string): Promise<boolean> => {
+    const db = anon();
+    if (!db) return false;
+    const { error } = await db.from(table).select(column, { head: true, count: "exact" }).limit(1);
+    return !error;
+  },
+  ["column-exists"],
+  { revalidate: TTL_SECONDS }
+);
+
+/** Is entries.updated_at there yet? (supabase/updated_at.sql) */
+export function hasUpdatedAt(): Promise<boolean> {
+  return columnExists("entries", "updated_at");
+}
+
 export interface FilterTally {
   pos: Record<string, number>;
   origin: Record<string, number>;

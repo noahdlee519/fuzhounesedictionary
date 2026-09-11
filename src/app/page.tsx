@@ -120,6 +120,12 @@ export default async function Home({
     } catch {
       errored = true;
     }
+    /* Nothing found at all. The assistant is unfolded for someone signed in,
+       where asking in words is the obvious next move; signed out it stays
+       folded, because the panel is a long pitch that would bury the note
+       below. */
+    const nothingFound = !errored && rows.length === 0 && people.length === 0;
+
     return (
       <div className="-my-10 py-10">
         {notices}
@@ -127,6 +133,7 @@ export default async function Home({
           defaultValue={q}
           signedIn={!!user}
           assistant
+          askOpen={nothingFound && !!user}
           placeholderFull={t("search.full")}
           placeholderShort={t("search.short")}
           label={t("search.label")}
@@ -149,13 +156,27 @@ export default async function Home({
             <ResultRow key={r.id} r={r} recordings={(r.audio_url ? 1 : 0) + (counts.get(r.id) ?? 0)} />
           ))}
         </div>
-        {!errored && rows.length === 0 && people.length === 0 && (
-          <p className="footnote px-1 py-3">
-            {t("results.none", { q })}{" "}
-            <Link href={`/submit?romanization=${encodeURIComponent(q)}`} className="link">
-              {t("results.add")}
-            </Link>
-          </p>
+        {/* Nothing found. Rather than a dead end, the three ways on: the
+            assistant (already unfolded above), adding the word, and the
+            other dictionaries listed under Learn. */}
+        {nothingFound && (
+          <div className="mt-8 rounded-xl border border-rule bg-surface p-6 sm:p-7">
+            <p className="h3">{t("results.none.h", { q })}</p>
+            <p className="read mt-2 text-inkSoft">{t("results.none.p")}</p>
+            <ul className="mt-4 space-y-2.5 text-[15px]">
+              <li className="text-inkSoft">{t("results.none.ask")}</li>
+              <li>
+                <Link href={`/submit?romanization=${encodeURIComponent(q)}`} className="link">
+                  {t("results.none.add", { q })}
+                </Link>
+              </li>
+              <li>
+                <Link href="/learn?tab=reading" className="link">
+                  {t("results.none.sources")}
+                </Link>
+              </li>
+            </ul>
+          </div>
         )}
       </div>
     );
@@ -460,8 +481,7 @@ export default async function Home({
 
       {/* Assistant */}
       <section id="ask" className="sec scroll-mt-16">
-        <p className="eyebrow">{t("ask.eyebrow")}</p>
-        <h2 className="h1 mt-2">{t("ask.h")}</h2>
+        <h2 className="h1">{t("ask.eyebrow")}</h2>
         <AskSection
           signedIn={!!user}
           samples={samples(lang)}

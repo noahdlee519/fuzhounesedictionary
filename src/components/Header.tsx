@@ -11,7 +11,7 @@ import ThemeToggle from "./ThemeToggle";
 /* The header, after the 9 Sep 2026 redesign: one 56px row, sticky, with a
    frosted background so the page shows through as it scrolls under it.
 
-   Wide:   wordmark · Browse Learn Contribute About … EN/中文 · ☾ · search · Sign in
+   Wide:   wordmark · Browse Learn Contribute About · EN/中文 · ☾ … search · Sign in
    Narrow: wordmark … search · Sign in
            Browse Learn Contribute About … EN/中文 · ☾
 
@@ -44,18 +44,29 @@ export function HeaderView({ user, profile }: SessionShape) {
           className="order-1 flex h-14 shrink-0 items-center md:h-auto"
         >
           <span className="inline-flex items-baseline gap-2 whitespace-nowrap font-bold tracking-tight">
-            <span className="han text-[17px] font-bold leading-none">福州話</span>
-            <span className="hidden text-sm font-medium text-inkSoft md:inline">fuzhounese.org</span>
+            {/* 福州 and "fuzhou" — the place — in lacquer; 話 and the rest in ink. */}
+            <span className="han text-[17px] font-bold leading-none">
+              <span className="text-lacquer">福州</span>話
+            </span>
+            {/* The domain is the first thing to go when the row is tight. */}
+            <span className="hidden text-sm font-medium text-inkSoft lg:inline">
+              <span className="text-lacquer">fuzhou</span>nese.org
+            </span>
           </span>
         </NavLink>
 
-        {/* 2. The links, with the two toggles at their far end. Wide: in the
-            row after the wordmark, growing to push the toggles right. Narrow:
-            a second line of their own. */}
-        <div className="order-3 flex min-w-0 basis-full items-center gap-x-3 pb-2 md:order-2 md:min-w-0 md:flex-1 md:basis-auto md:pb-0">
+        {/* 2. The links, with the two toggles at their far end. Wide: its
+            natural width, right after the wordmark. Narrow: a second line of
+            its own, the links scrolling sideways if they must.
+
+            At medium widths this used to shrink below the width of the links
+            while `md:overflow-visible` let them keep drawing, so "Contribute"
+            and "About" ran underneath the toggles. Nothing here shrinks now;
+            the search pill beside it is what gives way. */}
+        <div className="order-3 flex min-w-0 basis-full items-center gap-x-3 pb-2 md:order-2 md:w-auto md:min-w-0 md:flex-none md:basis-auto md:pb-0">
           <nav
             aria-label="Site"
-            className="nav-strip -ml-2 flex min-w-0 flex-1 items-center gap-x-1 overflow-x-auto whitespace-nowrap md:overflow-visible"
+            className="nav-strip -ml-2 flex min-w-0 flex-1 items-center gap-x-1 overflow-x-auto whitespace-nowrap md:flex-none md:overflow-visible"
           >
             <NavLink href="/browse" className={navLink}>{t("nav.browse")}</NavLink>
             <NavLink href="/learn" className={navLink}>{t("nav.learn")}</NavLink>
@@ -68,9 +79,11 @@ export function HeaderView({ user, profile }: SessionShape) {
           </div>
         </div>
 
-        {/* 3. Search pill and the account, at the end of the top row. */}
-        <div className="order-2 ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 md:order-3 md:flex-none">
-          <HeaderSearch className="min-w-0 flex-1 basis-[120px] sm:w-[220px] sm:flex-none" placeholder={t("search.header")} label={t("search.label")} />
+        {/* 3. Search pill and the account, at the end of the top row. This
+            group takes what is left and the pill shrinks into it, down to a
+            width that still shows a word or two of the placeholder. */}
+        <div className="order-2 ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 md:order-3">
+          <HeaderSearch className="min-w-0 flex-1 basis-[120px] sm:w-[248px] sm:flex-none md:w-auto md:min-w-[104px] md:max-w-[248px] md:flex-1 md:basis-[248px]" placeholder={t("search.header")} label={t("search.label")} />
           {user ? (
             <NavLink
               href="/account"

@@ -6,7 +6,9 @@ import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
 import { one, toCards } from "@/lib/entries";
-import { filterTally } from "@/lib/public-stats";
+import { filterTally, hasUpdatedAt } from "@/lib/public-stats";
+import { translator } from "@/lib/i18n";
+import { getLang } from "@/lib/lang";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 
@@ -80,6 +82,7 @@ export default async function BrowsePage({
 }: {
   searchParams: { page?: string; pos?: string; origin?: string; sort?: string; dir?: string };
 }) {
+  const t = translator(getLang());
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -90,13 +93,21 @@ export default async function BrowsePage({
   const originParam = (searchParams.origin ?? "").trim();
   const origin = originArea(originParam) ? originParam : "";
 
+  /* "Date edited" needs entries.updated_at, which supabase/updated_at.sql
+     adds. Until that has been run the column is not there, so the chip is
+     left out and a link that names it falls back to "date added" — better
+     than a word list that reads as unavailable. */
+  const canSortEdited = await hasUpdatedAt();
+  const sortKeys = SORT_KEYS.filter((k) => k !== "edited" || canSortEdited);
+
   const sortParam = (searchParams.sort ?? "").trim();
   const legacy = LEGACY_SORT[sortParam];
-  const sort: SortKey = legacy
+  const wanted: SortKey = legacy
     ? legacy[0]
     : SORT_KEYS.includes(sortParam as SortKey)
       ? (sortParam as SortKey)
       : DEFAULT_SORT;
+  const sort: SortKey = wanted === "edited" && !canSortEdited ? "added" : wanted;
   const { kind, column, natural } = SORTS[sort];
   const dirParam = (searchParams.dir ?? "").trim();
   const dir: Dir = legacy ? legacy[1] : dirParam === "asc" || dirParam === "desc" ? dirParam : natural;
@@ -228,24 +239,33 @@ export default async function BrowsePage({
     );
   };
 
+  /* "3,748 entries", "1 noun", "412 entries from Changle" — what the filters
+     on screen would return, in the reader's language. */
+  const countLine = [
+    pos
+      ? t(total === 1 ? "browse.count.pos.one" : "browse.count.pos", { n: total.toLocaleString(), pos })
+      : t(total === 1 ? "browse.count.one" : "browse.count", { n: total.toLocaleString() }),
+    origin ? t("browse.from", { place: originArea(origin)!.label }) : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className="space-y-8">
+    <div className="-my-10">
+      {/* Hero, in the same shape as Learn, Contribute and About. */}
+      <section className="pb-12 pt-20 max-[760px]:pb-8 max-[760px]:pt-11">
+        <p className="eyebrow">{t("nav.browse")}</p>
+        <h1 className="display mt-2">{t("browse.h")}</h1>
+        <p className="lede read mt-6">{t("browse.lede")}</p>
+      </section>
+      <hr className="rule-bleed" />
+
       <div
         id="words"
-        /* scroll-mt: how far below the top of the window the heading lands
-           when the page-jump form targets #words. */
-        className="flex scroll-mt-3 flex-wrap items-baseline justify-between gap-3"
+        /* scroll-mt: how far below the top of the window the list lands when
+           the page-jump form targets #words. */
+        className="scroll-mt-3 space-y-8 py-12 max-[760px]:py-8"
       >
-        <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-          Browse
-        </h1>
-        <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
-          {total.toLocaleString()} {pos ? pos : "entr"}
-          {pos ? (total === 1 ? "" : "s") : total === 1 ? "y" : "ies"}
-          {origin ? ` from ${originArea(origin)!.label}` : ""}
-        </span>
-      </div>
-
       {/* The same search as the home page, here because this is where people
           arrive looking for a word. It submits to the home page's results. */}
       <SearchBar focus={false} id="browse-search" signedIn={Boolean(user)} />
@@ -294,7 +314,7 @@ export default async function BrowsePage({
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Sort</p>
           {/* Choosing a key resets the direction to that key's natural one. */}
-          {SORT_KEYS.map((k) => chip(SORTS[k].label, hrefWith({ sort: k, dir: "" }), sort === k))}
+          {sortKeys.map((k) => chip(SORTS[k].label, hrefWith({ sort: k, dir: "" }), sort === k))}
           {/* One chip for the order. It names the current order and flips it
               when clicked, so there is never a second, near-identical chip. */}
           <Link
@@ -309,7 +329,7 @@ export default async function BrowsePage({
             {dirLabel(kind, dir)}
           </Link>
         </div>
-        <p className="text-sm text-inkFaint">Click any word for the full entry.</p>
+        <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">{countLine}</p>
       </div>
 
       {/* Three columns on a laptop, two on a tablet, one on a phone. The gaps
@@ -388,7 +408,7 @@ export default async function BrowsePage({
           <span />
         )}
       </div>
-
+      </div>
     </div>
   );
 }

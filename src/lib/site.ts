@@ -17,6 +17,8 @@ export const SITE_URL = "https://fuzhounese.org";
 // The name search engines and browser tabs show. Noah's wording (7 Sep 2026).
 export const SITE_NAME = "Fuzhounese-English Dictionary";
 
-// Noah's wording, used verbatim as the meta description / search snippet.
+/* The meta description — the grey line under the title in a search result.
+   Noah's wording, kept to about 155 characters so Google shows all of it,
+   and saying "recordings" rather than "audio", as the site does. */
 export const SITE_DESCRIPTION =
-  "The collaborative Fuzhounese-English dictionary project. Search for words, characters, romanization, and audio—and contribute your own entries.";
+  "A free, collaborative Fuzhounese-English dictionary. Search words, characters and romanization, hear recordings from speakers, and add your own.";
