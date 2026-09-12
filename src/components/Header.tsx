@@ -30,11 +30,7 @@ export default async function Header() {
 export function HeaderView({ user, profile }: SessionShape) {
   const lang = getLang();
   const t = translator(lang);
-  /* The links are set tight on a phone, where the row is full at four of
-     them plus the toggles, and given air as soon as there is any: the nav
-     grows into whatever the search leaves and spreads them evenly. */
-  const navLink =
-    "rounded-lg px-1.5 py-2 text-[13px] font-medium leading-none transition-colors sm:px-2.5 md:px-3 md:text-sm";
+  const navLink = "rounded-lg px-1.5 py-2 text-[13px] font-medium leading-none transition-colors md:px-2.5 md:text-sm";
 
   return (
     <header className="sticky top-0 z-40 border-b border-rule bg-[var(--header-bg)] backdrop-blur-[20px] backdrop-saturate-[180%]">
@@ -68,28 +64,27 @@ export function HeaderView({ user, profile }: SessionShape) {
             while `md:overflow-visible` let them keep drawing, so "Contribute"
             and "About" ran underneath the toggles. Nothing here shrinks now;
             the search pill beside it is what gives way. */}
-        <div className="order-3 flex min-w-0 basis-full items-center gap-x-3 pb-2 md:order-2 md:w-auto md:min-w-[auto] md:flex-1 md:basis-auto md:pb-0">
+        <div className="order-3 flex min-w-0 basis-full items-center gap-x-3 pb-2 md:order-2 md:w-auto md:min-w-0 md:flex-none md:basis-auto md:pb-0">
           <nav
             aria-label="Site"
-            className="nav-strip -ml-2 flex min-w-0 flex-1 items-center justify-between overflow-x-auto whitespace-nowrap sm:gap-x-1 md:min-w-[auto] md:gap-x-2 md:overflow-visible"
+            className="nav-strip -ml-2 flex min-w-0 flex-1 items-center gap-x-1 overflow-x-auto whitespace-nowrap md:flex-none md:overflow-visible"
           >
             <NavLink href="/browse" className={navLink}>{t("nav.browse")}</NavLink>
             <NavLink href="/learn" className={navLink}>{t("nav.learn")}</NavLink>
             <NavLink href="/contribute" also={["/submit", "/improve", "/request", "/admin"]} className={navLink}>{t("nav.contribute")}</NavLink>
             <NavLink href="/about" className={navLink}>{t("nav.about")}</NavLink>
           </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <LangToggle lang={lang} />
             <ThemeToggle icon label={t("theme.dark")} />
           </div>
         </div>
 
         {/* 3. Search pill and the account, at the end of the top row. This
-            group holds its preferred width and only gives way when the row
-            runs out — the links beside it take the slack first, and the pill
-            never goes below a width that shows a word of the placeholder. */}
-        <div className="order-2 ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 md:order-3 md:flex-initial">
-          <HeaderSearch className="min-w-0 flex-1 basis-[120px] sm:w-[248px] sm:flex-none md:flex-initial md:min-w-[104px]" placeholder={t("search.header")} label={t("search.label")} />
+            group takes what is left and the pill shrinks into it, down to a
+            width that still shows a word or two of the placeholder. */}
+        <div className="order-2 ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 md:order-3">
+          <HeaderSearch className="min-w-0 flex-1 basis-[120px] sm:w-[248px] sm:flex-none md:w-auto md:min-w-[104px] md:max-w-[248px] md:flex-1 md:basis-[248px]" placeholder={t("search.header")} label={t("search.label")} />
           {user ? (
             <NavLink
               href="/account"
