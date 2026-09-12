@@ -65,14 +65,68 @@ export default async function AboutPage() {
     return out;
   };
 
-  const list = (keys: Key[]) => (
+  /* The same "[text](href)" marker, but split into the words before the
+     phrase, the phrase, and the words after it, so a translator can put the
+     marked phrase anywhere in the sentence. */
+  const split = (text: string) => {
+    const m = /\[([^\]]+)\]\([^)]+\)/.exec(text);
+    if (!m) return { before: text, label: text, after: "" };
+    return {
+      before: text.slice(0, m.index),
+      label: m[1],
+      after: text.slice(m.index + m[0].length),
+    };
+  };
+
+  const list = (keys: Key[], extra?: React.ReactNode) => (
     <ul className="mt-4">
       {keys.map((k) => (
         <li key={k} className="border-b border-rule py-3 leading-relaxed text-ink">
           {rich(t(k))}
         </li>
       ))}
+      {extra && (
+        <li className="border-b border-rule py-3 leading-relaxed text-ink">{extra}</li>
+      )}
     </ul>
+  );
+
+  /* Places to find other people who speak it. All three are off this site, so
+     they open in a new tab the way the developer's own links do. */
+  const COMMUNITY: { key: Key; href: string }[] = [
+    { key: "about.help.5.discord", href: "https://discord.gg/r9NAFS6Uvm" },
+    { key: "about.help.5.fza", href: "https://www.fuzhouamerica.org/" },
+    { key: "about.help.5.reddit", href: "https://www.reddit.com/r/ChineseLanguage/" },
+  ];
+
+  /* The last item on the help list folds open rather than linking out, on the
+     same <details> idiom as the guide sections, so it needs no JavaScript. */
+  const involved = split(t("about.help.5"));
+  const community = (
+    <details className="group">
+      <summary className="flex cursor-pointer list-none items-baseline gap-3 marker:content-none [&::-webkit-details-marker]:hidden">
+        <span>
+          {involved.before}
+          <span className="link group-hover:underline">{involved.label}</span>
+          {involved.after}
+        </span>
+        <span
+          aria-hidden
+          className="ml-auto font-mono text-[10px] text-inkFaint transition-transform group-open:rotate-90"
+        >
+          &#9656;
+        </span>
+      </summary>
+      <ul className="mt-2 space-y-1.5 border-l border-rule pl-4">
+        {COMMUNITY.map((c) => (
+          <li key={c.href}>
+            <a href={c.href} target="_blank" rel="noreferrer" className="link text-[15px]">
+              {t(c.key)}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 
   return (
@@ -149,7 +203,7 @@ export default async function AboutPage() {
           </div>
           <div>
             <h2 className="h2">{t("about.help.h")}</h2>
-            {list(["about.help.1", "about.help.2", "about.help.3", "about.help.4"])}
+            {list(["about.help.1", "about.help.2", "about.help.3", "about.help.4"], community)}
             <p className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
               <Link href="/improve?need=recording" className="link">
                 {t("about.help.record")}
