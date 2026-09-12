@@ -8,7 +8,6 @@ import SavedNotice from "@/components/SavedNotice";
 import SubmitButton from "@/components/SubmitButton";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import Pager from "@/components/Pager";
-import ThemeToggle from "@/components/ThemeToggle";
 import { saveProfile, deleteAccount } from "./actions";
 import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -22,9 +21,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const labelCls = "block font-mono text-xs uppercase tracking-[0.1em] text-inkFaint";
-const inputCls =
-  "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
+const labelCls = "field-label";
+const inputCls = "field-input";
 
 export default async function AccountPage({
   searchParams,
@@ -120,15 +118,11 @@ export default async function AccountPage({
             </p>
           </div>
           {/* self-start + a small top offset: the sign-out link sits on the
-              line of the name, not the vertical middle of the block. The
-              light/dark switch goes underneath it. */}
+              line of the name, not the vertical middle of the block. */}
           <div className="ml-auto flex flex-col items-end gap-2 self-start pt-[6px]">
             <form action="/auth/signout" method="post">
-              <button className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer">
-                Sign out
-              </button>
+              <button className="linkq text-sm">Sign out</button>
             </form>
-            <ThemeToggle />
           </div>
         </div>
         <AvatarUpload userId={user.id} hasAvatar={!!profile?.avatar_url} />
@@ -355,7 +349,7 @@ export default async function AccountPage({
           <div className="flex flex-wrap items-center gap-4">
             <SubmitButton
               pending="Saving…"
-              className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+              className="btn btn-primary btn-sm"
             >
               Save
             </SubmitButton>
@@ -384,10 +378,10 @@ export default async function AccountPage({
           </p>
         )}
         <details className="group">
-          <summary className="inline-block cursor-pointer list-none border border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
+          <summary className="btn btn-ghost btn-sm inline-flex cursor-pointer list-none group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
             Delete my account…
           </summary>
-          <form action={deleteAccount} className="mt-3 max-w-md space-y-3 border border-lacquer bg-surface p-4">
+          <form action={deleteAccount} className="mt-3 max-w-md space-y-3 rounded-xl border border-lacquer bg-surface p-4">
             <label className="flex items-start gap-3 text-sm">
               <input type="checkbox" name="recordings" className="mt-1 accent-lacquer" />
               <span>
@@ -407,7 +401,7 @@ export default async function AccountPage({
             </label>
             <SubmitButton
               pending="Deleting…"
-              className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+              className="btn btn-primary btn-sm"
             >
               Delete my account for good
             </SubmitButton>

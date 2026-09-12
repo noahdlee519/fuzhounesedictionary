@@ -88,7 +88,7 @@ export default function AvatarUpload({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <label className="cursor-pointer border border-rule bg-surface px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer">
+      <label className="btn btn-ghost btn-sm cursor-pointer">
         {busy ? "Uploading…" : hasAvatar ? "Change profile picture" : "Upload a profile picture"}
         <input type="file" accept={AVATAR_MIME_TYPES.join(",")} onChange={onFile} disabled={busy} className="hidden" />
       </label>
@@ -97,7 +97,7 @@ export default function AvatarUpload({
           type="button"
           onClick={remove}
           disabled={busy}
-          className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer disabled:opacity-50"
+          className="linkq text-sm disabled:opacity-50"
         >
           Remove
         </button>
