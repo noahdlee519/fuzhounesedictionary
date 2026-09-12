@@ -13,6 +13,8 @@ import { originArea } from "@/lib/origins";
 import { formatDate } from "@/lib/dates";
 import { translator, samples } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
+import { getSafe } from "@/lib/safe";
+import { isExplicit } from "@/lib/content-filter";
 import Avatar from "@/components/Avatar";
 import InfoTip from "@/components/InfoTip";
 
@@ -85,6 +87,7 @@ export default async function Home({
   const { user } = await getSessionUser();
   const lang = getLang();
   const t = translator(lang);
+  const safe = getSafe();
 
   const notices = (
     <>
@@ -115,6 +118,10 @@ export default async function Home({
       ]);
       if (error) throw error;
       rows = (data ?? []) as SearchRow[];
+      /* The filter works on the meaning the search matched, so a word that
+         also means something ordinary keeps its place and shows that other
+         meaning; a word whose match is the explicit one drops out. */
+      if (safe) rows = rows.filter((r) => !isExplicit(r.short_gloss));
       people = found;
       counts = await recordingCounts(supabase, rows.map((r) => r.id));
     } catch {
@@ -246,6 +253,9 @@ export default async function Home({
         audio: (wRec as any[])?.[0]?.audio_url ?? w.audio_url ?? null,
         gloss: firstSense<any>(w.senses)?.definition_en ?? null, meta: "",
       };
+      // Rather than an explicit word standing at the top of the home page all
+      // day, the module simply sits out; tomorrow's word takes its place.
+      if (safe && isExplicit(wotd.gloss)) wotd = null;
     }
   } catch {
     /* the sections below simply skip what they did not get */
@@ -348,7 +358,7 @@ export default async function Home({
               <Link href="/improve?need=recording" className="btn btn-primary">
                 {t("door.contribute.btn")}
               </Link>
-              <Link href="/submit" className="linkq">
+              <Link href="/submit" className="btn btn-primary">
                 {t("door.contribute.link")}
               </Link>
             </div>

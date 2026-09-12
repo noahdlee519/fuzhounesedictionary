@@ -6,6 +6,7 @@ import Avatar from "@/components/Avatar";
 import AvatarUpload from "@/components/AvatarUpload";
 import SavedNotice from "@/components/SavedNotice";
 import SubmitButton from "@/components/SubmitButton";
+import SafeToggle from "@/components/SafeToggle";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import Pager from "@/components/Pager";
 import { saveProfile, deleteAccount } from "./actions";
@@ -13,6 +14,7 @@ import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
 import { STATUS_STYLE } from "@/lib/status";
 import { firstSense, one, sortSenses } from "@/lib/entries";
+import { getSafe } from "@/lib/safe";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +32,7 @@ export default async function AccountPage({
   searchParams: { saved?: string; problem?: string; show?: string; page?: string };
 }) {
   const { user } = await getSessionUser();
+  const safe = getSafe();
 
   if (!user) {
     return (
@@ -119,10 +122,14 @@ export default async function AccountPage({
           </div>
           {/* self-start + a small top offset: the sign-out link sits on the
               line of the name, not the vertical middle of the block. */}
-          <div className="ml-auto flex flex-col items-end gap-2 self-start pt-[6px]">
+          <div className="ml-auto flex flex-col items-end gap-2.5 self-start pt-[6px]">
             <form action="/auth/signout" method="post">
               <button className="linkq text-sm">Sign out</button>
             </form>
+            {/* Kept beside sign-out rather than down in the profile form: it
+                is a setting for reading the dictionary, not something saved
+                about you, and it takes effect the moment it is clicked. */}
+            <SafeToggle on={safe} />
           </div>
         </div>
         <AvatarUpload userId={user.id} hasAvatar={!!profile?.avatar_url} />

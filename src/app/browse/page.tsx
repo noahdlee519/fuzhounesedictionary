@@ -9,7 +9,9 @@ import { one, toCards } from "@/lib/entries";
 import { filterTally, hasUpdatedAt } from "@/lib/public-stats";
 import { translator } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
-import { ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
+import { getSafe } from "@/lib/safe";
+import { withoutExplicit } from "@/lib/content-filter";
+import { ORIGIN_AREAS, originArea } from "@/lib/origins";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -61,14 +63,28 @@ const LEGACY_SORT: Record<string, [SortKey, Dir]> = {
 
 /* Two of the parts of speech mean nothing to most English speakers, and they
    are exactly the ones a Fuzhounese learner most needs explained. Each gets a
-   hover note on its filter chip. Grounded in words actually in the dictionary:
-   the particles are 賣, 各, 未; the measure words are 隻 and 本. */
+   hover note on its filter chip. Grounded in the words the dictionary holds
+   once scripts/new-entries.csv is imported: the particles 賣, 各, 未 and the
+   measure words 隻, 本, 張, 條, 把, 間, 架. */
 const POS_NOTES: Record<string, string> = {
   particle:
     "A short word that carries no meaning on its own but does grammatical work\u2014turning a statement into a question, marking a plural, or showing that something has already happened.",
   "measure word":
     "A counting word that goes between a number and a noun, like the \u201csheets\u201d in \u201cthree sheets of paper\u201d. Fuzhounese needs one, and which word you use depends on the kind of thing being counted.",
 };
+
+/* The chips read as one alphabetical run in both rows. The parts of speech
+   were in a grammar book's order and the origins in geographical groups, but
+   the groups are not shown on the chips, so the order only ever looked
+   arbitrary to someone hunting for one. Two are pinned ahead of the A–Z:
+   "Anywhere", which clears the filter, and Fuzhou city itself, which is what
+   most people are looking for. */
+const POS_CHIPS = [...PARTS_OF_SPEECH].sort((a, b) => a.localeCompare(b, "en"));
+const PINNED_ORIGIN = "fuzhou_unsure";
+const ORIGIN_CHIPS = [
+  ...ORIGIN_AREAS.filter((a) => a.code === PINNED_ORIGIN),
+  ...ORIGIN_AREAS.filter((a) => a.code !== PINNED_ORIGIN).sort((a, b) => a.label.localeCompare(b.label, "en")),
+];
 
 export const metadata: Metadata = {
   title: "Browse all words",
@@ -83,6 +99,7 @@ export default async function BrowsePage({
   searchParams: { page?: string; pos?: string; origin?: string; sort?: string; dir?: string };
 }) {
   const t = translator(getLang());
+  const safe = getSafe();
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -119,12 +136,20 @@ export default async function BrowsePage({
   // the lookup with the header, so this costs nothing extra.
   const { user } = await getSessionUser();
   const senseCols = "definition_en, part_of_speech, sort";
-  const cols = `id, hanzi, romanization, headword, audio_url, senses${pos ? "!inner" : ""}(${senseCols})`;
+  /* An inner join whenever a filter reaches into the meanings: PostgREST only
+     drops the parent row when the embed is inner, so with a plain join a
+     filtered-out meaning would leave the word behind with an empty senses
+     array. */
+  const joinSenses = Boolean(pos) || safe;
+  const cols = `id, hanzi, romanization, headword, audio_url, senses${joinSenses ? "!inner" : ""}(${senseCols})`;
 
-  const base = () => {
-    let q = supabase.from("entries").select(cols, { count: "exact" }).eq("status", "approved");
+  const base = (head = false) => {
+    let q = supabase.from("entries").select(cols, { count: "exact", head }).eq("status", "approved");
     if (pos) q = q.eq("senses.part_of_speech", pos);
     if (origin) q = q.eq("origin_area", origin);
+    // A word whose only meaning is explicit disappears; one that also means
+    // something else stays, showing the other meaning.
+    if (safe) q = withoutExplicit(q, "senses.definition_en");
     return q;
   };
 
@@ -140,10 +165,16 @@ export default async function BrowsePage({
     let q = supabase
       .from("senses")
       .select("definition_en, part_of_speech, entry:entries!inner(id, hanzi, romanization, headword, audio_url, origin_area)", { count: "exact" })
-      .eq("sort", 0)
       .eq("entry.status", "approved");
+    /* Which meaning stands for the word here. With no part-of-speech filter
+       it is the first one, so the list is one row per word. With a filter it
+       has to be the meaning that matched: 小時 carries "measure word" on its
+       third meaning, and asking for the first as well quietly lost it — three
+       words in the Fuzhounese order, two in the English one. */
     if (pos) q = q.eq("part_of_speech", pos);
+    else q = q.eq("sort", 0);
     if (origin) q = q.eq("entry.origin_area", origin);
+    if (safe) q = withoutExplicit(q, "definition_en");
     // Entries with no gloss sort last in both directions rather than flipping
     // to the top on Z–A, where they would be pure noise.
     return q.order("definition_en", { ascending: asc, nullsFirst: false }).range(from, to);
@@ -159,7 +190,15 @@ export default async function BrowsePage({
      alike and clicking "adverb" on a dictionary with no adverbs is a dead end
      with no warning. Cached for a minute across visitors (lib/public-stats);
      if it is unavailable we simply do not dim anything. */
-  const [list, tally] = await Promise.all([listQuery, filterTally()]);
+  /* In English order the rows come from `senses`, so its count is meanings,
+     not words. The number on screen and the paging are words, so they come
+     from the same entries query the Fuzhounese order pages — one HEAD, no
+     rows, alongside the others. */
+  const [list, tally, entryCount] = await Promise.all([
+    listQuery,
+    filterTally(),
+    lang === "en" ? base(true) : Promise.resolve(null),
+  ]);
 
   if (lang === "fz") {
     const { data, count, error } = list;
@@ -167,14 +206,17 @@ export default async function BrowsePage({
     entries = await toCards(supabase, data ?? []);
     total = count ?? 0;
   } else {
-    const { data, count, error } = list;
+    const { data, error } = list;
     if (error) failed = true;
-    // Turn each first-sense row back into the entry shape the cards expect.
+    // Turn each matching-sense row back into the entry shape the cards expect.
+    // A word with two meanings of the same part of speech would arrive twice;
+    // the first — the one the sort put here — is the one that is kept.
+    const seen = new Set<string>();
     const rows = ((data ?? []) as any[])
       .map((r) => ({ ...one<any>(r.entry), senses: [{ definition_en: r.definition_en, part_of_speech: r.part_of_speech, sort: 0 }] }))
-      .filter((e) => e.id);
+      .filter((e) => e.id && !seen.has(e.id) && seen.add(e.id));
     entries = await toCards(supabase, rows);
-    total = count ?? 0;
+    total = (entryCount as any)?.count ?? 0;
   }
 
   const posCounts = new Map(Object.entries(tally.pos));
@@ -276,7 +318,7 @@ export default async function BrowsePage({
             stay inside the content column however the chips wrap */}
         <div className="relative flex flex-wrap gap-2">
           {chip("All", hrefWith({ pos: "" }), !pos)}
-          {PARTS_OF_SPEECH.map((p) =>
+          {POS_CHIPS.map((p) =>
             chip(p, hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p))
           )}
         </div>
@@ -296,14 +338,12 @@ export default async function BrowsePage({
           </summary>
           <div className="mt-2 flex flex-wrap gap-2">
             {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
-            {ORIGIN_GROUPS.flatMap((g) =>
-              ORIGIN_AREAS.filter((a) => a.group === g).map((a) =>
-                chip(
-                  `${a.label} ${a.hanzi}`,
-                  hrefWith({ origin: a.code }),
-                  origin === a.code,
-                  countsKnown && !originCounts.get(a.code)
-                )
+            {ORIGIN_CHIPS.map((a) =>
+              chip(
+                `${a.label} ${a.hanzi}`,
+                hrefWith({ origin: a.code }),
+                origin === a.code,
+                countsKnown && !originCounts.get(a.code)
               )
             )}
           </div>
