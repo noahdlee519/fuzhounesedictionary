@@ -274,6 +274,17 @@ body {
 @media (min-width: 900px) {
   .info-tip-left { top: 0; left: calc(100% + 16px); }
 }
+/* The same panel on the little origin map beside a recording, naming the place
+   the map is showing. Anchored to the map itself rather than to the row: the
+   map is only 36px wide and sits at the right-hand end, so right: 0 on the map
+   grows the panel leftward into the row it came from and it cannot leave the
+   screen. Hover only, and deliberately not a tab stop — an entry with five
+   recordings would be five stops leading nowhere, and the line beside the map
+   already names the place in text, with the map's own aria-label repeating it
+   for a screen reader. */
+.has-map { position: relative; }
+.has-map:hover .info-tip { opacity: 1; visibility: visible; }
+
 @media (prefers-reduced-motion: reduce) {
   .info-tip { transition: none; }
 }
