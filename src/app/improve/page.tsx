@@ -34,7 +34,7 @@ export default async function ImprovePage({
 }: {
   searchParams: { page?: string; origin?: string; need?: string; sent?: string; problem?: string };
 }) {
-  const { user } = await getSessionUser();
+  const { user, profile } = await getSessionUser();
 
   if (!user) {
     const recording = searchParams.need === "recording";
@@ -306,7 +306,7 @@ export default async function ImprovePage({
                     you have recorded this twice
                   </span>
                 ) : (
-                  <Recorder userId={user.id} entryId={r.id} kind="headword" label="Needs a recording" />
+                  <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" label="Needs a recording" />
                 )
               ) : (
                 <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">

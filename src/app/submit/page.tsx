@@ -94,7 +94,7 @@ export default async function SubmitPage({
   const supabase = createClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("origin_area, origin_locality")
+    .select("origin_area, origin_locality, is_editor")
     .eq("id", user.id)
     .maybeSingle();
   const originArea = profile?.origin_area ?? "";
@@ -110,6 +110,7 @@ export default async function SubmitPage({
       </p>
       <SubmitForm
         userId={user.id}
+        isEditor={Boolean(profile?.is_editor)}
         initialRomanization={searchParams.romanization ?? ""}
         defaultOriginArea={originArea}
         defaultOriginLocality={originLocality}

@@ -52,7 +52,7 @@ export function HeaderView({ user, profile }: SessionShape) {
                 layout the top line holds only the wordmark, the search and the
                 account, so it fits from 560px; on the one-row layout it has to
                 wait until 920, where it stops squeezing the search box. */}
-            <span className="hidden text-sm font-medium text-inkSoft min-[560px]:inline md:hidden min-[920px]:inline">
+            <span className="hidden text-sm font-medium text-ink min-[560px]:inline md:hidden min-[920px]:inline">
               <span className="text-lacquer">fuzhou</span>nese.org
             </span>
           </span>

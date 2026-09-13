@@ -234,7 +234,7 @@ export default async function AdminPage() {
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
                   </div>
-                  <div className="mt-3"><PlayButton src={r.audio_url} label={`${e?.romanization || e?.headword || "recording"}${c?.display_name ? `, read by ${c.display_name}` : ""}`} /></div>
+                  <div className="mt-3"><PlayButton src={r.audio_url} label={`${e?.romanization || e?.headword || "recording"}${c?.display_name ? `, recorded by ${c.display_name}` : ""}`} /></div>
                   {r.note && (
                     <p className="romanization mt-2 text-sm text-inkSoft">{r.note}</p>
                   )}

@@ -5,7 +5,7 @@ import PlayButton from "./PlayButton";
 import RecordingNoteEditor from "./RecordingNoteEditor";
 import VoteButtons, { type VoteState } from "./VoteButtons";
 
-/* One row per recording: a play button, the speaker's note, who read it and
+/* One row per recording: a play button, the speaker's note, who recorded it and
    where their Fuzhounese is from, and the thumbs. This is the point of the recordings table: the same word
    said in Changle and in Gulou are both correct and both worth hearing. */
 
@@ -50,7 +50,7 @@ export default function RecordingList({
         const who = r.contributor?.display_name;
         const note = (r.note ?? "").trim();
         const mine = Boolean(viewerId && r.contributor?.id === viewerId);
-        const label = `${note || (r.kind === "example" ? "example sentence" : "the word")}${who ? `, read by ${who}` : ""}`;
+        const label = `${note || (r.kind === "example" ? "example sentence" : "the word")}${who ? `, recorded by ${who}` : ""}`;
         return (
           <li key={r.id} className="flex flex-wrap items-start gap-x-3 gap-y-2">
             <div className="pt-0.5">
@@ -60,8 +60,9 @@ export default function RecordingList({
             <div className="min-w-[11rem] flex-1 space-y-1">
               {/* The speaker's line about the take — the sentence they read,
                   or how they would put it. On your own recording it is
-                  editable in place. */}
-              {mine ? (
+                  editable in place; with no note there is nothing here at all,
+                  and the note is added from the account page instead. */}
+              {mine && note ? (
                 <RecordingNoteEditor id={r.id} note={note} back={back ?? "/account?show=recordings"} compact />
               ) : (
                 note && <p className="romanization text-[15px] leading-snug text-ink">{note}</p>
@@ -69,13 +70,13 @@ export default function RecordingList({
               <p className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
                 {who && r.contributor?.id ? (
                   <>
-                    read by{" "}
+                    recorded by{" "}
                     <Link href={`/contributor/${r.contributor.id}`} className="hover:text-lacquer">
                       {who}
                     </Link>
                   </>
                 ) : (
-                  "read by a contributor"
+                  "recorded by a contributor"
                 )}
                 {origin && (
                   <>

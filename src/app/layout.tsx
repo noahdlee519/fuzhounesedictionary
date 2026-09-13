@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import Header from "@/components/Header";
+import NavMemory from "@/components/NavMemory";
 import PageFade from "@/components/PageFade";
 import { Analytics } from "@vercel/analytics/next";
 import { LICENSE } from "@/lib/constants";
@@ -102,6 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
+        <NavMemory />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:border focus:border-lacquer focus:bg-paper focus:px-3 focus:py-2 focus:text-sm"
@@ -126,7 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <span className="han text-[17px] leading-none">
               <span className="text-lacquer">福州</span>話
             </span>
-            <span className="text-sm font-medium text-inkSoft">
+            <span className="text-sm font-medium text-ink">
               <span className="text-lacquer">fuzhou</span>nese.org
             </span>
           </Link>

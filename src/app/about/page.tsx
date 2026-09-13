@@ -104,18 +104,10 @@ export default async function AboutPage() {
   const involved = split(t("about.help.5"));
   const community = (
     <details className="group">
-      <summary className="flex cursor-pointer list-none items-baseline gap-3 marker:content-none [&::-webkit-details-marker]:hidden">
-        <span>
-          {involved.before}
-          <span className="link group-hover:underline">{involved.label}</span>
-          {involved.after}
-        </span>
-        <span
-          aria-hidden
-          className="ml-auto font-mono text-[10px] text-inkFaint transition-transform group-open:rotate-90"
-        >
-          &#9656;
-        </span>
+      <summary className="cursor-pointer list-none marker:content-none [&::-webkit-details-marker]:hidden">
+        {involved.before}
+        <span className="link group-hover:underline">{involved.label}</span>
+        {involved.after}
       </summary>
       <ul className="mt-2 space-y-1.5 border-l border-rule pl-4">
         {COMMUNITY.map((c) => (

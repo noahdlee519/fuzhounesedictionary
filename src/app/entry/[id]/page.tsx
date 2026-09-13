@@ -250,6 +250,7 @@ export default async function EntryPage({
               <Recorder
                 userId={user.id}
                 entryId={entry.id}
+                isEditor={canDelete}
                 kind="headword"
                 label={
                   headwordRecs.length || entry.audio_url
@@ -311,6 +312,7 @@ export default async function EntryPage({
                   <Recorder
                     userId={user.id}
                     entryId={entry.id}
+                    isEditor={canDelete}
                     kind="example"
                     senseId={s.id}
                     label="Read this sentence aloud"

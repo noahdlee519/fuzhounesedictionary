@@ -69,11 +69,14 @@ function Part({
 
 export default function SubmitForm({
   userId,
+  isEditor = false,
   initialRomanization,
   defaultOriginArea = "",
   defaultOriginLocality = "",
 }: {
   userId: string;
+  /** Editors are not told about the review queue they run. */
+  isEditor?: boolean;
   initialRomanization: string;
   defaultOriginArea?: string;
   defaultOriginLocality?: string;
@@ -204,7 +207,7 @@ export default function SubmitForm({
           <div className="space-y-3 border border-rule p-4">
             <p className="text-sm text-lacquer">{recordingFailed}</p>
             <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Try the word again</p>
-            <Recorder userId={userId} entryId={savedEntryId} kind="headword" />
+            <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="headword" />
           </div>
         )}
 
@@ -213,7 +216,7 @@ export default function SubmitForm({
             {savedSenses.map((s) => (
               <div key={s.id} className="space-y-2 border border-rule p-4">
                 <p className="romanization text-inkSoft">{s.example}</p>
-                <Recorder userId={userId} entryId={savedEntryId} kind="example" senseId={s.id} />
+                <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="example" senseId={s.id} />
               </div>
             ))}
           </div>

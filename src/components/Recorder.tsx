@@ -23,6 +23,7 @@ export default function Recorder({
   senseId,
   label,
   onSaved,
+  isEditor = false,
 }: {
   userId: string;
   entryId: string;
@@ -30,6 +31,8 @@ export default function Recorder({
   senseId?: string;
   label?: string;
   onSaved?: () => void;
+  /** An editor is the one who reviews the queue, so they are not told about it. */
+  isEditor?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -108,7 +111,7 @@ export default function Recorder({
     return (
       <div className="space-y-2 text-sm text-inkSoft">
         <p className="flex flex-wrap items-center gap-3">
-          <span>Saved. It will appear once an editor has listened to it.</span>
+          <span>{isEditor ? "Saved." : "Saved. It will appear once an editor has listened to it."}</span>
           <button
             type="button"
             onClick={() => setDone(false)}

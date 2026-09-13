@@ -19,7 +19,7 @@ export default function PlayButton({
   showDuration = false,
 }: {
   src: string;
-  /** What is being played, for screen readers: "Play 厝 chuó, read by Mei". */
+  /** What is being played, for screen readers: "Play 厝 chuó, recorded by Mei". */
   label: string;
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
