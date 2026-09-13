@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatOrigin } from "@/lib/origins";
 import DeleteRecording from "./DeleteRecording";
+import OriginMap from "./OriginMap";
 import PlayButton from "./PlayButton";
 import RecordingNoteEditor from "./RecordingNoteEditor";
 import VoteButtons, { type VoteState } from "./VoteButtons";
@@ -97,7 +98,11 @@ export default function RecordingList({
               </p>
             </div>
 
-            <div className="ml-auto flex shrink-0 items-center gap-2 pt-0.5">
+            <div className="ml-auto flex shrink-0 items-center gap-3 pt-0.5">
+              {/* Where this speaker's Fuzhounese is from, as a map. The word
+                  is the same word; the point of having several takes is that
+                  they come from different places. */}
+              <OriginMap code={r.origin_area} className={compact ? "!h-7 !w-7" : ""} />
               {votes && (
                 <VoteButtons
                   id={r.id}
