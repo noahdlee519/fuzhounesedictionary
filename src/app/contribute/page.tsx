@@ -23,6 +23,19 @@ export const metadata: Metadata = {
    and the people who have given the most. The four ways keep their own
    pages (/improve, /submit, /request); this is the door. */
 
+/* A clock for the minutes-and-seconds label on each tile. Drawn to the same
+   16px box and 1.6 stroke as the magnifier in the search bar, so it sits in
+   the small caps as a unit marker rather than as an illustration — the hands
+   read at 12px, anything finer does not. */
+function Clock({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={className}>
+      <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 4.6V8l2.4 1.7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const WAYS: { key: "record" | "add" | "improve" | "wanted"; href: string }[] = [
   { key: "record", href: "/improve?need=recording" },
   { key: "add", href: "/submit" },
@@ -166,6 +179,7 @@ export default async function ContributePage() {
           {WAYS.map((w) => (
             <Link key={w.key} href={w.href} className="group block border-b border-rule py-5">
               <p className="eyebrow inline-flex items-center gap-1.5">
+                <Clock className="h-3 w-3 shrink-0 opacity-70" />
                 {t(`hub.${w.key}.time` as Key)}
               </p>
               <h2 className="h3 mt-2 text-lacquer transition-opacity group-hover:opacity-80">{t(`hub.${w.key}.h` as Key)}</h2>
