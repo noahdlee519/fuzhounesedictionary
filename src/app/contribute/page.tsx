@@ -63,11 +63,12 @@ export default async function ContributePage() {
         .limit(5),
       supabase
         .from("recordings")
-        .select("entry_id, created_at, contributor:profiles(display_name), entry:entries!inner(id, hanzi, romanization, headword, status)")
+        // No embeds; the word and the speaker are looked up by id below. Same
+        // silent failure as the home page's list — see the note there.
+        .select("entry_id, created_at, contributor_id")
         .eq("status", "approved")
-        .eq("entry.status", "approved")
         .order("created_at", { ascending: false })
-        .limit(6),
+        .limit(24),
       // Words people wrote, not the imported ones (those link to their source).
       supabase
         .from("entries")
@@ -96,14 +97,35 @@ export default async function ContributePage() {
     people = top;
 
     const seen = new Set<string>();
+    const pick: any[] = [];
     for (const r of (recs ?? []) as any[]) {
-      const e = one<any>(r.entry);
-      if (!e?.id) continue;
-      seen.add(e.id);
-      recent.push({
-        id: e.id, hanzi: e.hanzi, romanization: e.romanization || e.headword,
-        who: one<any>(r.contributor)?.display_name ?? null, kind: "recorded", at: r.created_at,
-      });
+      if (!r.entry_id || seen.has(r.entry_id)) continue;
+      seen.add(r.entry_id);
+      pick.push(r);
+      if (pick.length === 12) break;
+    }
+    if (pick.length) {
+      const ids = [...new Set(pick.map((r) => r.contributor_id).filter(Boolean))];
+      const [{ data: ents }, { data: profs }] = await Promise.all([
+        supabase
+          .from("entries")
+          .select("id, hanzi, romanization, headword")
+          .in("id", pick.map((r) => r.entry_id))
+          .eq("status", "approved"),
+        ids.length
+          ? supabase.from("profiles").select("id, display_name").in("id", ids)
+          : Promise.resolve({ data: [] } as any),
+      ]);
+      const names = new Map(((profs ?? []) as any[]).map((p) => [p.id, p.display_name ?? null]));
+      const byId = new Map(((ents ?? []) as any[]).map((e) => [e.id, e]));
+      for (const r of pick) {
+        const e = byId.get(r.entry_id);
+        if (!e) continue;
+        recent.push({
+          id: e.id, hanzi: e.hanzi, romanization: e.romanization || e.headword,
+          who: names.get(r.contributor_id) ?? null, kind: "recorded", at: r.created_at,
+        });
+      }
     }
     for (const e of (added ?? []) as any[]) {
       if (seen.has(e.id)) continue;

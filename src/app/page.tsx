@@ -197,18 +197,23 @@ export default async function Home({
   let top: TopContributor[] = [];
 
   try {
-    const [numbers, people, { data: recs }, { data: wants }] = await Promise.all([
+    const [numbers, people, { data: recs, error: recsErr }, { data: wants }] = await Promise.all([
       missionTally(),
       topContributors(4).catch(() => [] as TopContributor[]),
+      // No embeds: the word and the speaker are looked up by id below. This
+      // query asked for both through PostgREST and came back empty in
+      // production while every count on the page said there were dozens of
+      // recordings — and because the error was dropped on the floor, the
+      // module read as "no recordings yet" rather than as broken. Whatever
+      // the join was unhappy about, two id lookups cannot be unhappy about
+      // anything; it is the same shape topContributors already uses. Extra
+      // rows are asked for because the dedupe below thins the list.
       supabase
         .from("recordings")
-        .select(
-          "entry_id, audio_url, created_at, origin_area, contributor:profiles(display_name), entry:entries!inner(id, hanzi, romanization, headword, status)"
-        )
+        .select("entry_id, audio_url, created_at, origin_area, contributor_id")
         .eq("status", "approved")
-        .eq("entry.status", "approved")
         .order("created_at", { ascending: false })
-        .limit(24),
+        .limit(48),
       supabase
         .from("word_requests_ranked")
         .select("id, term, votes, entry_id")
@@ -221,18 +226,46 @@ export default async function Home({
     top = people;
     wanted = (wants ?? []) as typeof wanted;
 
+    // A query that returns nothing and a query that failed look identical by
+    // the time they reach the page; say which it was.
+    if (recsErr) console.error("home: newest recordings query failed:", recsErr.message);
+
+    // One recording per word, newest first, then the words and the speakers
+    // those rows point at.
+    const rows = (recs ?? []) as any[];
+    const pick: any[] = [];
     const seen = new Set<string>();
-    for (const r of (recs ?? []) as any[]) {
-      const e = one<any>(r.entry);
-      if (!e?.id || seen.has(e.id)) continue;
-      seen.add(e.id);
-      const who = one<any>(r.contributor)?.display_name;
-      const where = originArea(r.origin_area);
-      newest.push({
-        id: e.id, hanzi: e.hanzi, romanization: e.romanization, headword: e.headword, audio: r.audio_url,
-        meta: [who, where ? `${where.label} ${where.hanzi}` : null, formatDate(r.created_at)].filter(Boolean).join(" · "),
-      });
-      if (newest.length === 4) break;
+    for (const r of rows) {
+      if (!r.entry_id || seen.has(r.entry_id)) continue;
+      seen.add(r.entry_id);
+      pick.push(r);
+      if (pick.length === 12) break; // headroom: some words may not be approved
+    }
+    if (pick.length) {
+      const who = new Map<string, string | null>();
+      const peopleIds = [...new Set(pick.map((r) => r.contributor_id).filter(Boolean))];
+      const [{ data: ents }, { data: profs }] = await Promise.all([
+        supabase
+          .from("entries")
+          .select("id, hanzi, romanization, headword")
+          .in("id", pick.map((r) => r.entry_id))
+          .eq("status", "approved"),
+        peopleIds.length
+          ? supabase.from("profiles").select("id, display_name").in("id", peopleIds)
+          : Promise.resolve({ data: [] } as any),
+      ]);
+      for (const p of (profs ?? []) as any[]) who.set(p.id, p.display_name ?? null);
+      const byId = new Map(((ents ?? []) as any[]).map((e) => [e.id, e]));
+      for (const r of pick) {
+        const e = byId.get(r.entry_id);
+        if (!e) continue; // the word is not approved, or is gone
+        const where = originArea(r.origin_area);
+        newest.push({
+          id: e.id, hanzi: e.hanzi, romanization: e.romanization, headword: e.headword, audio: r.audio_url,
+          meta: [who.get(r.contributor_id) ?? null, where ? `${where.label} ${where.hanzi}` : null, formatDate(r.created_at)].filter(Boolean).join(" · "),
+        });
+        if (newest.length === 4) break;
+      }
     }
 
     // Word of the day: one voiced entry, the same for everyone all day.
@@ -283,11 +316,7 @@ export default async function Home({
           福州話
         </span>
         <div className="relative">
-          <h1 className="display">
-            {t("hero.1")}
-            <br />
-            {t("hero.2")}
-          </h1>
+          <h1 className="display max-w-[24ch] [text-wrap:balance]">{t("hero.1")}</h1>
           <p className="lede read relative mt-6">
             {t("hero.lede.1")}
             <InfoTip id="dialect-tip" text={t("hero.tip")} />
