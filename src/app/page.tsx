@@ -22,8 +22,8 @@ export const dynamic = "force-dynamic";
 
 /* ---------------------------------------------------------------------------
    The home page, in the 9 Sep 2026 design. Without a query: the mission in
-   two lines, the search, two doors (learner, speaker), the mission numbers
-   with a bar per district, four modules of live content, and the assistant.
+   two lines, the search, two doors (learner, speaker), four modules of live
+   content, and the assistant.
    With a query: the search box and the results as rows.
    --------------------------------------------------------------------------- */
 
@@ -263,7 +263,6 @@ export default async function Home({
 
   const words = tally?.words ?? 0;
   const voiced = tally?.voiced ?? 0;
-  const pct = words ? Math.round((voiced / words) * 100) : 0;
   const silent = Math.max(0, words - voiced);
   const modules = [wotd, true, true, top.length > 0].filter(Boolean).length;
 
@@ -366,31 +365,6 @@ export default async function Home({
         </div>
       </section>
       <hr className="rule-bleed" />
-
-      {/* Mission progress: two numbers and a call to action. */}
-      {tally && (
-        <>
-          <section className="sec">
-            <p className="eyebrow">{t("mission.eyebrow")}</p>
-            <h2 className="h1 mt-2 max-w-[22ch]">
-              {t("mission.h", { words: words.toLocaleString(), recs: tally.recordings.toLocaleString() })}
-            </h2>
-            <p className="lede mt-4 max-w-[46ch]">{t("mission.lede", { pct })}</p>
-            <div className="mt-8 h-[3px] max-w-[640px] overflow-hidden bg-rule" aria-hidden="true">
-              <i className="block h-full bg-lacquer" style={{ width: `${pct}%` }} />
-            </div>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/improve?need=recording" className="btn btn-primary">
-                {t("mission.btn")}
-              </Link>
-              <Link href="/submit" className="linkq">
-                {t("mission.link")}
-              </Link>
-            </div>
-          </section>
-          <hr className="rule-bleed" />
-        </>
-      )}
 
       {/* Four modules */}
       <section className="sec">
