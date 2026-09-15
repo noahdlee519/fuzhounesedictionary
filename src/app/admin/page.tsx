@@ -76,9 +76,12 @@ export default async function AdminPage() {
         .select("*, senses(*), contributor:profiles(id, display_name)")
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
+      // The word is embedded, the speaker is not: production will not join
+      // recordings to profiles, and asking takes the whole queue down with
+      // it. See supabase/recordings_profiles_fk.sql.
       supabase
         .from("recordings")
-        .select("id, entry_id, kind, audio_url, note, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword)")
+        .select("id, entry_id, kind, audio_url, note, origin_area, origin_locality, created_at, contributor_id, entry:entries(hanzi, romanization, headword)")
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
       supabase
@@ -90,10 +93,16 @@ export default async function AdminPage() {
         .order("created_at", { ascending: true }),
     ]);
   const pending = (data ?? []).map((e: any) => ({ ...e, contributor: one(e.contributor) }));
+  const recSpeakerIds = [...new Set(((recData ?? []) as any[]).map((r) => r.contributor_id).filter(Boolean))];
+  const recSpeakers = new Map<string, { id: string; display_name: string | null }>();
+  if (recSpeakerIds.length) {
+    const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", recSpeakerIds);
+    for (const p of (profs ?? []) as any[]) recSpeakers.set(p.id, { id: p.id, display_name: p.display_name ?? null });
+  }
   const pendingRecs = (recData ?? []).map((r: any) => ({
     ...r,
     entry: one(r.entry),
-    contributor: one(r.contributor),
+    contributor: recSpeakers.get(r.contributor_id) ?? null,
   }));
   const pendingSugs = (sugData ?? []).map((s: any) => ({
     ...s,

@@ -127,12 +127,20 @@ export default async function EntryPage({
   // None of these depend on each other, so they go out together. Recordings
   // are keyed by entry id, not by the entry row, and RLS filters them to what
   // the viewer may hear: approved ones plus their own pending ones.
-  const [{ user, profile }, entry, { data: recRows }] = await Promise.all([
+  const [{ user, profile }, entry, { data: recRows, error: recErr }] = await Promise.all([
     getSessionUser(),
     loadEntry(params.id),
+    // The speaker is looked up separately rather than embedded. Asking
+    // PostgREST to join recordings to profiles is the one thing this site
+    // does that production will not answer: it takes every page that tried
+    // it down to an empty list, and this page's empty list reads "be the
+    // first to say this word" on words that already have several. Every
+    // query that joins recordings to entries, or entries to profiles, is
+    // fine — it is this one pair. supabase/recordings_profiles_fk.sql
+    // repairs the relationship itself; this does not wait for it.
     supabase
       .from("recordings")
-      .select("id, kind, sense_id, audio_url, status, note, origin_area, origin_locality, created_at, contributor:profiles(id, display_name)")
+      .select("id, kind, sense_id, audio_url, status, note, origin_area, origin_locality, created_at, contributor_id")
       .eq("entry_id", params.id)
       .order("created_at", { ascending: true }),
   ]);
@@ -145,9 +153,22 @@ export default async function EntryPage({
   const canDelete = Boolean(profile?.is_editor);
   const here = `/entry/${entry.id}`;
 
+  if (recErr) console.error(`entry ${params.id}: recordings query failed:`, recErr.message);
+
+  // Names for the voices on this page, in one lookup by id.
+  const speakerIds = [...new Set(((recRows ?? []) as any[]).map((r) => r.contributor_id).filter(Boolean))];
+  const speakers = new Map<string, { id: string; display_name: string | null }>();
+  if (speakerIds.length) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, display_name")
+      .in("id", speakerIds);
+    for (const p of (profs ?? []) as any[]) speakers.set(p.id, { id: p.id, display_name: p.display_name ?? null });
+  }
+
   const recordings: RecordingRow[] = (recRows ?? []).map((r: any) => ({
     ...r,
-    contributor: one(r.contributor),
+    contributor: speakers.get(r.contributor_id) ?? null,
   }));
 
   // Thumbs up/down: public totals from the view, plus the viewer's own votes.
