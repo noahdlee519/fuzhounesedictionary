@@ -27,6 +27,22 @@ export const dynamic = "force-dynamic";
    With a query: the search box and the results as rows.
    --------------------------------------------------------------------------- */
 
+/* A string carrying one "[text](#id)" marker, rendered with that phrase as a
+   link to somewhere else on this page. The marker is in the string rather than
+   around it so a translation can put the linked phrase where its own grammar
+   wants it. */
+function anchored(text: string) {
+  const m = /\[([^\]]+)\]\(([^)]+)\)/.exec(text);
+  if (!m) return text;
+  return (
+    <>
+      {text.slice(0, m.index)}
+      <a href={m[2]} className="link">{m[1]}</a>
+      {text.slice(m.index + m[0].length)}
+    </>
+  );
+}
+
 interface MiniRow {
   id: string;
   hanzi: string | null;
@@ -171,7 +187,7 @@ export default async function Home({
             <p className="h3">{t("results.none.h", { q })}</p>
             <p className="read mt-2 text-inkSoft">{t("results.none.p")}</p>
             <ul className="mt-4 space-y-2.5 text-[15px]">
-              <li className="text-inkSoft">{t("results.none.ask")}</li>
+              <li className="text-inkSoft">{anchored(t("results.none.ask"))}</li>
               <li>
                 <Link href={`/submit?romanization=${encodeURIComponent(q)}`} className="link">
                   {t("results.none.add", { q })}
