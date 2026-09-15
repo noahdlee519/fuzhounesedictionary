@@ -30,17 +30,6 @@ const WAYS: { key: "record" | "add" | "improve" | "wanted"; href: string }[] = [
   { key: "wanted", href: "/request" },
 ];
 
-/* A small clock beside each tile's time cost. Drawn in the current colour,
-   so it takes the eyebrow's grey. */
-function Clock() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="-mt-px">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
-
 interface Recent {
   id: string;
   hanzi: string | null;
@@ -155,7 +144,6 @@ export default async function ContributePage() {
           {WAYS.map((w) => (
             <Link key={w.key} href={w.href} className="group block border-b border-rule py-5">
               <p className="eyebrow inline-flex items-center gap-1.5">
-                <Clock />
                 {t(`hub.${w.key}.time` as Key)}
               </p>
               <h2 className="h3 mt-2 text-lacquer transition-opacity group-hover:opacity-80">{t(`hub.${w.key}.h` as Key)}</h2>
@@ -177,7 +165,7 @@ export default async function ContributePage() {
                   <div key={x.id} className="flex items-center gap-3 border-b border-rule py-2.5 last:border-b-0">
                     <Link
                       href="/request"
-                      className="inline-flex h-9 min-w-[52px] items-center justify-center gap-1 rounded-full border border-ruleStrong px-2 font-mono text-xs text-inkSoft hover:border-lacquer hover:text-lacquer"
+                      className="inline-flex h-9 min-w-[52px] items-center justify-center gap-1 rounded-sm border border-ruleStrong px-2 text-xs text-inkSoft hover:border-lacquer hover:text-lacquer"
                       aria-label={t("mod.votes", { n: x.votes })}
                     >
                       ▲ {x.votes}

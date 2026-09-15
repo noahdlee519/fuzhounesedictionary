@@ -40,18 +40,18 @@ const Han = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Rom = ({ children }: { children: React.ReactNode }) => (
-  <span className="romanization italic text-ink">{children}</span>
+  <span className="romanization text-ink">{children}</span>
 );
 
 const Num = ({ children }: { children: React.ReactNode }) => (
-  <span className="font-mono tabular-nums text-ink">{children}</span>
+  <span className="tabular-nums text-ink">{children}</span>
 );
 
 /** Not yet confirmed by a speaker. Shown on purpose. */
 const Unchecked = () => (
   <span
     title="Not yet checked by a speaker"
-    className="ml-2 whitespace-nowrap border border-rule px-1.5 py-0.5 align-middle font-mono text-[10px] uppercase tracking-wide text-inkFaint"
+    className="ml-2 whitespace-nowrap border border-rule px-1.5 py-0.5 align-middle meta text-[12px] text-inkFaint"
   >
     unchecked
   </span>
@@ -73,7 +73,7 @@ function Section({
       <summary className="flex cursor-pointer list-none items-baseline gap-3 py-4 marker:content-none">
         <span
           aria-hidden
-          className="mt-0.5 font-mono text-sm text-inkFaint transition-transform group-open:rotate-90"
+          className="mt-0.5 text-sm text-inkFaint transition-transform group-open:rotate-90"
         >
           &#9656;
         </span>
@@ -94,7 +94,7 @@ export const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][
           {head.map((h, i) => (
             <th
               key={i}
-              className="border-b border-ruleStrong pb-2 pr-4 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-inkFaint"
+              className="border-b border-ruleStrong pb-2 pr-4 meta text-inkFaint"
             >
               {h}
             </th>
@@ -171,7 +171,7 @@ function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean; extra
             dominantBaseline="central"
             fontSize="7.5"
             fill="currentColor"
-            className="font-mono text-inkFaint"
+            className="text-inkFaint"
           >
             {lvl}
           </text>
@@ -201,24 +201,24 @@ export const ToneChart = () => (
           <ToneGlyph levels={t.levels} short={t.short} extra={t.extra} />
         </div>
         <figcaption className="mt-2 flex items-baseline justify-between gap-2 border-t border-rule pt-2">
-          <span className="font-mono text-lg font-semibold leading-none tabular-nums text-ink">
+          <span className="text-lg font-semibold leading-none tabular-nums text-ink">
             {t.pitch}
           </span>
           {t.name ? (
             <span className="font-display text-sm text-inkSoft">{t.name}</span>
           ) : (
-            <span className="font-mono text-[10px] uppercase tracking-wide text-inkFaint">in-word</span>
+            <span className="meta text-[12px] text-inkFaint">in-word</span>
           )}
         </figcaption>
         {t.buc && (
           <div className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 text-[13px]">
             <span className="font-display font-semibold text-ink">{t.han}</span>
             {t.cited ? (
-              <span className="romanization italic text-inkSoft">{t.buc}</span>
+              <span className="romanization text-inkSoft">{t.buc}</span>
             ) : (
               <span
                 title="Bàng-uâ-cê—unchecked: the mark-to-tone mapping isn't confirmed yet"
-                className="romanization italic text-inkSoft underline decoration-dotted decoration-inkFaint underline-offset-2"
+                className="romanization text-inkSoft underline decoration-dotted decoration-inkFaint underline-offset-2"
               >
                 {t.buc}
               </span>
@@ -248,13 +248,13 @@ const SandhiGrid = () => (
     <table className="w-full min-w-[34rem] border-collapse text-center text-[15px]">
       <thead>
         <tr>
-          <th className="border-b border-ruleStrong pb-2 pr-3 text-left font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+          <th className="border-b border-ruleStrong pb-2 pr-3 text-left meta text-inkFaint">
             1st
           </th>
           {TONE_ORDER.map((t) => (
             <th
               key={t}
-              className="border-b border-ruleStrong pb-2 font-mono text-[11px] font-medium tabular-nums text-inkFaint"
+              className="border-b border-ruleStrong pb-2 text-[11px] font-medium tabular-nums text-inkFaint"
             >
               +{t}
             </th>
@@ -264,14 +264,14 @@ const SandhiGrid = () => (
       <tbody>
         {TONE_ORDER.map((row) => (
           <tr key={row}>
-            <th className="border-b border-rule py-2 pr-3 text-left font-mono text-[13px] font-medium tabular-nums text-ink">
+            <th className="border-b border-rule py-2 pr-3 text-left text-[13px] font-medium tabular-nums text-ink">
               {row}
             </th>
             {SANDHI[row].map((cell, i) => (
               <td
                 key={i}
                 className={
-                  "border-b border-rule py-2 font-mono text-[13px] tabular-nums " +
+                  "border-b border-rule py-2 text-[13px] tabular-nums " +
                   (cell === row ? "text-inkFaint" : "text-ink")
                 }
               >
@@ -292,7 +292,7 @@ export function Contents() {
   return (
     <nav
       aria-label="On this page"
-      className="sticky top-0 z-20 -mx-5 border-b border-rule bg-paper/95 px-5 py-3 backdrop-blur"
+      className="sticky top-0 z-20 -mx-5 border-b border-rule bg-paper px-5 py-3"
     >
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
         {SECTIONS.map((s) => (
@@ -327,7 +327,7 @@ export default function Guide() {
           just the word for a child.
         </P>
         <div className="pt-1">
-          <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Start here</p>
+          <p className="meta text-inkFaint">Start here</p>
           <ul className="mt-2 max-w-[68ch] list-disc space-y-1.5 pl-5 text-[17px] leading-relaxed text-inkSoft marker:text-lacquer">
             <li>
               <a href="#sounds" className="text-lacquer hover:underline">The sounds</a>—the
@@ -517,7 +517,7 @@ export default function Guide() {
           <Rom>Hók-ciŭ</Rom>. It never travelled much beyond the mission churches.
         </P>
         <div className="border-l-2 border-lacquer bg-surface p-4">
-          <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Missing</p>
+          <p className="meta text-lacquer">Missing</p>
           <p className="mt-2 max-w-[62ch] text-sm text-inkSoft">
             A confirmed Bàng-uâ-cê mark for each tone. The Tones section now shows a reconstructed
             mapping, flagged unchecked; only the breve on <Han>陰平</Han> and <Han>陽入</Han> is
@@ -589,7 +589,7 @@ export default function Guide() {
           </p>
         </div>
 
-        <h3 className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+        <h3 className="pt-2 meta text-inkFaint">
           Asking things
         </h3>
         <Table
@@ -603,7 +603,7 @@ export default function Guide() {
           ]}
         />
 
-        <h3 className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+        <h3 className="pt-2 meta text-inkFaint">
           Yes, no, and getting by
         </h3>
         <Table
@@ -616,7 +616,7 @@ export default function Guide() {
           ]}
         />
 
-        <h3 className="pt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+        <h3 className="pt-2 meta text-inkFaint">
           Still to come
         </h3>
         <P>
@@ -632,7 +632,7 @@ export default function Guide() {
 export function Sources() {
   return (
     <section className="border-t border-rule pt-6">
-      <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Sources</h2>
+      <h2 className="meta text-inkFaint">Sources</h2>
       <ul className="mt-3 max-w-[68ch] space-y-2 text-sm text-inkSoft">
         <li>
           Tone values and names, the isolation examples, and the whole bi-syllabic sandhi grid come

@@ -92,12 +92,12 @@ export default async function Home({
   const notices = (
     <>
       {searchParams.deleted && (
-        <p role="status" className="wrap mb-6 rounded-xl bg-surface px-5 py-3 text-sm text-inkSoft">
+        <p role="status" className="wrap mb-6 rounded-sm border border-rule bg-surface px-5 py-3 text-sm text-inkSoft">
           Your account has been deleted. Thank you for everything you added.
         </p>
       )}
       {searchParams.auth_error && (
-        <p role="alert" className="mb-6 rounded-xl bg-surface px-5 py-3 text-sm text-inkSoft">
+        <p role="alert" className="mb-6 rounded-sm border border-rule bg-surface px-5 py-3 text-sm text-inkSoft">
           <span className="font-semibold text-ink">Sign-in did not complete.</span> {searchParams.auth_error}{" "}
           Please try again, and if it keeps happening let Noah know what it says here.
         </p>
@@ -167,7 +167,7 @@ export default async function Home({
             assistant (already unfolded above), adding the word, and the
             other dictionaries listed under Learn. */}
         {nothingFound && (
-          <div className="mt-8 rounded-xl border border-rule bg-surface p-6 sm:p-7">
+          <div className="mt-8 rounded-sm border border-rule bg-surface p-6 sm:p-7">
             <p className="h3">{t("results.none.h", { q })}</p>
             <p className="read mt-2 text-inkSoft">{t("results.none.p")}</p>
             <ul className="mt-4 space-y-2.5 text-[15px]">
@@ -348,7 +348,7 @@ export default async function Home({
             </h2>
             <p className="mt-3 max-w-[34ch] text-inkSoft">{t("door.contribute.p")}</p>
             {tally && (
-              <p className="mt-4 font-mono text-[13px] text-inkSoft">
+              <p className="mt-4 text-[13px] text-inkSoft">
                 {t("door.contribute.counter", { silent: silent.toLocaleString(), voiced: voiced.toLocaleString() })
                   .split(/(\d[\d,]*)/)
                   .map((part, i) => (/^\d[\d,]*$/.test(part) ? <b key={i} className="font-medium text-lacquer">{part}</b> : part))}
@@ -358,7 +358,7 @@ export default async function Home({
               <Link href="/improve?need=recording" className="btn btn-primary">
                 {t("door.contribute.btn")}
               </Link>
-              <Link href="/submit" className="btn btn-primary">
+              <Link href="/submit" className="btn btn-ghost">
                 {t("door.contribute.link")}
               </Link>
             </div>
@@ -376,7 +376,7 @@ export default async function Home({
               {t("mission.h", { words: words.toLocaleString(), recs: tally.recordings.toLocaleString() })}
             </h2>
             <p className="lede mt-4 max-w-[46ch]">{t("mission.lede", { pct })}</p>
-            <div className="mt-8 h-1 max-w-[640px] overflow-hidden rounded-sm bg-surface" aria-hidden="true">
+            <div className="mt-8 h-[3px] max-w-[640px] overflow-hidden bg-rule" aria-hidden="true">
               <i className="block h-full bg-lacquer" style={{ width: `${pct}%` }} />
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -396,7 +396,7 @@ export default async function Home({
       <section className="sec">
         <div className={`grid gap-10 max-[900px]:grid-cols-2 max-[760px]:grid-cols-1 ${modules >= 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
           {wotd && (
-            <div className="self-start rounded-xl bg-accentSoft p-5">
+            <div className="self-start rounded-sm bg-accentSoft p-5">
               <h3 className="h3 mb-4">{t("mod.wotd")}</h3>
               <Link href={`/entry/${wotd.id}`}>
                 {wotd.hanzi ? (
@@ -436,7 +436,7 @@ export default async function Home({
                 <div key={x.id} className="flex items-center gap-3 border-b border-rule py-2.5 last:border-b-0">
                   <Link
                     href="/request"
-                    className="inline-flex h-9 min-w-[52px] items-center justify-center gap-1 rounded-full border border-ruleStrong px-2 font-mono text-xs text-inkSoft hover:border-lacquer hover:text-lacquer"
+                    className="inline-flex h-9 min-w-[52px] items-center justify-center gap-1 rounded-sm border border-ruleStrong px-2 text-xs text-inkSoft hover:border-lacquer hover:text-lacquer"
                     aria-label={t("mod.votes", { n: x.votes })}
                   >
                     ▲ {x.votes}

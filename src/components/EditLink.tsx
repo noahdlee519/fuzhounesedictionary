@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-/* An editor's "Edit →" that tells the edit page where to return to after
+/* An editor's "Edit" that tells the edit page where to return to after
    Save: the page this one was reached from, when that is a page on this site
    (page 4 of the word list, a search, a profile), otherwise this entry.
    Read from document.referrer after mount; the server renders the entry
@@ -38,7 +38,7 @@ export default function EditLink({
 
   return (
     <Link href={`/admin/edit/${entryId}?back=${encodeURIComponent(back)}`} className={className}>
-      Edit →
+      Edit
     </Link>
   );
 }

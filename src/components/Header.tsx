@@ -30,10 +30,10 @@ export default async function Header() {
 export function HeaderView({ user, profile }: SessionShape) {
   const lang = getLang();
   const t = translator(lang);
-  const navLink = "rounded-lg px-1.5 py-2 text-[13px] font-medium leading-none transition-colors md:px-2.5 md:text-sm";
+  const navLink = "ui rounded-sm px-1.5 py-2 text-[13px] font-medium leading-none transition-colors md:px-2.5 md:text-sm";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-rule bg-[var(--header-bg)] backdrop-blur-[20px] backdrop-saturate-[180%]">
+    <header className="sticky top-0 z-40 border-b border-rule bg-paper">
       <div className="wrap flex flex-wrap items-center gap-x-3 md:h-14 md:flex-nowrap md:gap-x-5">
         {/* 1. Wordmark. The two words share a baseline inside a box that is
             centred in the row, so the characters sit level at every width. */}

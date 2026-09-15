@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Inter_Tight, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import Header from "@/components/Header";
 import NavMemory from "@/components/NavMemory";
 import PageFade from "@/components/PageFade";
@@ -11,13 +11,38 @@ import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import { translator } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
-// Faces from the 9 Sep 2026 redesign: Inter Tight for all Latin text,
-// JetBrains Mono for romanization and labels (both self-hosted through
-// next/font), and Noto Serif TC for Chinese characters, which is linked from
-// Google Fonts in <head> because its 100-odd unicode-range slices are better
-// fetched on demand than bundled.
-const display = Inter_Tight({ subsets: ["latin"], variable: "--font-display", display: "swap", adjustFontFallback: false });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap", adjustFontFallback: false });
+// One Latin face for everything: Charis SIL, which SIL International makes for
+// dictionaries and grammars of exactly this kind of language. It is here for
+// its coverage as much as its look — it draws the combining marks of
+// Bàng-uâ-cê (ṳ̆, nè̤ng, ā̤) and the whole IPA including the tone letters ˥ ˩,
+// none of which the faces before it had. Self-hosted from src/fonts; see the
+// README there. Romanization is never set in italic — the stacked marks sit
+// correctly upright and drift in the italic. Noto Serif TC for Chinese
+// characters is linked from Google Fonts in <head> because its 100-odd
+// unicode-range slices are better fetched on demand than bundled.
+const display = localFont({
+  src: [
+    { path: "../fonts/CharisSIL-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/CharisSIL-Bold.woff2", weight: "700", style: "normal" },
+    { path: "../fonts/CharisSIL-Italic.woff2", weight: "400", style: "italic" },
+  ],
+  variable: "--font-display",
+  display: "swap",
+  adjustFontFallback: false,
+});
+
+// And a second face for the interface only — the nav, buttons, chips, form
+// fields and paging controls. Libre Franklin, a Franklin Gothic revival: the
+// gothic that sits beside a Charter-family serif in newspapers and reference
+// books, and characterful enough not to read as a default. It never touches
+// dictionary content, so it needs no IPA or combining marks; the labels stay
+// Charis small capitals.
+const ui = localFont({
+  src: [{ path: "../fonts/LibreFranklin.woff2", weight: "400 700", style: "normal" }],
+  variable: "--font-ui",
+  display: "swap",
+  adjustFontFallback: false,
+});
 
 
 export const metadata: Metadata = {
@@ -45,13 +70,13 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     locale: "en_US",
-    images: [{ url: "/og.png?v=3", width: 1200, height: 630, alt: SITE_NAME }],
+    images: [{ url: "/og.png?v=5", width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: ["/og.png?v=3"],
+    images: ["/og.png?v=5"],
   },
   robots: { index: true, follow: true },
   /* Icons declared here rather than by the app/ file convention, so the tags
@@ -84,7 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const lang = getLang();
   const t = translator(lang);
   return (
-    <html lang={lang === "zh" ? "zh-Hant" : "en"} className={`${display.variable} ${mono.variable}`} style={{ ["--font-han" as string]: "'Noto Serif TC'" }} suppressHydrationWarning>
+    <html lang={lang === "zh" ? "zh-Hant" : "en"} className={`${display.variable} ${ui.variable}`} style={{ ["--font-han" as string]: "'Noto Serif TC'" }} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -106,7 +131,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NavMemory />
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:border focus:border-lacquer focus:bg-paper focus:px-3 focus:py-2 focus:text-sm"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:border focus:border-lacquer focus:bg-paper focus:px-3 focus:py-2 focus:text-sm"
         >
           Skip to content
         </a>

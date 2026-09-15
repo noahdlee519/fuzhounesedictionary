@@ -84,15 +84,15 @@ export default async function WantedPage({
             <input type="hidden" name="back" value="/request" />
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
               <label className="block">
-                <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-inkFaint">Word or phrase</span>
+                <span className="mb-1 block meta text-inkFaint">Word or phrase</span>
                 <input name="term" required placeholder="e.g. 鼎邊糊 or “dĭng-biĕng-gū”" className={inputCls} />
               </label>
               <label className="block">
-                <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-inkFaint">Note (optional)</span>
+                <span className="mb-1 block meta text-inkFaint">Note (optional)</span>
                 <input name="note" placeholder="What it means, or where you heard it" className={inputCls} />
               </label>
             </div>
-            <SubmitButton pending="Sending…" className="border border-lacquer bg-lacquer px-4 py-2 font-mono text-xs uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60">
+            <SubmitButton pending="Sending…" className="border border-lacquer bg-lacquer px-4 py-2 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60">
               Request this word
             </SubmitButton>
           </form>
@@ -105,7 +105,7 @@ export default async function WantedPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+        <h2 className="meta text-inkFaint">
           {error || !user ? "Open requests" : `${requests.length} open request${requests.length === 1 ? "" : "s"}`}
         </h2>
 
@@ -139,7 +139,7 @@ export default async function WantedPage({
                     }
                   >
                     <span aria-hidden className="text-base leading-none">▲</span>
-                    <span className="font-mono text-sm font-medium tabular-nums">{r.votes}</span>
+                    <span className="text-sm font-medium tabular-nums">{r.votes}</span>
                   </VoteButton>
                 </form>
 
@@ -152,25 +152,25 @@ export default async function WantedPage({
                     ) : (
                       <span className="romanization font-display text-lg font-semibold text-ink">{display}</span>
                     )}
-                    <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint ring-1 ring-rule px-2 py-0.5">
+                    <span className="meta text-inkFaint ring-1 ring-rule px-2 py-0.5">
                       {needsVoice ? "needs a recording" : "needs an entry"}
                     </span>
                     {audioLanded && (
-                      <span className="font-mono text-[11px] uppercase tracking-wide text-lacquer ring-1 ring-lacquer px-2 py-0.5">audio added</span>
+                      <span className="meta text-lacquer ring-1 ring-lacquer px-2 py-0.5">audio added</span>
                     )}
                   </div>
                   {r.note && <p className="mt-1 text-sm text-inkSoft">{r.note}</p>}
 
-                  <div className="mt-2 flex flex-wrap gap-4 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                  <div className="mt-2 flex flex-wrap gap-4 meta text-inkFaint">
                     {needsVoice ? (
-                      <Link href={`/entry/${r.entry_id}`} className="hover:text-lacquer">Open entry to add audio →</Link>
+                      <Link href={`/entry/${r.entry_id}`} className="hover:text-lacquer">Open entry to add audio</Link>
                     ) : (
-                      <Link href={`/submit?romanization=${encodeURIComponent(r.term)}`} className="hover:text-lacquer">Add this word →</Link>
+                      <Link href={`/submit?romanization=${encodeURIComponent(r.term)}`} className="hover:text-lacquer">Add this word</Link>
                     )}
                     {isEd && (
                       <form action={fulfillRequest}>
                         <input type="hidden" name="id" value={r.id} />
-                        <SubmitButton pending="…" className="uppercase hover:text-lacquer disabled:opacity-60">
+                        <SubmitButton pending="…" className="meta hover:text-lacquer disabled:opacity-60">
                           Mark done ✓
                         </SubmitButton>
                       </form>

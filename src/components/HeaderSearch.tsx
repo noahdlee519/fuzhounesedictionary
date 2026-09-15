@@ -30,7 +30,7 @@ export default function HeaderSearch({
         autoComplete="off"
         placeholder={placeholder}
         aria-label={label}
-        className="h-[34px] w-full rounded-full border border-transparent bg-surface pl-8 pr-3.5 text-sm tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-ruleStrong focus:bg-paper focus-visible:outline-none"
+        className="ui h-[34px] w-full rounded-sm border border-ruleStrong bg-paper pl-8 pr-3.5 text-sm tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-ruleStrong focus:bg-paper focus-visible:outline-none"
       />
     </form>
   );

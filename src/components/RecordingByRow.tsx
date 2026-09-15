@@ -51,7 +51,7 @@ export default function RecordingByRow({
       <span className="romanization font-display font-semibold text-lacquer">{name}</span>
       {meaning && <span className="text-sm text-inkFaint">{meaning}</span>}
       {r.kind === "example" && (
-        <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">in a sentence</span>
+        <span className="meta text-inkFaint">in a sentence</span>
       )}
     </span>
   );
@@ -68,7 +68,7 @@ export default function RecordingByRow({
         )}
         {showStatus && (
           <span
-            className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[r.status] ?? STATUS_STYLE.pending}`}
+            className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[r.status] ?? STATUS_STYLE.pending}`}
           >
             {r.status}
           </span>

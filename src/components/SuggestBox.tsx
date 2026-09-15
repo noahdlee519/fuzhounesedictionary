@@ -13,14 +13,14 @@ export interface SenseOption {
 }
 
 const chipCls =
-  "inline-block cursor-pointer list-none border px-2 py-0.5 font-mono text-[11px] uppercase " +
-  "tracking-wide transition-colors [&::-webkit-details-marker]:hidden [&::marker]:content-['']";
+  "inline-block cursor-pointer list-none border px-2 py-0.5 meta " +
+  "transition-colors [&::-webkit-details-marker]:hidden [&::marker]:content-['']";
 
 const fieldCls =
   "mt-1 w-full border border-rule bg-paper px-3 py-2 text-sm outline-none " +
   "focus:border-lacquer placeholder:text-inkFaint";
 
-const labelCls = "block font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint";
+const labelCls = "block meta text-inkFaint";
 
 export default function SuggestBox({
   kind,
@@ -44,7 +44,7 @@ export default function SuggestBox({
 
   if (pending) {
     return (
-      <span className="inline-block border border-rule px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+      <span className="inline-block border border-rule px-2 py-0.5 meta text-inkFaint">
         your {isIpa ? "IPA" : "example"} · awaiting review
       </span>
     );
@@ -76,7 +76,7 @@ export default function SuggestBox({
               required
               maxLength={500}
               placeholder="/sɛiʔ˥/"
-              className={`${fieldCls} font-mono`}
+              className={`${fieldCls}`}
             />
             <span className="mt-1 block text-xs text-inkFaint">
               Write what you hear, in your own variety. An editor checks it before it appears.
@@ -128,7 +128,7 @@ export default function SuggestBox({
 
         <SubmitButton
           pending="Sending…"
-          className="border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           Send for review
         </SubmitButton>

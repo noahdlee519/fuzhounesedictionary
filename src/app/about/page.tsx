@@ -148,7 +148,7 @@ export default async function AboutPage() {
             <div className="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
               {stats.map((s) => (
                 <p key={s.label}>
-                  <span className="block font-mono text-[32px] font-medium leading-none tracking-tight tabular-nums text-ink sm:text-[40px]">
+                  <span className="block text-[32px] font-medium leading-none tracking-tight tabular-nums text-ink sm:text-[40px]">
                     {s.n.toLocaleString()}
                   </span>
                   <span className="mt-2 block text-sm text-inkSoft">{t(s.label)}</span>
@@ -221,7 +221,7 @@ export default async function AboutPage() {
             alt="Noah Lee"
             width={144}
             height={144}
-            className="h-36 w-36 shrink-0 rounded-xl object-cover ring-1 ring-rule"
+            className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
           />
           <div>
             <p className="eyebrow">{t("about.dev")}</p>

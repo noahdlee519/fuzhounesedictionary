@@ -7,7 +7,7 @@ Writes public/icon.png, icon-48.png, apple-icon.png, favicon.ico and og.png.
 
 The old set was drawn for the letterpress design — beige paper, a boxed
 lattice, a red serif 福 on a tinted tile. The site is now white paper, near
-black ink, one lacquer red, Inter Tight for Latin and Noto Serif for
+black ink, one lacquer red, Charis SIL for Latin and Noto Serif for
 characters, so the icons and the preview card follow it.
 
 The icon is a lacquer 福 — the same red the wordmark gives 福州 and "fuzhou"
@@ -15,9 +15,9 @@ The icon is a lacquer 福 — the same red the wordmark gives 福州 and "fuzhou
 rather than a white tile. It is set in the heaviest serif weight, because at
 sixteen pixels a Bold one goes to mush.
 
-Fonts. Inter Tight comes from the @fontsource package (the same faces the
-site loads through next/font); Noto Serif CJK TC is a system font here. Point
-INTER_DIR at a directory of InterTight-{400,600,700,800}.ttf.
+Fonts. Latin is Charis SIL, the same face the site loads; point CHARIS_DIR at
+a folder of `CharisSIL-{Regular,Bold}.ttf` (google/fonts, ofl/charissil). Noto
+Serif CJK TC is a system font here.
 """
 
 import os
@@ -25,7 +25,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PUBLIC = os.path.join(REPO, "public")
-INTER_DIR = os.environ.get("INTER_DIR", "/tmp/fonts")
+CHARIS_DIR = os.environ.get("CHARIS_DIR", "/tmp/cand")
 CJK = "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc"
 CJK_BLACK = "/usr/share/fonts/opentype/noto/NotoSerifCJK-Black.ttc"
 CJK_TC = 3  # face index of Noto Serif CJK TC in these collections
@@ -39,7 +39,11 @@ RULE = (232, 232, 234)
 
 
 def inter(weight, size):
-    return ImageFont.truetype(os.path.join(INTER_DIR, f"InterTight-{weight}.ttf"), size)
+    # Kept under its old name so the drawing code below reads as before.
+    # Charis has two weights and nothing between them, so anything above
+    # Regular is drawn Bold — the same rule the stylesheet follows.
+    face = "Bold" if weight >= 600 else "Regular"
+    return ImageFont.truetype(os.path.join(CHARIS_DIR, f"CharisSIL-{face}.ttf"), size)
 
 
 def han(size, black=False):
@@ -106,8 +110,8 @@ def og():
     )
 
     y = 150
-    d.text((x, y), "Fuzhounese is fading.", font=inter(800, 74), fill=INK)
-    d.text((x, y + 88), "Help keep it spoken.", font=inter(800, 74), fill=INK)
+    d.text((x, y), "Fuzhounese is fading.", font=inter(700, 74), fill=INK)
+    d.text((x, y + 88), "Help keep it spoken.", font=inter(700, 74), fill=INK)
 
     lede = "A free, collaborative dictionary of the Fuzhou dialect,"
     lede2 = "with recordings from the people who speak it."

@@ -25,7 +25,7 @@ export function LegalPage({
         <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
           {title}
         </h1>
-        <p className="mt-3 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+        <p className="mt-3 meta text-inkFaint">
           Last updated {updated}
         </p>
         <div className="mt-5 max-w-[68ch] space-y-3 text-lg leading-relaxed text-inkSoft">{intro}</div>
@@ -52,7 +52,7 @@ export function Section({ n, title, children }: { n: number; title: string; chil
   return (
     <section className="space-y-3">
       <h2 className="flex items-baseline gap-3 font-display text-lg font-bold tracking-tight">
-        <span className="font-mono text-xs font-normal tabular-nums text-inkFaint">
+        <span className="text-xs font-normal tabular-nums text-inkFaint">
           {String(n).padStart(2, "0")}
         </span>
         {title}

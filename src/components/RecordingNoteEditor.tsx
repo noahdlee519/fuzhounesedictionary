@@ -28,9 +28,9 @@ export default function RecordingNoteEditor({
         {text ? (
           <span className="romanization text-inkSoft">{text}</span>
         ) : (
-          <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">no note</span>
+          <span className="meta text-inkFaint">no note</span>
         )}
-        <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint group-hover:text-lacquer group-open:text-lacquer">
+        <span className="meta text-inkFaint group-hover:text-lacquer group-open:text-lacquer">
           {text ? "edit" : "+ add a note"}
         </span>
       </summary>
@@ -48,7 +48,7 @@ export default function RecordingNoteEditor({
         />
         <SubmitButton
           pending="Saving…"
-          className="border border-rule px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-60"
+          className="border border-rule px-3 py-1.5 meta text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-60"
         >
           Save note
         </SubmitButton>

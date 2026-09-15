@@ -43,7 +43,7 @@ export default function ThemeToggle({
         title={label}
         onClick={toggle}
         disabled={dark === null}
-        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ruleStrong text-inkSoft transition-colors hover:text-ink disabled:opacity-60 ${className}`}
+        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-ruleStrong text-inkSoft transition-colors hover:text-ink disabled:opacity-60 ${className}`}
       >
         {dark ? (
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -67,7 +67,7 @@ export default function ThemeToggle({
       aria-label={label}
       onClick={toggle}
       disabled={dark === null}
-      className={`inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer disabled:opacity-60 ${className}`}
+      className={`inline-flex items-center gap-2 meta text-inkFaint transition-colors hover:text-lacquer disabled:opacity-60 ${className}`}
     >
       <span>{dark ? "Dark" : "Light"} mode</span>
       <span

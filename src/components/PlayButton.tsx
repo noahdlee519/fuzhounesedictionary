@@ -106,7 +106,7 @@ export default function PlayButton({
         )}
       </button>
       {showDuration && duration !== null && (
-        <span className="font-mono text-xs tabular-nums text-inkSoft">{fmt(duration)}</span>
+        <span className="text-xs tabular-nums text-inkSoft">{fmt(duration)}</span>
       )}
     </span>
   );

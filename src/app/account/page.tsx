@@ -36,7 +36,7 @@ export default async function AccountPage({
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-lg space-y-4 text-center">
+      <div className="max-w-lg space-y-4">
         <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">My account</h1>
         <p className="text-inkSoft">Sign in to see the words you&apos;ve contributed.</p>
         <div className="flex justify-center"><SignInButton next="/account" /></div>
@@ -116,7 +116,7 @@ export default async function AccountPage({
               {since && <span>Member since {since}</span>}
               {since && <span aria-hidden> · </span>}
               <Link href={`/contributor/${user.id}`} className="transition-colors hover:text-lacquer">
-                View profile →
+                View profile
               </Link>
             </p>
           </div>
@@ -158,7 +158,7 @@ export default async function AccountPage({
                 }
               >
                 <div className="font-display text-3xl font-bold tabular-nums text-lacquer">{t.n}</div>
-                <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+                <div className="mt-1 meta text-inkFaint">
                   {t.label}
                 </div>
               </Link>
@@ -172,9 +172,9 @@ export default async function AccountPage({
               Your words could not be loaded just now. Please check back shortly.
             </p>
           ) : entries.length === 0 ? (
-            <div className="border border-rule bg-surface p-8 text-center">
+            <div className="border border-rule bg-surface p-8">
               <p className="text-inkSoft">You haven&apos;t added any words yet.</p>
-              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word →</Link>
+              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word</Link>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -184,7 +184,7 @@ export default async function AccountPage({
                   <div className="flex items-baseline gap-3">
                     {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
-                    <span className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
+                    <span className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
                       {e.status}
                     </span>
                   </div>
@@ -205,9 +205,9 @@ export default async function AccountPage({
 
         {show === "meanings" && (
           meanings.length === 0 ? (
-            <div className="border border-rule bg-surface p-8 text-center">
+            <div className="border border-rule bg-surface p-8">
               <p className="text-inkSoft">No meanings yet.</p>
-              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word →</Link>
+              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word</Link>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -218,9 +218,9 @@ export default async function AccountPage({
                     {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
                     {m.part_of_speech && (
-                      <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">{m.part_of_speech}</span>
+                      <span className="meta text-inkFaint">{m.part_of_speech}</span>
                     )}
-                    <span className={`ml-auto font-mono text-[11px] uppercase tracking-wide ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
+                    <span className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
                       {e.status}
                     </span>
                   </div>
@@ -248,7 +248,7 @@ export default async function AccountPage({
 
         {show === "recordings" && (
           recordings.length === 0 ? (
-            <div className="border border-rule bg-surface p-8 text-center">
+            <div className="border border-rule bg-surface p-8">
               <p className="text-inkSoft">You haven&apos;t recorded anything yet.</p>
               <Link href="/improve" className="mt-2 inline-block font-medium text-lacquer hover:underline">
                 Record a word &rarr;
@@ -388,7 +388,7 @@ export default async function AccountPage({
           <summary className="btn btn-ghost btn-sm inline-flex cursor-pointer list-none group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
             Delete my account…
           </summary>
-          <form action={deleteAccount} className="mt-3 max-w-md space-y-3 rounded-xl border border-lacquer bg-surface p-4">
+          <form action={deleteAccount} className="mt-3 max-w-md space-y-3 rounded-sm border border-lacquer bg-surface p-4">
             <label className="flex items-start gap-3 text-sm">
               <input type="checkbox" name="recordings" className="mt-1 accent-lacquer" />
               <span>

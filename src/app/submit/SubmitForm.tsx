@@ -44,7 +44,7 @@ const emptySense = (): SenseDraft => ({
 const inputCls =
   "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
 const fieldLabel = "block text-sm";
-const eyebrow = "font-mono text-xs uppercase tracking-[0.1em] text-lacquer";
+const eyebrow = "meta text-lacquer";
 
 /* A section of the form: a mono eyebrow, a one-line explanation, the fields. */
 function Part({
@@ -206,7 +206,7 @@ export default function SubmitForm({
         {recordingFailed && (
           <div className="space-y-3 border border-rule p-4">
             <p className="text-sm text-lacquer">{recordingFailed}</p>
-            <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Try the word again</p>
+            <p className="meta text-inkFaint">Try the word again</p>
             <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="headword" />
           </div>
         )}
@@ -225,11 +225,11 @@ export default function SubmitForm({
         <div className="flex flex-wrap items-center gap-4 border-t border-rule pt-4">
           <Link
             href="/submit?success=1"
-            className="border border-lacquer bg-lacquer px-6 py-2.5 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90"
+            className="border border-lacquer bg-lacquer px-6 py-2.5 font-semibold text-paper transition-opacity hover:opacity-90"
           >
             Done
           </Link>
-          <Link href="/account" className="font-mono text-xs uppercase tracking-wide text-inkSoft hover:text-lacquer">
+          <Link href="/account" className="meta text-inkSoft hover:text-lacquer">
             View my submissions
           </Link>
         </div>
@@ -285,14 +285,14 @@ export default function SubmitForm({
         {senses.map((s, i) => (
           <div key={i} className="space-y-3 border border-rule p-4">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase tracking-wide text-inkFaint">
+              <span className="meta text-inkFaint">
                 Meaning {i + 1}
               </span>
               {senses.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeSense(i)}
-                  className="font-mono text-xs uppercase tracking-wide text-inkFaint hover:text-lacquer"
+                  className="meta text-inkFaint hover:text-lacquer"
                 >
                   Remove
                 </button>
@@ -358,7 +358,7 @@ export default function SubmitForm({
         <button
           type="button"
           onClick={addSense}
-          className="font-mono text-xs uppercase tracking-wide text-lacquer hover:underline"
+          className="meta text-lacquer hover:underline"
         >
           + Another meaning
         </button>
@@ -380,7 +380,7 @@ export default function SubmitForm({
                 {wordShown || <span className="text-inkFaint">the word above</span>}
               </span>
               {rec.take && !rec.recording && (
-                <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                <span className="meta text-inkFaint">
                   kept—sent with the word
                 </span>
               )}
@@ -398,7 +398,7 @@ export default function SubmitForm({
             />
             {rec.take && !rec.recording && (
               <label className="block">
-                <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+                <span className="meta text-inkFaint">
                   A note with it <span className="normal-case tracking-normal">(optional)</span>
                 </span>
                 <input
@@ -460,7 +460,7 @@ export default function SubmitForm({
         <button
           type="submit"
           disabled={submitting}
-          className="border border-lacquer bg-lacquer px-8 py-3 font-display font-semibold uppercase tracking-wide text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="border border-lacquer bg-lacquer px-8 py-3 font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {submitting ? "Sending…" : "Submit for review"}
         </button>

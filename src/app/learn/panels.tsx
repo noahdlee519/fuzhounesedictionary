@@ -11,7 +11,7 @@ const P = ({ children }: { children: React.ReactNode }) => (
 );
 
 const H = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">{children}</h3>
+  <h3 className="meta text-lacquer">{children}</h3>
 );
 
 const Han = ({ children }: { children: React.ReactNode }) => (
@@ -19,11 +19,11 @@ const Han = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Rom = ({ children }: { children: React.ReactNode }) => (
-  <span className="romanization italic text-ink">{children}</span>
+  <span className="romanization text-ink">{children}</span>
 );
 
 const Num = ({ children }: { children: React.ReactNode }) => (
-  <span className="font-mono tabular-nums text-ink">{children}</span>
+  <span className="tabular-nums text-ink">{children}</span>
 );
 
 const Block = ({ id, children }: { id?: string; children: React.ReactNode }) => (
@@ -252,7 +252,7 @@ const orthography = (
         </a>{" "}
         in the Features panel.
       </P>
-      <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Consonants</p>
+      <p className="meta text-inkFaint">Consonants</p>
       <Table
         head={["Letter", "IPA", "Sounds like", "Example"]}
         rows={[
@@ -272,7 +272,7 @@ const orthography = (
           [<Rom>s</Rom>, "s", "s in see", <><Han>山</Han> <Rom>săng</Rom>, mountain</>],
         ]}
       />
-      <p className="pt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Vowels</p>
+      <p className="pt-2 meta text-inkFaint">Vowels</p>
       <Table
         head={["Letter", "IPA", "Sounds like", "Example"]}
         rows={[
@@ -291,7 +291,7 @@ const orthography = (
         as its letters in sequence: <Han>天</Han> <Rom>tiĕng</Rom>, <Han>花</Han> <Rom>huă</Rom>,{" "}
         <Han>狗</Han> <Rom>gāu</Rom>, <Han>手</Han> <Rom>chiū</Rom>.
       </P>
-      <p className="pt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Endings</p>
+      <p className="pt-2 meta text-inkFaint">Endings</p>
       <Table
         head={["Letter", "IPA", "Sounds like", "Example"]}
         rows={[

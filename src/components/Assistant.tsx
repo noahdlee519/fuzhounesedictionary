@@ -111,7 +111,7 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
               <p className="text-sm leading-relaxed text-inkSoft">{ex.a}</p>
             </div>
           ))}
-          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">Example answers</p>
+          <p className="meta text-inkFaint">Example answers</p>
         </div>
         <p className="text-sm text-inkSoft">
           Sign in to ask your own.
@@ -201,7 +201,7 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
                 setTurns([]);
                 setNotice(null);
               }}
-              className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer"
+              className="meta text-inkFaint transition-colors hover:text-lacquer"
             >
               Clear conversation
             </button>
@@ -209,7 +209,7 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
         )}
 
         {busy && (
-          <p aria-live="polite" className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          <p aria-live="polite" className="meta text-inkFaint">
             Looking…
           </p>
         )}
@@ -247,7 +247,7 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
         <button
           type="submit"
           disabled={busy || !draft.trim()}
-          className="shrink-0 border-l border-rule px-5 font-mono text-xs uppercase tracking-[0.1em] text-inkSoft transition-colors hover:text-lacquer disabled:opacity-40"
+          className="shrink-0 border-l border-rule px-5 meta text-inkSoft transition-colors hover:text-lacquer disabled:opacity-40"
         >
           Ask
         </button>

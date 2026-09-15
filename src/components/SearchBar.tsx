@@ -92,7 +92,7 @@ export default function SearchBar({
           defaultValue={defaultValue}
           autoFocus={focusOnMount}
           placeholder={narrow ? placeholderShort : placeholderFull}
-          className="h-14 w-full rounded-xl border border-ruleStrong bg-surface pl-[46px] pr-5 text-[17px] tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus:bg-paper focus-visible:outline-none"
+          className="ui h-14 w-full rounded-sm border border-ink bg-paper pl-[46px] pr-5 text-[17px] tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus:bg-paper focus-visible:outline-none"
         />
       </form>
 

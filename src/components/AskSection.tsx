@@ -76,7 +76,7 @@ export default function AskSection({
             onClick={() => ask(x.q)}
             aria-pressed={asked === x.q}
             className={
-              "min-h-[44px] rounded-full border px-4 py-2.5 text-left text-sm transition-colors " +
+              "min-h-[44px] rounded-sm border px-4 py-2.5 text-left text-sm transition-colors " +
               (asked === x.q ? "border-ink" : "border-ruleStrong hover:border-inkMute")
             }
           >
@@ -86,7 +86,7 @@ export default function AskSection({
       </div>
 
       {(busy || answer || notice) && (
-        <div className="mt-6 rounded-xl bg-surface px-[22px] py-5 text-[17px] leading-[1.55]" aria-live="polite">
+        <div className="mt-6 rounded-sm border border-rule bg-surface px-[22px] py-5 text-[17px] leading-[1.55]" aria-live="polite">
           {busy && <p className="text-inkSoft">{s.looking}</p>}
           {notice && <p className="text-lacquer">{notice}</p>}
           {answer && (

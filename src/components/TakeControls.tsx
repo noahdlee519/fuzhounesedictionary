@@ -9,7 +9,7 @@ import type { Take } from "./useRecorder";
    the form is sent. */
 
 export const recBtn =
-  "inline-flex items-center gap-2 border px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] transition-colors disabled:opacity-50";
+  "inline-flex items-center gap-2 border px-3 py-1.5 meta transition-colors disabled:opacity-50";
 
 export default function TakeControls({
   recording,
@@ -60,7 +60,7 @@ export default function TakeControls({
               <span aria-hidden="true" className="inline-block h-2 w-2 animate-pulse bg-current" />
               Stop
             </button>
-            <span aria-live="polite" className="font-mono text-xs tabular-nums text-lacquer">
+            <span aria-live="polite" className="text-xs tabular-nums text-lacquer">
               {seconds.toFixed(1)}s
             </span>
           </>

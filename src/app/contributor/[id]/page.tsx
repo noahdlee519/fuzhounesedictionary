@@ -111,20 +111,20 @@ export default async function ContributorPage({
     <div className="space-y-8">
       <section className="flex items-start justify-between gap-6 border-b border-rule pb-6">
         <div className="min-w-0">
-          <p className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">Contributor</p>
+          <p className="meta text-lacquer">Contributor</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
             {profile.display_name || "Anonymous contributor"}
           </h1>
           {origin && (
             <p className="mt-3 text-inkSoft">
-              <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Fuzhounese from </span>
+              <span className="meta text-inkFaint">Fuzhounese from </span>
               {origin}
             </p>
           )}
-          <p className="mt-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          <p className="mt-2 meta text-inkFaint">
             Member since {since}
           </p>
-          <p className="mt-1 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+          <p className="mt-1 meta text-inkFaint">
             {total.toLocaleString()} word{total === 1 ? "" : "s"} ·{" "}
             {totalRecs.toLocaleString()} recording{totalRecs === 1 ? "" : "s"}
           </p>
@@ -163,8 +163,8 @@ export default async function ContributorPage({
       </section>
 
       <p className="border-t border-rule pt-5">
-        <Link href="/learn" className="font-mono text-xs uppercase tracking-[0.1em] text-inkSoft hover:text-lacquer">
-          Browse all words →
+        <Link href="/learn" className="meta text-inkSoft hover:text-lacquer">
+          Browse all words
         </Link>
       </p>
     </div>

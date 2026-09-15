@@ -31,9 +31,9 @@ export const metadata: Metadata = {
 };
 
 const chip =
-  "font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-0.5";
+  "meta text-inkSoft ring-1 ring-rule px-2 py-0.5";
 const btn =
-  "border px-4 py-1.5 font-mono text-xs uppercase tracking-[0.1em] transition-colors";
+  "border px-4 py-1.5 meta transition-colors";
 
 export default async function AdminPage() {
   const { user, profile } = await getSessionUser();
@@ -44,7 +44,7 @@ export default async function AdminPage() {
     return (
       <div className="space-y-8">
         <ContributeTabs active="review" />
-        <div className="mx-auto max-w-lg space-y-4 rounded-xl border border-rule bg-surface p-8 text-center">
+        <div className="max-w-lg space-y-4 rounded-sm border border-rule bg-surface p-8">
           <p className="h3">{t("admin.signin.h")}</p>
           <p className="text-inkSoft">{t("admin.signin.p")}</p>
           <div className="flex justify-center"><SignInButton next="/admin" label={t("signin.google")} /></div>
@@ -57,7 +57,7 @@ export default async function AdminPage() {
     return (
       <div className="space-y-8">
         <ContributeTabs active="add" />
-        <div className="mx-auto max-w-lg space-y-3 rounded-xl border border-rule bg-surface p-8 text-center">
+        <div className="max-w-lg space-y-3 rounded-sm border border-rule bg-surface p-8">
           <p className="h3">{t("admin.only.h")}</p>
           <p className="text-inkSoft">{t("admin.only.p", { name: profile?.display_name ?? "" })}</p>
           <Link href="/submit" className="link">{t("admin.only.link")}</Link>
@@ -114,7 +114,7 @@ export default async function AdminPage() {
         {missingTable(e) ? (
           <>
             The database does not have that table yet: run{" "}
-            <code className="font-mono text-[13px]">supabase/{file}</code> in the Supabase SQL
+            <code className="text-[13px]">supabase/{file}</code> in the Supabase SQL
             editor and reload.
           </>
         ) : (
@@ -132,7 +132,7 @@ export default async function AdminPage() {
         <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
           What people have sent in, oldest first. Publish what is right, send back what is not.
         </p>
-        <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+        <span className="meta text-inkFaint">
           {waiting} waiting
         </span>
       </div>
@@ -143,7 +143,7 @@ export default async function AdminPage() {
 
       {pendingSugs.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">
+          <h2 className="meta text-lacquer">
             {pendingSugs.length} suggestion{pendingSugs.length === 1 ? "" : "s"} to read
           </h2>
           <div className="grid gap-3">
@@ -162,17 +162,17 @@ export default async function AdminPage() {
                     </Link>
                     <span className={chip}>{s.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
-                    <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                    <span className="ml-auto meta text-inkFaint">
                       {formatDateTime(s.created_at)}
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
                   </div>
 
                   <div className="mt-3 border-l-2 border-lacquer pl-3">
-                    <p className={s.kind === "ipa" ? "font-mono text-lg" : "text-lg"}>{s.value}</p>
+                    <p className={s.kind === "ipa" ? "text-lg" : "text-lg"}>{s.value}</p>
                     {s.value_gloss && <p className="text-sm text-inkSoft">{s.value_gloss}</p>}
                     {sense?.definition_en && (
-                      <p className="mt-1 font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                      <p className="mt-1 meta text-inkFaint">
                         for the sense: {sense.definition_en}
                       </p>
                     )}
@@ -210,7 +210,7 @@ export default async function AdminPage() {
 
       {pendingRecs.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer">
+          <h2 className="meta text-lacquer">
             {pendingRecs.length} recording{pendingRecs.length === 1 ? "" : "s"} to listen to
           </h2>
           <div className="grid gap-3">
@@ -229,7 +229,7 @@ export default async function AdminPage() {
                     </Link>
                     <span className={chip}>{r.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
-                    <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                    <span className="ml-auto meta text-inkFaint">
                       {formatDateTime(r.created_at)}
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
@@ -272,7 +272,7 @@ export default async function AdminPage() {
 
       {waiting === 0 ? (
         !anyFailed && (
-          <div className="border border-rule bg-surface p-8 text-center text-inkSoft">
+          <div className="border border-rule bg-surface p-8 text-inkSoft">
             Nothing waiting for review.
           </div>
         )
@@ -288,9 +288,9 @@ export default async function AdminPage() {
                   <span className="romanization font-display text-lg font-semibold text-lacquer">
                     {e.romanization || e.headword}
                   </span>
-                  {e.ipa && <span className="font-mono text-sm text-inkFaint">/{e.ipa}/</span>}
+                  {e.ipa && <span className="text-sm text-inkFaint">/{e.ipa}/</span>}
                   {origin && <span className={chip}>{origin}</span>}
-                  <span className="ml-auto font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                  <span className="ml-auto meta text-inkFaint">
                     {formatDateTime(e.created_at)}
                     {" · "}
                     {e.contributor?.id ? (
@@ -308,7 +308,7 @@ export default async function AdminPage() {
                 <ol className="mt-3 space-y-1">
                   {senses.map((s, i) => (
                     <li key={s.id} className="text-sm">
-                      <span className="font-mono text-inkFaint tabular-nums">{i + 1}.</span>{" "}
+                      <span className="text-inkFaint tabular-nums">{i + 1}.</span>{" "}
                       {s.part_of_speech && <em className="text-lacquer">{s.part_of_speech} </em>}
                       {s.definition_en}
                       {s.gloss_zh && <span className="text-inkSoft"> · {s.gloss_zh}</span>}
@@ -341,9 +341,9 @@ export default async function AdminPage() {
                   </form>
                   <Link
                     href={`/admin/edit/${e.id}`}
-                    className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer hover:underline"
+                    className="meta text-lacquer hover:underline"
                   >
-                    Edit →
+                    Edit
                   </Link>
                   <DeleteEntry id={e.id} back="/admin" className="ml-auto" />
                 </div>

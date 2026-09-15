@@ -194,7 +194,7 @@ export default async function EntryPage({
       <BackLink
         fallback="/"
         fallbackLabel="← Back to search"
-        className="font-mono text-xs uppercase tracking-wider text-inkFaint hover:text-lacquer"
+        className="meta text-inkFaint hover:text-lacquer"
       />
 
       <header className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-rule pb-5">
@@ -202,18 +202,18 @@ export default async function EntryPage({
         <span className="romanization font-display text-3xl font-semibold text-lacquer">
           {entry.romanization || entry.headword}
         </span>
-        {entry.ipa && <span className="font-mono text-inkFaint">/{entry.ipa}/</span>}
+        {entry.ipa && <span className="text-inkFaint">/{entry.ipa}/</span>}
         {/* && binds tighter than ?: — the old form fell into the else branch
             and drew an empty bordered pill on every entry with no origin. */}
         {wordOrigin && entry.origin_area ? (
           <Link
             href={`/browse?origin=${encodeURIComponent(entry.origin_area)}`}
-            className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
+            className="meta text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
           >
             {wordOrigin}
           </Link>
         ) : entry.variety ? (
-          <span className="font-mono text-[11px] uppercase tracking-wide text-inkSoft ring-1 ring-rule px-2 py-1">
+          <span className="meta text-inkSoft ring-1 ring-rule px-2 py-1">
             {entry.variety}
           </span>
         ) : null}
@@ -234,7 +234,7 @@ export default async function EntryPage({
         {entry.audio_url && (
           <div className="flex items-center gap-3">
             <PlayButton src={entry.audio_url} label={`${entryTitle(entry)}, the original recording`} />
-            <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+            <span className="meta text-inkFaint">
               submitted with the word
             </span>
           </div>
@@ -274,14 +274,14 @@ export default async function EntryPage({
                 <SignInButton
                   next={`/entry/${entry.id}`}
                   label="Sign in and record it"
-                  className="inline-flex items-center gap-2 border border-lacquer bg-lacquer px-3 py-1.5 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer [&>svg]:hidden"
+                  className="inline-flex items-center gap-2 border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer [&>svg]:hidden"
                 />
                 <form action={requestWord}>
                   <input type="hidden" name="entry_id" value={entry.id} />
                   <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
                   <input type="hidden" name="back" value={`/entry/${entry.id}`} />
                   <button className="text-sm text-lacquer hover:underline">
-                    Can&apos;t? Ask for a recording →
+                    Can&apos;t? Ask for a recording
                   </button>
                 </form>
               </div>
@@ -293,7 +293,7 @@ export default async function EntryPage({
       <ol className="space-y-5">
         {senses.map((s, i) => (
           <li key={s.id} className="border-l-2 border-lacquer pl-5">
-            <div className="flex items-baseline gap-2 font-mono text-xs uppercase tracking-wider text-inkFaint">
+            <div className="flex items-baseline gap-2 meta text-inkFaint">
               <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span>
               {s.part_of_speech && <span className="italic text-lacquer">{s.part_of_speech}</span>}
             </div>
@@ -326,7 +326,7 @@ export default async function EntryPage({
 
       {related.length > 0 && (
         <section className="space-y-2">
-          <h2 className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Related words</h2>
+          <h2 className="meta text-inkFaint">Related words</h2>
           <ul className="flex flex-wrap gap-2">
             {related.map((r) => (
               <li key={r.id}>
@@ -345,7 +345,7 @@ export default async function EntryPage({
 
       {entry.notes && (
         <div className="bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
-          <span className="font-mono text-xs uppercase tracking-wide text-inkFaint">Notes </span>
+          <span className="meta text-inkFaint">Notes </span>
           {linkifyNotes(entry.notes)}
         </div>
       )}
@@ -373,7 +373,7 @@ export default async function EntryPage({
       />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+        <p className="meta text-inkFaint">
           Added {formatDate(entry.created_at)}
           {contributor && (
             <>
@@ -389,13 +389,13 @@ export default async function EntryPage({
               subject carries the page so the report is usable as sent. */}
           <a
             href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Suggested edit: ${entryTitle(entry)} (${SITE_URL}${here})`)}&body=${encodeURIComponent("What should change, and why:\n\n")}`}
-            className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"
+            className="meta text-inkFaint hover:text-lacquer"
           >
             Suggest an edit
           </a>
           <a
             href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Report: ${entryTitle(entry)} (${SITE_URL}${here})`)}`}
-            className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"
+            className="meta text-inkFaint hover:text-lacquer"
           >
             Report
           </a>
@@ -404,7 +404,7 @@ export default async function EntryPage({
             <EditLink
               entryId={entry.id}
               here={here}
-              className="font-mono text-[11px] uppercase tracking-wide text-inkFaint hover:text-lacquer"
+              className="meta text-inkFaint hover:text-lacquer"
             />
             <DeleteEntry id={entry.id} back="/learn" />
           </span>

@@ -21,7 +21,7 @@ export default function LearnPanels({
   initial,
 }: {
   panels: Panel[];
-  /** id inside a panel body → that panel's key, so "#tones" can open it. */
+  /** id inside a panel body → that panel's key, so "#tones" can open it. */
   anchors?: Record<string, string>;
   /** The panel named by ?tab= in the address, so /learn?tab=orthography
    *  opens on Orthography (server-rendered, so it is right before any
@@ -110,7 +110,7 @@ export default function LearnPanels({
           role="tabpanel"
           id={`panel-${current.key}`}
           aria-labelledby={`tab-${current.key}`}
-          className="page-fade space-y-5 rounded-xl border border-rule bg-surface p-5 sm:p-7"
+          className="page-fade space-y-5 rounded-sm border border-rule bg-surface p-5 sm:p-7"
         >
           {current.body}
 
@@ -136,7 +136,7 @@ export default function LearnPanels({
                   onClick={() => go(next.key)}
                   className="text-inkSoft transition-colors hover:text-lacquer"
                 >
-                  {next.label} →
+                  {next.label} →
                 </button>
               ) : (
                 <span />

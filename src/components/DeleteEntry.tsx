@@ -18,7 +18,7 @@ export default function DeleteEntry({
 }) {
   return (
     <details className={`group inline-block ${className}`}>
-      <summary className="inline-block cursor-pointer list-none border border-rule px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
+      <summary className="inline-block cursor-pointer list-none border border-rule px-2 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
         Delete word
       </summary>
       <form action={deleteEntry} className="mt-2 max-w-md space-y-2 border border-lacquer bg-surface p-3">
@@ -30,7 +30,7 @@ export default function DeleteEntry({
         </p>
         <SubmitButton
           pending="Deleting…"
-          className="border border-lacquer bg-lacquer px-3 py-1 font-mono text-[11px] uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="border border-lacquer bg-lacquer px-3 py-1 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           Yes, delete this word
         </SubmitButton>

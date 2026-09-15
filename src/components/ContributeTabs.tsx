@@ -57,7 +57,7 @@ export default async function ContributeTabs({ active }: { active: ContributeTab
               href={tab.href}
               aria-current={on ? "page" : undefined}
               className={
-                "inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-medium transition-colors " +
+                "ui inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-medium transition-colors " +
                 (on ? "border-lacquer text-ink" : "border-transparent text-inkSoft hover:border-rule hover:text-ink")
               }
             >
@@ -65,7 +65,7 @@ export default async function ContributeTabs({ active }: { active: ContributeTab
               {tab.key === "review" && waiting !== null && waiting > 0 && (
                 <span
                   className={
-                    "min-w-[1.25rem] rounded-full px-1.5 text-center font-mono text-[11px] leading-[18px] tabular-nums " +
+                    "ui min-w-[1.25rem] rounded-sm px-1.5 text-center text-[11px] leading-[18px] tabular-nums " +
                     (on ? "bg-lacquer text-paper" : "border border-ruleStrong text-inkSoft")
                   }
                   aria-label={t("tab.waiting", { n: waiting })}

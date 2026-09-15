@@ -27,7 +27,7 @@ export default function LangToggle({ lang, className = "" }: { lang: Lang; class
       aria-pressed={lang === v}
       lang={v === "zh" ? "zh-Hant" : "en"}
       className={
-        "h-full whitespace-nowrap px-2.5 text-xs font-semibold tracking-[.01em] transition-colors " +
+        "ui h-full whitespace-nowrap px-2.5 text-xs font-semibold tracking-[.01em] transition-colors " +
         (lang === v ? "bg-ink text-paper" : "text-inkSoft hover:text-ink")
       }
     >
@@ -39,7 +39,7 @@ export default function LangToggle({ lang, className = "" }: { lang: Lang; class
   return (
     <>
       {/* Wide: both languages, the current one filled. */}
-      <div role="group" aria-label="Language" className={`hidden h-8 overflow-hidden rounded-full border border-ruleStrong lg:flex ${className}`}>
+      <div role="group" aria-label="Language" className={`hidden h-8 overflow-hidden rounded-sm border border-ruleStrong lg:flex ${className}`}>
         {btn("en", "EN")}
         {btn("zh", "中文")}
       </div>
@@ -49,7 +49,7 @@ export default function LangToggle({ lang, className = "" }: { lang: Lang; class
         onClick={() => choose(other)}
         lang={other === "zh" ? "zh-Hant" : "en"}
         aria-label={other === "zh" ? "切換到中文" : "Switch to English"}
-        className={`inline-flex h-8 items-center rounded-full border border-ruleStrong px-2.5 text-xs font-semibold text-inkSoft transition-colors hover:text-ink lg:hidden ${className}`}
+        className={`ui inline-flex h-8 items-center rounded-sm border border-ruleStrong px-2.5 text-xs font-semibold text-inkSoft transition-colors hover:text-ink lg:hidden ${className}`}
       >
         {other === "zh" ? "中文" : "EN"}
       </button>

@@ -27,7 +27,6 @@
   --lacquer-soft: rgba(197, 49, 29, .10);
   --green:        #2E7D4F;
   --amber:        #B7791F;
-  --header-bg:    rgba(255, 255, 255, .72);
   --shadow:       0 12px 40px rgba(0, 0, 0, .12);
 }
 
@@ -51,7 +50,6 @@
     --lacquer-soft: rgba(232, 80, 58, .14);
     --green:        #4FB37B;
     --amber:        #D9A13C;
-    --header-bg:    rgba(11, 11, 12, .72);
     --shadow:       0 12px 40px rgba(0, 0, 0, .6);
   }
 }
@@ -71,7 +69,6 @@
   --lacquer-soft: rgba(232, 80, 58, .14);
   --green:        #4FB37B;
   --amber:        #D9A13C;
-  --header-bg:    rgba(11, 11, 12, .72);
   --shadow:       0 12px 40px rgba(0, 0, 0, .6);
 }
 :root[data-theme="light"] { color-scheme: light; }
@@ -79,9 +76,9 @@
 body {
   background-color: var(--paper);
   color: var(--ink);
-  font-family: var(--font-display), "SF Pro Display", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  font-family: var(--font-display), Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
   font-size: 17px;
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
@@ -96,9 +93,13 @@ body {
 .han {
   font-family: var(--font-han), "Songti TC", "Source Han Serif TC", "Noto Serif CJK TC", "PingFang TC", serif;
 }
-.romanization { font-variant-ligatures: none; font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace; }
+/* Romanization is the text face, upright, a shade more open than prose: the
+   stacked marks of Bàng-uâ-cê (ṳ̆, ā̤) sit correctly in Literata's upright
+   face and drift in its italic, so it is never italicised. Ligatures off so
+   "fi" in a romanized syllable stays two letters. */
+.romanization { font-variant-ligatures: none; letter-spacing: .012em; }
 
-:focus-visible { outline: 2px solid var(--lacquer); outline-offset: 3px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--lacquer); outline-offset: 3px; border-radius: 2px; }
 
 /* ---------------------------------------------------------------------------
    The mock-up's components, as classes, so server and client components share
@@ -121,44 +122,62 @@ body {
     margin-left: calc(50% - min(50vw, 544px));
   }
 
-  .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--ink-soft); }
-  .display { font-weight: 800; font-size: clamp(38px, 6.2vw, 64px); line-height: 1.03; letter-spacing: -.03em; }
-  .h1 { font-weight: 700; font-size: clamp(30px, 4.4vw, 40px); line-height: 1.08; letter-spacing: -.025em; }
-  .h2 { font-weight: 700; font-size: 28px; line-height: 1.15; letter-spacing: -.02em; }
-  .h3 { font-weight: 600; font-size: 21px; line-height: 1.25; letter-spacing: -.015em; }
-  .lede { font-size: 21px; line-height: 1.45; color: var(--ink-soft); letter-spacing: -.01em; }
-  @media (max-width: 760px) { .lede { font-size: 18px; } }
-  .footnote { font-size: 12px; color: var(--ink-mute); line-height: 1.5; }
+  /* Small labels are small capitals, the way a printed dictionary marks its
+     parts of speech and running heads — not mono uppercase letterspaced
+     text, which is the label style of every generated site. Literata has
+     real small caps; the tracking is what small caps need, no more. */
+/* The interface — controls you press, not words you read. Libre Franklin,
+     set wherever the page stops being a dictionary and starts being a tool:
+     buttons, chips, fields, the nav, the paging. Labels and headings are
+     deliberately NOT here; they stay Charis. */
+  .ui { font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif; }
 
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 22px;
-    border-radius: 999px; border: 1px solid transparent; font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+  /* Charis has two weights, 400 and 700, and nothing in between; every rule
+     below names one of them rather than leaving the browser to pick. */
+  .meta { font-variant-caps: small-caps; font-size: 13.5px; font-weight: 400; letter-spacing: .03em; line-height: 1.4; }
+  .eyebrow { font-variant-caps: small-caps; font-size: 14px; letter-spacing: .05em; font-weight: 700; color: var(--ink-soft); }
+  /* Headings: a serif wants its natural fit, not the crushed tracking a
+     grotesk display face takes. Weights stop at 700. */
+  .display { font-weight: 700; font-size: clamp(34px, 5.6vw, 58px); line-height: 1.06; letter-spacing: -.012em; }
+  .h1 { font-weight: 700; font-size: clamp(29px, 4.2vw, 38px); line-height: 1.12; letter-spacing: -.01em; }
+  .h2 { font-weight: 700; font-size: 27px; line-height: 1.18; letter-spacing: -.008em; }
+  .h3 { font-weight: 700; font-size: 21px; line-height: 1.28; letter-spacing: -.004em; }
+  .lede { font-size: 21px; line-height: 1.45; color: var(--ink-soft); }
+  @media (max-width: 760px) { .lede { font-size: 18px; } }
+  .footnote { font-size: 13px; color: var(--ink-mute); line-height: 1.5; }
+
+  .btn { font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px;
+    border-radius: 2px; border: 1px solid transparent; font-size: 15px; font-weight: 700;
     cursor: pointer; background: none; white-space: nowrap; text-align: center;
     transition: transform .12s ease, background .16s ease, opacity .16s ease, border-color .16s ease; }
   .btn:active { transform: scale(.98); }
   .btn-primary { background: var(--lacquer); color: var(--lacquer-ink); }
   .btn-primary:hover { opacity: .9; }
-  .btn-ghost { border-color: var(--rule-strong); color: var(--ink); }
+  .btn-ghost { border-color: var(--ink); color: var(--ink); }
   .btn-ghost:hover { background: var(--surface); }
   .btn-sm { min-height: 36px; padding: 0 14px; font-size: 13px; }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  .link { color: var(--lacquer); font-weight: 500; }
+  .link { color: var(--lacquer); font-weight: 400; }
   .link:hover { text-decoration: underline; }
-  .linkq { color: var(--ink-soft); font-weight: 500; font-size: 15px; }
+  .linkq { color: var(--ink-soft); font-weight: 400; font-size: 15px; }
   .linkq:hover { color: var(--ink); }
 
-  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px;
-    border: 1px solid var(--rule-strong); background: none; font-size: 13px; font-weight: 500; color: var(--ink-soft);
-    letter-spacing: -.005em; white-space: nowrap; cursor: pointer; transition: color .12s ease, border-color .12s ease; }
+  .chip { font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif;
+    display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 2px;
+    border: 1px solid var(--rule-strong); background: none; font-size: 15px; font-weight: 400; color: var(--ink-soft);
+    white-space: nowrap; cursor: pointer; transition: color .12s ease, border-color .12s ease; }
   .chip:hover { color: var(--ink); border-color: var(--ink-mute); }
   .chip-on, .chip[aria-pressed="true"], .chip[aria-current] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .chip-on:hover { color: var(--paper); }
 
-  .field-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
-  .field-input { width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--rule-strong); background: var(--surface);
-    padding: 10px 14px; font-size: 15px; color: var(--ink); }
+  .field-label { display: block; font-variant-caps: small-caps; font-size: 14px; font-weight: 700; letter-spacing: .05em; color: var(--ink-soft); margin-bottom: 6px; }
+  .field-input { font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif;
+    width: 100%; min-height: 44px; border-radius: 2px; border: 1px solid var(--ink-mute); background: var(--paper);
+    padding: 10px 12px; font-size: 16px; color: var(--ink); }
   .field-input::placeholder { color: var(--ink-mute); }
-  .field-input:focus { outline: none; border-color: var(--lacquer); background: var(--paper); }
+  .field-input:focus { outline: none; border-color: var(--lacquer); }
 
   .mini { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
   .mini:last-child { border-bottom: 0; }
@@ -181,9 +200,10 @@ body {
   margin-left: 5px;
   border: 1px solid currentColor;
   border-radius: 50%;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 9px;
+  font-family: inherit;
+  font-size: 10px;
   font-style: italic;
+  font-weight: 400;
   line-height: 1;
   /* Optical centring. The circle centres the glyph's ADVANCE box, but an italic
      "i" is not symmetric inside it: the tittle sits right of the stem, so in a
@@ -196,7 +216,7 @@ body {
      pixel left. That is the best balance available — the glyph is asymmetric, so
      no single offset centres every part of it. Going further (1px of padding)
      over-corrects and the letter starts to read left. */
-  padding-right: 0.5px;
+  padding-right: 0;
   opacity: .55;
   cursor: help;
   vertical-align: baseline;
@@ -256,7 +276,7 @@ body {
   margin-right: 1px;
   font-size: 8px;
   font-style: normal;
-  font-weight: 600;
+  font-weight: 700;
   padding-right: 0;
   /* .45em raised it to superscript height; Noah wanted it ~5px higher still. */
   vertical-align: calc(.45em + 5px);

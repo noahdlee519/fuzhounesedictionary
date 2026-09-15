@@ -70,7 +70,7 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
           <PlayButton src={entry.audio} size="md" label={`Play ${entry.hanzi || entry.romanization || entry.headword}`} />
           {n > 1 && (
             <Link href={`${href}#recordings`} className="text-[11px] font-medium text-inkSoft hover:text-lacquer">
-              more →
+              more
             </Link>
           )}
         </div>

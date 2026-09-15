@@ -129,7 +129,7 @@ export default function Recorder({
             className="flex max-w-md flex-wrap items-end gap-2"
           >
             <label className="block grow">
-              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+              <span className="meta text-inkFaint">
                 {savedNote ? "Your note" : "Add a note"}
               </span>
               <input
@@ -164,7 +164,7 @@ export default function Recorder({
   return (
     <div className="space-y-2">
       {label && (
-        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">{label}</p>
+        <p className="meta text-inkFaint">{label}</p>
       )}
 
       <TakeControls
@@ -194,7 +194,7 @@ export default function Recorder({
 
       {rec.take && !rec.recording && (
         <label className="block max-w-md">
-          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-inkFaint">
+          <span className="meta text-inkFaint">
             Note (optional)
           </span>
           <input

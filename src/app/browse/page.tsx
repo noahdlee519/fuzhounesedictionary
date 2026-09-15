@@ -313,7 +313,7 @@ export default async function BrowsePage({
       <SearchBar focus={false} id="browse-search" signedIn={Boolean(user)} />
 
       <div className="space-y-2">
-        <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Part of speech</p>
+        <p className="meta text-inkFaint">Part of speech</p>
         {/* relative: the info panels are positioned against this row, so they
             stay inside the content column however the chips wrap */}
         <div className="relative flex flex-wrap gap-2">
@@ -327,7 +327,7 @@ export default async function BrowsePage({
             sections, so it needs no JavaScript. A chosen origin still shows in
             the count line above even when this is folded away. */}
         <details open className="group pt-2">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint marker:content-none hover:text-lacquer">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 meta text-inkFaint marker:content-none hover:text-lacquer">
             Origin
             <span
               aria-hidden
@@ -352,7 +352,7 @@ export default async function BrowsePage({
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Sort</p>
+          <p className="meta text-inkFaint">Sort</p>
           {/* Choosing a key resets the direction to that key's natural one. */}
           {sortKeys.map((k) => chip(SORTS[k].label, hrefWith({ sort: k, dir: "" }), sort === k))}
           {/* One chip for the order. It names the current order and flips it
@@ -365,11 +365,11 @@ export default async function BrowsePage({
             // link — bold, underlined, the arrows in red.
             className="ml-2 inline-flex items-center gap-1.5 text-[15px] font-semibold text-ink underline decoration-ruleStrong decoration-[1.5px] underline-offset-[5px] transition-colors hover:decoration-lacquer"
           >
-            <span aria-hidden className="font-mono text-[13px] leading-none text-lacquer">&#8645;</span>
+            <span aria-hidden className="text-[13px] leading-none text-lacquer">&#8645;</span>
             {dirLabel(kind, dir)}
           </Link>
         </div>
-        <p className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">{countLine}</p>
+        <p className="meta text-inkFaint">{countLine}</p>
       </div>
 
       {/* Three columns on a laptop, two on a tablet, one on a phone. The gaps
@@ -395,7 +395,7 @@ export default async function BrowsePage({
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-rule pt-5 font-mono text-xs uppercase tracking-[0.1em]">
+      <div className="flex items-center justify-between border-t border-rule pt-5 meta">
         {page > 1 ? (
           <Link
             href={hrefWith({ page: page - 1 > 1 ? String(page - 1) : "" })}
@@ -427,7 +427,7 @@ export default async function BrowsePage({
               max={totalPages}
               defaultValue={page}
               aria-label={`Page number, 1 to ${totalPages}`}
-              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center font-mono text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <span>of {totalPages}</span>
             <button
@@ -442,7 +442,7 @@ export default async function BrowsePage({
         )}
         {hasNext ? (
           <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
-            Next →
+            Next →
           </Link>
         ) : (
           <span />

@@ -37,7 +37,7 @@ export default function SafeToggle({
       aria-label={label}
       title="Hide vulgar and explicit meanings from the word list and search results. Words reached on purpose still show everything."
       onClick={toggle}
-      className={`inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.1em] text-inkFaint transition-colors hover:text-lacquer ${className}`}
+      className={`inline-flex items-center gap-2 meta text-inkFaint transition-colors hover:text-lacquer ${className}`}
     >
       <span>{label}</span>
       <span

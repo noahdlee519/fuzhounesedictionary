@@ -41,7 +41,7 @@ export default async function ImprovePage({
     return (
       <div className="space-y-8">
         <ContributeTabs active="improve" />
-        <div className="mx-auto max-w-lg space-y-4 rounded-xl border border-rule bg-surface p-8 text-center">
+        <div className="max-w-lg space-y-4 rounded-sm border border-rule bg-surface p-8">
           <p className="h3">{recording ? "Sign in to record a word" : "Sign in to improve a word"}</p>
           <p className="text-inkSoft">
             {recording
@@ -172,7 +172,7 @@ export default async function ImprovePage({
             <Link href="/request" className="text-lacquer hover:underline">Wanted</Link>.
           </p>
           {!error && (
-            <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">
+            <span className="meta text-inkFaint">
               {total.toLocaleString()} word{total === 1 ? "" : "s"}{" "}
               {need === "recording" ? "without a recording" : need ? "missing this" : `need${total === 1 ? "s" : ""} work`}
             </span>
@@ -226,14 +226,14 @@ export default async function ImprovePage({
       )}
 
       {!error && rows.length === 0 && (
-        <div className="border border-rule bg-surface p-8 text-center">
+        <div className="border border-rule bg-surface p-8">
           <p className="text-inkSoft">
             {origin
               ? `Every word from ${originArea(origin)!.label} is complete.`
               : "Every word in the dictionary is complete. Genuinely remarkable."}
           </p>
           <Link href="/learn" className="mt-2 inline-block font-medium text-lacquer hover:underline">
-            Browse the dictionary →
+            Browse the dictionary
           </Link>
         </div>
       )}
@@ -249,7 +249,7 @@ export default async function ImprovePage({
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-mono text-xs tabular-nums text-inkFaint">
+                  <span className="text-xs tabular-nums text-inkFaint">
                     {String(from + i + 1).padStart(2, "0")}
                   </span>
                   {r.hanzi && (
@@ -267,12 +267,12 @@ export default async function ImprovePage({
                     {r.romanization || r.headword}
                   </Link>
                   {wordOrigin && (
-                    <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint ring-1 ring-rule px-2 py-0.5">
+                    <span className="meta text-inkFaint ring-1 ring-rule px-2 py-0.5">
                       {wordOrigin}
                     </span>
                   )}
                   {r.votes > 0 && (
-                    <span className="font-mono text-[11px] uppercase tracking-wide text-lacquer ring-1 ring-lacquer px-2 py-0.5">
+                    <span className="meta text-lacquer ring-1 ring-lacquer px-2 py-0.5">
                       {r.votes} asked
                     </span>
                   )}
@@ -302,14 +302,14 @@ export default async function ImprovePage({
 
               {r.needs_recording ? (
                 (takes[r.id] ?? 0) >= MAX_RECORDINGS_PER_WORD ? (
-                  <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                  <span className="meta text-inkFaint">
                     you have recorded this twice
                   </span>
                 ) : (
                   <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" label="Needs a recording" />
                 )
               ) : (
-                <span className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+                <span className="meta text-inkFaint">
                   has a recording
                 </span>
               )}
@@ -319,7 +319,7 @@ export default async function ImprovePage({
       </ol>
 
       {(page > 1 || hasNext) && (
-        <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.1em]">
+        <div className="flex items-center justify-between meta">
           {page > 1 ? (
             <Link href={href(origin, page - 1)} className="text-inkSoft hover:text-lacquer">
               ← Previous
@@ -343,7 +343,7 @@ export default async function ImprovePage({
               max={totalPages}
               defaultValue={page}
               aria-label={`Page number, 1 to ${totalPages}`}
-              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center font-mono text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <span>of {totalPages}</span>
             <button
@@ -355,7 +355,7 @@ export default async function ImprovePage({
           </form>
           {hasNext ? (
             <Link href={href(origin, page + 1)} className="text-inkSoft hover:text-lacquer">
-              Next {PAGE_SIZE} →
+              Next {PAGE_SIZE} →
             </Link>
           ) : (
             <span />

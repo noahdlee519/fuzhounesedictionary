@@ -25,13 +25,17 @@ const config: Config = {
         amber: "var(--amber)",
       },
       fontFamily: {
-        // One Latin face for everything (Inter Tight), a serif for Chinese
-        // characters, a mono for romanization and small labels. `serif` is
-        // kept as a name so older pages resolve; it is the sans now.
-        display: ["var(--font-display)", "SF Pro Display", "Helvetica Neue", "Helvetica", "Arial", "system-ui", "sans-serif"],
-        serif: ["var(--font-display)", "SF Pro Display", "Helvetica Neue", "Helvetica", "Arial", "system-ui", "sans-serif"],
+        // One Latin face for everything (Charis SIL) and a serif for Chinese
+        // characters. `display` and `serif` are the same face; both names are
+        // kept so every page resolves. There is no mono face any more —
+        // labels are small caps and romanization is the text face upright;
+        // `mono` is left pointing at the system for anything genuinely code.
+        // Charter is the fallback because Charis is drawn from it.
+        display: ["var(--font-display)", "Charter", "Bitstream Charter", "Iowan Old Style", "Georgia", "serif"],
+        serif: ["var(--font-display)", "Charter", "Bitstream Charter", "Iowan Old Style", "Georgia", "serif"],
         han: ["var(--font-han)", "Songti TC", "Source Han Serif TC", "Noto Serif CJK TC", "PingFang TC", "serif"],
-        mono: ["var(--font-mono)", "ui-monospace", "SF Mono", "Menlo", "monospace"],
+        ui: ["var(--font-ui)", "Helvetica Neue", "Arial", "system-ui", "sans-serif"],
+        mono: ["ui-monospace", "SF Mono", "Menlo", "monospace"],
       },
       boxShadow: { soft: "var(--shadow)" },
       maxWidth: { wrap: "1040px" },

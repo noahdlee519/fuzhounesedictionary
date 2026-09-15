@@ -28,7 +28,7 @@ export default async function SubmitPage({
     return (
       <div className="space-y-8">
         <ContributeTabs active="add" />
-        <div className="mx-auto max-w-lg space-y-4 rounded-xl border border-rule bg-surface p-8 text-center">
+        <div className="max-w-lg space-y-4 rounded-sm border border-rule bg-surface p-8">
           <p className="h2">Thank you</p>
           <p className="text-inkSoft">
             Your word is in the review queue. An editor will read it before it goes live, and it will
@@ -73,7 +73,7 @@ export default async function SubmitPage({
               ))}
             </ul>
           </div>
-          <div className="space-y-4 self-start rounded-xl border border-rule bg-surface p-6">
+          <div className="space-y-4 self-start rounded-sm border border-rule bg-surface p-6">
             <p className="h3">Sign in to start</p>
             <p className="text-sm text-inkSoft">
               A Google account is all it takes. It is how a word is credited to you and how an

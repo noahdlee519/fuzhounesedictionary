@@ -68,7 +68,7 @@ export default function RecordingList({
               ) : (
                 note && <p className="romanization text-[15px] leading-snug text-ink">{note}</p>
               )}
-              <p className="font-mono text-[11px] uppercase tracking-wide text-inkFaint">
+              <p className="meta text-inkFaint">
                 {who && r.contributor?.id ? (
                   <>
                     recorded by{" "}

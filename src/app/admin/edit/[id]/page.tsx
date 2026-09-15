@@ -54,7 +54,7 @@ export default async function EditEntryPage({
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-baseline justify-between">
         <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">Edit entry</h1>
-        <Link href={back} className="font-mono text-xs uppercase tracking-[0.1em] text-lacquer hover:underline">
+        <Link href={back} className="meta text-lacquer hover:underline">
           {backLabel}
         </Link>
       </div>
@@ -90,11 +90,11 @@ export default async function EditEntryPage({
           <input name="audio_url" defaultValue={entry.audio_url ?? ""} className={cls} /></label>
 
         <fieldset className="space-y-4">
-          <legend className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Meanings</legend>
+          <legend className="meta text-inkFaint">Meanings</legend>
           {senses.map((s, i) => (
             <div key={s.id} className="space-y-3 border border-rule p-4">
               <input type="hidden" name="sense_id" value={s.id} />
-              <span className="font-mono text-xs uppercase tracking-[0.1em] text-inkFaint">Meaning {i + 1}</span>
+              <span className="meta text-inkFaint">Meaning {i + 1}</span>
               <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
                 <label className="block"><span className="text-sm">Part of speech</span>
                   <select name={`pos_${s.id}`} defaultValue={s.part_of_speech ?? ""} className={cls}>
@@ -119,7 +119,7 @@ export default async function EditEntryPage({
         <label className="block"><span className="text-sm font-medium">Notes</span>
           <textarea name="notes" defaultValue={entry.notes ?? ""} rows={2} className={cls} /></label>
 
-        <button className="border border-lacquer bg-lacquer px-8 py-3 font-mono text-xs uppercase tracking-[0.1em] text-paper transition-colors hover:bg-transparent hover:text-lacquer">Save changes</button>
+        <button className="border border-lacquer bg-lacquer px-8 py-3 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer">Save changes</button>
       </form>
 
       {/* Outside the edit form: a form cannot nest inside another form. */}

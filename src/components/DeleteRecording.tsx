@@ -19,7 +19,7 @@ export default function DeleteRecording({
 }) {
   return (
     <details className={`group inline-block ${className}`}>
-      <summary className="inline-block cursor-pointer list-none border border-rule px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wide text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
+      <summary className="inline-block cursor-pointer list-none border border-rule px-1.5 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
         Delete
       </summary>
       <form action={deleteRecording} className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -28,7 +28,7 @@ export default function DeleteRecording({
         <span className="text-xs text-inkSoft">Remove this recording for good?</span>
         <SubmitButton
           pending="Deleting…"
-          className="border border-lacquer bg-lacquer px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="border border-lacquer bg-lacquer px-2 py-0.5 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           Yes, delete
         </SubmitButton>
