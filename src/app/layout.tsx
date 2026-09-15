@@ -45,6 +45,28 @@ const ui = localFont({
 });
 
 
+// Fifteen characters that Noto Serif TC does not have. Its Google subsets stop
+// at U+FFFF, and Fuzhounese keeps words above it — 𣍐 mâ̤, 𡳞 lâng — so the
+// browser was substituting per character and a Mac picked a sans, leaving one
+// word set in two faces. These glyphs are Hanazono Mincho, a Ming face like
+// Noto's, cut down to only what the dictionary uses: 4.8 KB. The unicode-range
+// keeps it off every other character, so it is fetched only by a page that has
+// one. Rebuilt by scripts/make-rare-han-font.py, which reads the character
+// list out of the CSVs.
+const rareHan = localFont({
+  src: [{ path: "../fonts/RareHan.woff2", weight: "400 700", style: "normal" }],
+  variable: "--font-rare",
+  display: "swap",
+  adjustFontFallback: false,
+  declarations: [
+    {
+      prop: "unicode-range",
+      // One literal string: next/font rejects anything it has to evaluate.
+      value: "U+206BA, U+2114F, U+2179F, U+21CDE, U+22BFD, U+231AF, U+23350, U+23E47, U+24D81, U+26067, U+27F28, U+29A11, U+29A4D, U+2BAA6, U+2C08C",
+    },
+  ],
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -109,7 +131,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const lang = getLang();
   const t = translator(lang);
   return (
-    <html lang={lang === "zh" ? "zh-Hant" : "en"} className={`${display.variable} ${ui.variable}`} style={{ ["--font-han" as string]: "'Noto Serif TC'" }} suppressHydrationWarning>
+    <html lang={lang === "zh" ? "zh-Hant" : "en"} className={`${display.variable} ${ui.variable} ${rareHan.variable}`} style={{ ["--font-han" as string]: "'Noto Serif TC'" }} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -62,3 +62,41 @@ in it that contains ṳ̆ or ɛ, it will fall back mid-word — put it in Charis
       --layout-features='*' --flavor=woff2 --no-hinting --output-file=full.woff2
 
 then `fontTools.varLib.instancer` with `{"wght": (400, 700)}`.
+
+
+## RareHan — the fifteen characters Noto does not have
+
+`RareHan.woff2`, 4.8 KB: fifteen glyphs, no layout tables, no hinting.
+
+Noto Serif TC, which the site links from Google Fonts for Chinese characters,
+is served as 324 unicode-range subsets and **not one of them reaches above
+U+FFFF**. Fuzhounese keeps words up there — 𣍐 *mâ̤* (cannot), 𡳞 *lâng*, 𢯽 in
+鉛筆𢯽 (pencil). These are precisely the characters the dialect has and standard
+Chinese does not, so a font built for standard Chinese is exactly the font that
+will not carry them.
+
+What the browser does then is substitute per character, and macOS picks a sans.
+The visible result was one word set in two faces: 𣍐合 with its two characters
+plainly disagreeing. Noah spotted it.
+
+The glyphs are **Hanazono Mincho** (花園明朝), <https://fonts.jp/hanazono/> —
+free to use and redistribute, and a Ming face, so it sits beside Noto rather
+than against it. Fetched through the `hanamin` npm package, which is that font
+pre-split into per-block woff2 files; the package is only a delivery vehicle,
+and its own MIT licence covers the splitting, not the glyphs.
+
+Rebuild with:
+
+    python3 scripts/make-rare-han-font.py
+
+The script reads every `hanzi` column in `scripts/*.csv`, keeps what sits above
+U+FFFF, pulls those glyphs out of Hanazono and merges them into one file. Add a
+word with a new rare character, re-run it, and paste the `unicode-range` it
+prints into the `rareHan` block in `src/app/layout.tsx` — that range has to
+list the characters exactly, or a page with one will not fetch the font.
+
+`--report` lists the characters and the words they appear in without building.
+
+**One character is still missing.** 𰢫 (U+308AB, in ⿰禾𰢫) is in Extension G,
+on plane 3, which Hanazono does not reach either; the script names it on every
+run rather than passing over it. That one entry keeps falling back.

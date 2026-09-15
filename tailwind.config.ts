@@ -33,7 +33,7 @@ const config: Config = {
         // Charter is the fallback because Charis is drawn from it.
         display: ["var(--font-display)", "Charter", "Bitstream Charter", "Iowan Old Style", "Georgia", "serif"],
         serif: ["var(--font-display)", "Charter", "Bitstream Charter", "Iowan Old Style", "Georgia", "serif"],
-        han: ["var(--font-han)", "Songti TC", "Source Han Serif TC", "Noto Serif CJK TC", "PingFang TC", "serif"],
+        han: ["var(--font-rare)", "var(--font-han)", "Songti TC", "Source Han Serif TC", "Noto Serif CJK TC", "PingFang TC", "serif"],
         ui: ["var(--font-ui)", "Helvetica Neue", "Arial", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "SF Mono", "Menlo", "monospace"],
       },

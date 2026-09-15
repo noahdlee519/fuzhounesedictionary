@@ -91,7 +91,9 @@ body {
    them. Loaded from Google Fonts (layout.tsx); the fallbacks are what Apple
    and Android devices have. */
 .han {
-  font-family: var(--font-han), "Songti TC", "Source Han Serif TC", "Noto Serif CJK TC", "PingFang TC", serif;
+  /* --font-rare first: it answers for the fifteen characters above U+FFFF
+     that --font-han has no glyph for, and for nothing else. */
+  font-family: var(--font-rare), var(--font-han), "Songti TC", "Source Han Serif TC", "Noto Serif CJK TC", "PingFang TC", serif;
 }
 /* Romanization is the text face, upright, a shade more open than prose: the
    stacked marks of Bàng-uâ-cê (ṳ̆, ā̤) sit correctly in Literata's upright
