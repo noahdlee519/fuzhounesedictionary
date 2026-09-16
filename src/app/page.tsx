@@ -341,8 +341,9 @@ export default async function Home({
         </div>
       </section>
 
-      {/* Search */}
-      <section className="relative pb-14">
+      {/* Search, and the assistant right under it: the two ways of asking
+          the dictionary something, before the page offers anything else. */}
+      <section className="relative">
         <SearchBar
           signedIn={!!user}
           placeholderFull={t("search.full")}
@@ -359,6 +360,25 @@ export default async function Home({
               {t("ask.link")}
             </Link>
           }
+        />
+      </section>
+
+      {/* Assistant */}
+      <section id="ask" className="sec scroll-mt-16">
+        <h2 className="h1">{t("ask.eyebrow")}</h2>
+        <AskSection
+          signedIn={!!user}
+          samples={samples(lang)}
+          s={{
+            own: t("ask.own"),
+            placeholderIn: t("ask.placeholder.in"),
+            placeholderOut: t("ask.placeholder.out"),
+            note: t("ask.note"),
+            btn: t("ask.btn"),
+            example: t("ask.example"),
+            signin: t("ask.signin"),
+            looking: t("ask.looking"),
+          }}
         />
       </section>
       <hr className="rule-bleed" />
@@ -505,26 +525,6 @@ export default async function Home({
             </div>
           )}
         </div>
-      </section>
-      <hr className="rule-bleed" />
-
-      {/* Assistant */}
-      <section id="ask" className="sec scroll-mt-16">
-        <h2 className="h1">{t("ask.eyebrow")}</h2>
-        <AskSection
-          signedIn={!!user}
-          samples={samples(lang)}
-          s={{
-            own: t("ask.own"),
-            placeholderIn: t("ask.placeholder.in"),
-            placeholderOut: t("ask.placeholder.out"),
-            note: t("ask.note"),
-            btn: t("ask.btn"),
-            example: t("ask.example"),
-            signin: t("ask.signin"),
-            looking: t("ask.looking"),
-          }}
-        />
       </section>
     </div>
   );
