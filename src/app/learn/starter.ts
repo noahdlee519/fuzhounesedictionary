@@ -16,6 +16,15 @@ import type { Key } from "@/lib/i18n";
    and siŏh before a measure word, both of them numerals, and a list of numbers
    wants the one that belongs beside 二 nê and 三 săng. */
 
+/* Two romanizations match when they are the same letters and marks, however
+   those marks happen to be encoded. é is one codepoint typed on a Mac and two
+   — e plus a combining acute — pasted from a good many other places, and the
+   two are indistinguishable on screen. Comparing them raw means an entry that
+   looks exactly right never matches, and the fallback quietly serves the other
+   reading instead: the failure shows up as nothing happening. */
+const sameRom = (a: string | null | undefined, b: string) =>
+  !!a && a.normalize("NFC").trim().toLowerCase() === b.normalize("NFC").trim().toLowerCase();
+
 interface Pick {
   hanzi: string;
   /** Part of speech of the first sense, when the characters are ambiguous. */
@@ -154,7 +163,8 @@ export const starterWords = unstable_cache(
         // shows, with the reading it does have.
         let entry = list[0];
         if (pick.pos) entry = list.find((e) => firstSense(e)?.part_of_speech === pick.pos) ?? entry;
-        if (pick.rom) entry = list.find((e) => e.romanization === pick.rom) ?? entry;
+        const rom = pick.rom;  // narrowed, so the closure below keeps the type
+        if (rom) entry = list.find((e) => sameRom(e.romanization, rom)) ?? entry;
         chosen.push({ group, entry });
       }
     }
