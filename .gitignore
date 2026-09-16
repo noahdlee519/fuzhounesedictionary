@@ -11,6 +11,9 @@ next-env.d.ts
 # vercel
 .vercel
 
+# python leaves these behind whenever a script in scripts/ is imported
+__pycache__/
+
 # scratch
 _to_delete/
 

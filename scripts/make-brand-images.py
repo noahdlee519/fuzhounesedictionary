@@ -93,7 +93,7 @@ def og():
     # home page, and the icon's character, in the space the text leaves.
     mark = Image.new("RGB", (W, H), PAPER)
     md = ImageDraw.Draw(mark)
-    mf = han(330)
+    mf = han(300)
     l, t, r, b = md.textbbox((0, 0), "福", font=mf)
     md.text((W - 56 - (r - l) - l, (H - (b - t)) / 2 - t), "福", font=mf, fill=INK)
     im = Image.blend(im, mark, 0.05)
@@ -109,14 +109,17 @@ def og():
         2.4,
     )
 
-    y = 150
-    d.text((x, y), "Fuzhounese is fading.", font=inter(700, 74), fill=INK)
-    d.text((x, y + 88), "Help keep it spoken.", font=inter(700, 74), fill=INK)
+    # The home page's headline, broken where the page itself breaks it. It is
+    # set smaller than the two-line headline it replaced because it is half as
+    # long again; at 64 the second line still clears the wordmark below.
+    y = 146
+    d.text((x, y), "Welcome to the Fuzhounese", font=inter(700, 64), fill=INK)
+    d.text((x, y + 78), "Dictionary Project", font=inter(700, 64), fill=INK)
 
-    lede = "A free, collaborative dictionary of the Fuzhou dialect,"
-    lede2 = "with recordings from the people who speak it."
-    d.text((x, y + 208), lede, font=inter(400, 27), fill=INK_SOFT)
-    d.text((x, y + 246), lede2, font=inter(400, 27), fill=INK_SOFT)
+    lede = "A free, collaborative dictionary of the Fuzhou dialect, with"
+    lede2 = "English and Mandarin support, and recordings from speakers."
+    d.text((x, y + 196), lede, font=inter(400, 27), fill=INK_SOFT)
+    d.text((x, y + 234), lede2, font=inter(400, 27), fill=INK_SOFT)
 
     # The wordmark, two-tone as in the header: the place in lacquer, the rest
     # in ink.

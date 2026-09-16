@@ -21,4 +21,4 @@ export const SITE_NAME = "Fuzhounese-English Dictionary";
    Noah's wording, kept to about 155 characters so Google shows all of it,
    and saying "recordings" rather than "audio", as the site does. */
 export const SITE_DESCRIPTION =
-  "A free, collaborative Fuzhounese-English dictionary. Search words, characters and romanization, hear recordings from speakers, and add your own.";
+  "A free, collaborative dictionary of the Fuzhou dialect, with English and Mandarin support. Search words and characters, and hear recordings from speakers.";

@@ -11,12 +11,17 @@ import type { Key } from "@/lib/i18n";
    every character below had an approved entry then.
 
    Where the same characters head two entries (八 is both "eight" and "to
-   know"), `pos` says which one is meant. */
+   know"), `pos` says which one is meant; where both entries are the same part
+   of speech, `rom` does. 一 is the case that needs it: it is ék when you count
+   and siŏh before a measure word, both of them numerals, and a list of numbers
+   wants the one that belongs beside 二 nê and 三 săng. */
 
 interface Pick {
   hanzi: string;
   /** Part of speech of the first sense, when the characters are ambiguous. */
   pos?: string;
+  /** Romanization, when the characters and the part of speech both are. */
+  rom?: string;
 }
 
 export interface StarterGroup {
@@ -45,7 +50,7 @@ export const STARTER: StarterGroup[] = [
     key: "counting",
     label: "learn.g.counting",
     words: [
-      { hanzi: "一" }, { hanzi: "二" }, { hanzi: "三" }, { hanzi: "四" }, { hanzi: "五" },
+      { hanzi: "一", rom: "ék" }, { hanzi: "二" }, { hanzi: "三" }, { hanzi: "四" }, { hanzi: "五" },
       { hanzi: "六" }, { hanzi: "七" }, { hanzi: "八", pos: "numeral" }, { hanzi: "九" }, { hanzi: "十" },
     ],
   },
@@ -144,7 +149,12 @@ export const starterWords = unstable_cache(
       for (const pick of group.words) {
         const list = (byHanzi.get(pick.hanzi) ?? []).sort((a, b) => a.created_at.localeCompare(b.created_at));
         if (!list.length) continue;
-        const entry = pick.pos ? list.find((e) => firstSense(e)?.part_of_speech === pick.pos) ?? list[0] : list[0];
+        // Each selector narrows the list; falling back to the oldest entry
+        // means a word whose second reading has not been added yet still
+        // shows, with the reading it does have.
+        let entry = list[0];
+        if (pick.pos) entry = list.find((e) => firstSense(e)?.part_of_speech === pick.pos) ?? entry;
+        if (pick.rom) entry = list.find((e) => e.romanization === pick.rom) ?? entry;
         chosen.push({ group, entry });
       }
     }

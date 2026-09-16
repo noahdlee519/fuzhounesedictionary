@@ -92,13 +92,13 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     locale: "en_US",
-    images: [{ url: "/og.png?v=5", width: 1200, height: 630, alt: SITE_NAME }],
+    images: [{ url: "/og.png?v=6", width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: ["/og.png?v=5"],
+    images: ["/og.png?v=6"],
   },
   robots: { index: true, follow: true },
   /* Icons declared here rather than by the app/ file convention, so the tags
