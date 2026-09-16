@@ -136,9 +136,12 @@ const TONES: {
   { name: "陰入", pitch: "23", levels: [2, 3], short: true, han: "福", buc: "hók" },
   { name: "陽入", pitch: "5", levels: [5, 5], short: true, han: "日", buc: "nĭk" },
   // The eighth is one of the two tones (21 / 24) that only surface inside a
-  // word, so its example is the first syllable of a two-syllable entry: 二 is
-  // 242 on its own and 21 at the front of 二八天.
-  { pitch: "21", levels: [2, 1], extra: true, han: "二八天", buc: "ni21 weik21 tieng44", cited: true },
+  // word, so its example is the first syllable of a two-syllable entry: 八 is
+  // baik on its own and 21 at the front of 八音. It replaced 二八天, which
+  // showed the same thing but has no entry here — an example a reader cannot
+  // look up is not much of an example. 八音 is in the dictionary, from the
+  // same printed source, and it happens to mean "the eight tones".
+  { pitch: "21", levels: [2, 1], extra: true, han: "八音", buc: "beik21 ing44", cited: true },
 ];
 
 function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean; extra?: boolean }) {
@@ -404,7 +407,7 @@ export default function Guide() {
         </P>
         <P>
           The two extra tones are <Num>21</Num> and <Num>24</Num>. You will never hear them on a
-          word said by itself; the box above marked <i>in-word</i> is the <Num>21</Num>, shown on the first syllable of <Han>二八天</Han>.
+          word said by itself; the box above marked <i>in-word</i> is the <Num>21</Num>, shown on the first syllable of <Han>八音</Han>.
         </P>
       </Section>
 
@@ -599,7 +602,7 @@ export default function Guide() {
             ["what (also)", <Han>乜毛名</Han>, <Rom>mie21 nok44 miang53</Rom>, <Unchecked />],
             ["when", <Han>乜候</Han>, <Rom>mieng53 ngau242</Rom>, <Unchecked />],
             ["why, what for", <Han>干乜势</Han>, <Rom>gang21 me53 lie213</Rom>, <Unchecked />],
-            ["Do you speak Fuzhounese?", <Han>汝會講福州話賣？</Han>, <Rom>—</Rom>, <Unchecked />],
+            ["Do you speak Fuzhounese?", <Han>汝會講福州話賣？</Han>, <Rom>Nṳ̄ â̤ gōng Hók-ciŭ-uâ mâ̤</Rom>, <Unchecked />],
           ]}
         />
 

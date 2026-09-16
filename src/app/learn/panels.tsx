@@ -59,7 +59,8 @@ const features = (
       <H>Questions</H>
       <P>
         The verb stays where it is. A particle at the end turns a statement into a yes-or-no
-        question—<Han>汝會講福州話賣？</Han> <i>do you speak Fuzhounese?</i>—or a negative does
+        question—<Han>汝會講福州話賣？</Han> <Rom>Nṳ̄ â̤ gōng Hók-ciŭ-uâ mâ̤</Rom>,{" "}
+        <i>do you speak Fuzhounese?</i>—or a negative does
         the same job. <Han>未</Han> <Rom>mà̤</Rom> at the end asks whether something has happened
         yet: <Han>食飯未</Han> <Rom>siăh buáng mà̤</Rom>, <i>have you eaten?</i>, which is also how
         people say hello.
@@ -81,21 +82,20 @@ const features = (
     <Block id="tones">
       <H>Tones</H>
       <P>
-        Seven, when a syllable stands alone. Pitch is written on a five-point scale, <Num>5</Num>{" "}
+        There are seven tones on a word said by itself. Pitch is written on a five-point scale, <Num>5</Num>{" "}
         high and <Num>1</Num> low: <Han>陰平</Han> <Num>44</Num>, <Han>陽平</Han> <Num>53</Num>,{" "}
         <Han>上聲</Han> <Num>31</Num>, <Han>陰去</Han> <Num>213</Num>, <Han>陽去</Han>{" "}
         <Num>242</Num>, <Han>陰入</Han> <Num>23</Num>, <Han>陽入</Han> <Num>5</Num>. The last two are
         short, on syllables that end in a glottal stop—the catch in the middle of
         &ldquo;uh-oh&rdquo;. Two more tones appear only inside longer words; the last box is one of
-        them, heard on the first syllable of <Han>二八天</Han>.
+        them, heard on the first syllable of <Han>八音</Han>.
       </P>
       <div className="pt-1">
         <ToneChart />
       </div>
       <p className="text-sm text-inkFaint">
         The word under each box carries that tone. The two short lines are the entering tones, cut
-        off by the glottal stop. A dotted romanization means its tone mark has not yet been
-        confirmed by a speaker.
+        off by the glottal stop.
       </p>
     </Block>
 
@@ -105,6 +105,7 @@ const features = (
         The tone in the table is the tone a syllable has <i>on its own</i>. Inside a word it is
         different. The rule has two halves. <b>The last syllable of a word keeps its own tone.</b>{" "}
         <b>The syllable before it changes</b>, and what it changes to depends on both syllables.
+        This is called &ldquo;sandhi&rdquo; and it is a unique yet difficult feature of Fuzhounese.
       </P>
       <P>
         Take the name of the city, <Han>福州</Han> <Rom>Hók-ciŭ</Rom>. <Han>福</Han> by itself is a
@@ -159,21 +160,27 @@ const features = (
     <Block>
       <H>Sounds</H>
       <P>
-        Fourteen consonants and seven vowels; the Orthography tab has the full chart with how each is
-        said. Three things stand out if you come from English or Mandarin.
+        There are fourteen consonants and seven vowels in total. Visit the{" "}
+        <a href="#orthography" className="text-lacquer hover:underline">
+          Orthography
+        </a>{" "}
+        tab for the full chart of how each is said. Three things stand out if you have a background
+        in English or Mandarin:
       </P>
       <P>
-        <b>No f, no v.</b> Nowhere in the language. Where Mandarin has an f, Fuzhounese usually has
+        <b>Fuzhounese doesn&rsquo;t have an f or a v sound.</b> Where Mandarin has an f, Fuzhounese usually has
         an h: <Han>福</Han> is <Rom>hók</Rom>, <Han>花</Han> is <Rom>huă</Rom>, <Han>風</Han> is{" "}
         <Rom>hŭng</Rom>.
       </P>
       <P>
-        <b>Only three ways to end a syllable.</b> A vowel, <Rom>-ng</Rom>, or the glottal stop, the
-        catch in the middle of &ldquo;uh-oh&rdquo;, written <Rom>-h</Rom> or <Rom>-k</Rom>. Where
+        <b>Only three ways to end a syllable.</b> Words either end in a vowel, with <Rom>-ng</Rom>,
+        or with a glottal stop (i.e. the catch in the middle of &ldquo;uh-oh&rdquo;, written{" "}
+        <Rom>-h</Rom> or <Rom>-k</Rom>). Where
         older Chinese ended syllables in <Rom>-m</Rom>, <Rom>-n</Rom> or <Rom>-ng</Rom>, Fuzhounese
         has only <Rom>-ng</Rom>: <Han>心</Han> <Rom>sĭng</Rom>, <Han>山</Han> <Rom>săng</Rom>,{" "}
-        <Han>新</Han> <Rom>sĭng</Rom>. Where it ended in <Rom>-p</Rom>, <Rom>-t</Rom> or{" "}
-        <Rom>-k</Rom>, there is only the catch: <Han>十</Han> <Rom>sĕk</Rom>, <Han>白</Han>{" "}
+        <Han>新</Han> <Rom>sĭng</Rom>. Where other Chinese words end in <Rom>-p</Rom>, <Rom>-t</Rom> or{" "}
+        <Rom>-k</Rom>, Fuzhounese ends them all with the glottal stop, written <Rom>-h</Rom> or{" "}
+        <Rom>-k</Rom>: <Han>十</Han> <Rom>sĕk</Rom>, <Han>白</Han>{" "}
         <Rom>băh</Rom>, <Han>八</Han> <Rom>báik</Rom>.
       </P>
       <P>
@@ -230,6 +237,17 @@ const orthography = (
         <i>thing</i>, the mark under the o says which o it is, and the mark above it gives the tone.
       </P>
       <P>
+        The curved mark, the breve, is the one of those tone marks this dictionary can vouch for. It
+        sits on the two tones that are level and unmoving—<Num>44</Num>, the high flat one, and{" "}
+        <Num>5</Num>, its short counterpart: <Han>天</Han> <Rom>tiĕng</Rom>, <i>sky</i>, and{" "}
+        <Han>日</Han> <Rom>nĭk</Rom>, <i>day</i>. Which mark goes with each of the other five is not
+        settled here yet, which is why the tone cards under{" "}
+        <a href="#tones" className="text-lacquer hover:underline">
+          Tones
+        </a>{" "}
+        carry an <i>unchecked</i> flag.
+      </P>
+      <P>
         <b>Tone numbers</b> write the pitch as digits after each syllable, <Rom>seik21 zo213</Rom>,
         using the values from the tone table. Because they record the tone as actually spoken, they
         show the sandhi that a tone mark on a headword hides. Entries taken from a printed dictionary
@@ -252,9 +270,8 @@ const orthography = (
         </a>{" "}
         in the Features panel.
       </P>
-      <p className="meta text-inkFaint">Consonants</p>
       <Table
-        head={["Letter", "IPA", "Sounds like", "Example"]}
+        head={["Consonants", "IPA", "Sounds like", "Example"]}
         rows={[
           [<Rom>b</Rom>, "p", "p in spin (no puff of air)", <><Han>八</Han> <Rom>báik</Rom>, eight</>],
           [<Rom>p</Rom>, "pʰ", "p in pin (with the puff)", <><Han>鼻</Han> <Rom>pĭ</Rom>, nose</>],
@@ -272,9 +289,8 @@ const orthography = (
           [<Rom>s</Rom>, "s", "s in see", <><Han>山</Han> <Rom>săng</Rom>, mountain</>],
         ]}
       />
-      <p className="pt-2 meta text-inkFaint">Vowels</p>
       <Table
-        head={["Letter", "IPA", "Sounds like", "Example"]}
+        head={["Vowels", "IPA", "Sounds like", "Example"]}
         rows={[
           [<Rom>a</Rom>, "a", "a in father", <><Han>花</Han> <Rom>huă</Rom>, flower</>],
           [<Rom>a̤</Rom>, "ɛ", "e in bed", <><Han>洗</Han> <Rom>sā̤</Rom>, to wash</>],
@@ -291,9 +307,8 @@ const orthography = (
         as its letters in sequence: <Han>天</Han> <Rom>tiĕng</Rom>, <Han>花</Han> <Rom>huă</Rom>,{" "}
         <Han>狗</Han> <Rom>gāu</Rom>, <Han>手</Han> <Rom>chiū</Rom>.
       </P>
-      <p className="pt-2 meta text-inkFaint">Endings</p>
       <Table
-        head={["Letter", "IPA", "Sounds like", "Example"]}
+        head={["Endings", "IPA", "Sounds like", "Example"]}
         rows={[
           [<Rom>-ng</Rom>, "ŋ", "ng in sing", <><Han>心</Han> <Rom>sĭng</Rom>, heart</>],
           [<Rom>-h</Rom>, "ʔ", "the catch in “uh-oh”; the syllable stops short", <><Han>白</Han> <Rom>băh</Rom>, white</>],
