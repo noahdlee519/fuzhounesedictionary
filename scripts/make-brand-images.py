@@ -50,39 +50,6 @@ def han(size, black=False):
     return ImageFont.truetype(CJK_BLACK if black else CJK, size, index=CJK_TC)
 
 
-def tracked(draw, xy, runs, fill, tracking=0.0):
-    """Draw a row of (text, font) runs letter by letter, with extra space
-       between the letters — the eyebrow's wide tracking. Returns the x it
-       ended at, so a caller can keep going."""
-    x, y = xy
-    for text, font in runs:
-        # A serif character sits lower than Latin caps at the same size; the
-        # small nudge puts the two on one optical line.
-        dy = 1 if font.getname()[0].startswith("Noto") else 0
-        for ch in text:
-            draw.text((x, y + dy), ch, font=font, fill=fill)
-            x += font.getlength(ch) + tracking
-    return x
-
-
-def icon(size, opaque=False):
-    """The app icon: a lacquer 福, centred by its ink rather than by its box.
-
-    Transparent behind the glyph, so a browser drawing it on a dark tab strip
-    gets the character and not a white tile; `opaque` paints the paper back in
-    for iOS, which composites a transparent home-screen icon onto black."""
-    # 4x supersampling, so the glyph's curves stay clean at 48 and 16 pixels.
-    s = size * 4
-    im = Image.new("RGBA", (s, s), PAPER + (255,) if opaque else (255, 255, 255, 0))
-    d = ImageDraw.Draw(im)
-    f = han(int(s * 0.86), black=True)
-    # The character's own bounding box, so the optical centre is what is
-    # centred — a CJK glyph does not fill its em square evenly.
-    l, t, r, b = d.textbbox((0, 0), "福", font=f)
-    d.text(((s - (r - l)) / 2 - l, (s - (b - t)) / 2 - t), "福", font=f, fill=LACQUER)
-    return im.resize((size, size), Image.LANCZOS)
-
-
 def og():
     """The link preview: the home page's hero, at 1200x630."""
     W, H = 1200, 630
@@ -100,19 +67,13 @@ def og():
     d = ImageDraw.Draw(im)
 
     x = 80
-    lat, ser = inter(600, 15), han(15)
-    tracked(
-        d,
-        (x, 92),
-        [("FUZHOUNESE · ", lat), ("福州話", ser), (" · EASTERN MIN", lat)],
-        INK_SOFT,
-        2.4,
-    )
 
     # The home page's headline, broken where the page itself breaks it. It is
     # set smaller than the two-line headline it replaced because it is half as
-    # long again; at 64 the second line still clears the wordmark below.
-    y = 146
+    # long again; at 64 the second line still clears the wordmark below. With
+    # no eyebrow above it, the block sits a little lower so it reads as
+    # centred between the top edge and the rule.
+    y = 176
     d.text((x, y), "Welcome to the Fuzhounese", font=inter(700, 64), fill=INK)
     d.text((x, y + 78), "Dictionary Project", font=inter(700, 64), fill=INK)
 
@@ -124,7 +85,7 @@ def og():
     # The wordmark, two-tone as in the header: the place in lacquer, the rest
     # in ink.
     d.line([(x, H - 108), (W - x, H - 108)], fill=RULE, width=2)
-    hf, wf = han(27), inter(600, 24)
+    hf, wf = han(27), inter(400, 24)
     cx = x
     for part, fill in (("福州", LACQUER), ("話", INK)):
         d.text((cx, H - 78), part, font=hf, fill=fill)
