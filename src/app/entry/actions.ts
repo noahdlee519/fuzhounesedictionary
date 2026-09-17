@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { localPath } from "@/lib/local-path";
 
 /* Thumbs up or down on a recording. One vote per person: pressing the same
    thumb again withdraws it, pressing the other flips it. Runs as the
@@ -17,7 +18,7 @@ export async function voteRecording(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
   const value = Number(formData.get("value"));
   const raw = String(formData.get("back") ?? "");
-  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  const back = localPath(raw, "/");
   if (!user || !id || (value !== 1 && value !== -1)) redirect(back);
 
   const { data: mine } = await supabase

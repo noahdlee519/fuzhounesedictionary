@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { localPath } from "@/lib/local-path";
 
 // OAuth redirect target: exchanges the ?code for a session cookie, then sends
 // the user back where they started.
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
   // Only ever redirect to a path on this site. "//evil.com" and "https://..."
   // are rejected rather than trusted, since `next` arrives in the query string.
   const raw = searchParams.get("next") ?? "/";
-  const next = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  const next = localPath(raw, "/");
 
   const fail = (why: string) =>
     NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(why)}`);

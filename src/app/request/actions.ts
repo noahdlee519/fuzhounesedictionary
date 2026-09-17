@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser, isEditor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { adminClient } from "@/lib/supabase/admin";
+import { localPath } from "@/lib/local-path";
 
 // Create a request (or, if one already exists for this word/entry, just upvote it).
 export async function requestWord(formData: FormData) {
@@ -12,7 +13,7 @@ export async function requestWord(formData: FormData) {
   // `back` comes from the form, so only a path on this site is honoured —
   // the same guard as auth/callback. "//evil.com" and "https://…" fall back.
   const raw = String(formData.get("back") ?? "/request");
-  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/request";
+  const back = localPath(raw, "/request");
   if (!user) redirect(back);
 
   const term = String(formData.get("term") ?? "").trim();

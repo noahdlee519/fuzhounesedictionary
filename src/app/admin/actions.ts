@@ -10,6 +10,7 @@ import { isEditor } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { ORIGIN_AREA_CODES } from "@/lib/origins";
 import { AUDIO_BUCKET, PARTS_OF_SPEECH } from "@/lib/constants";
+import { localPath } from "@/lib/local-path";
 
 async function requireEditor() {
   if (!(await isEditor())) redirect("/");
@@ -48,7 +49,7 @@ export async function saveEdit(formData: FormData) {
   // (and from there the browser's own Back returns to the word list). Only a
   // path on this site is honoured.
   const rawBack = String(formData.get("back") ?? "");
-  const back = rawBack.startsWith("/") && !rawBack.startsWith("//") ? rawBack : "/admin";
+  const back = localPath(rawBack, "/admin");
   const supabase = adminClient();
 
   // Update entry core fields.
@@ -177,7 +178,7 @@ export async function deleteRecording(formData: FormData) {
   await requireEditor();
   const id = String(formData.get("id") ?? "");
   const raw = String(formData.get("back") ?? "/admin");
-  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";
+  const back = localPath(raw, "/admin");
   if (!id) redirect(back);
 
   const supabase = adminClient();
@@ -234,7 +235,7 @@ export async function deleteEntry(formData: FormData) {
   await requireEditor();
   const id = String(formData.get("id") ?? "");
   const raw = String(formData.get("back") ?? "/admin");
-  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";
+  const back = localPath(raw, "/admin");
   if (!id) redirect(back);
 
   const supabase = adminClient();

@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
 import { sortSenses } from "@/lib/entries";
 import DeleteEntry from "@/components/DeleteEntry";
+import { localPath } from "@/lib/local-path";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function EditEntryPage({
   // Where Save returns to: the queue by default, or the entry page when the
   // edit was opened from there. Only a path on this site is honoured.
   const raw = (searchParams.back ?? "").trim();
-  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";
+  const back = localPath(raw, "/admin");
   const backLabel = back.startsWith("/entry/")
     ? "← Back to the word"
     : back.startsWith("/admin")

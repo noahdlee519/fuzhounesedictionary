@@ -7,6 +7,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AUDIO_BUCKET, AVATAR_BUCKET } from "@/lib/constants";
 import { ORIGIN_AREA_CODES, ORIGIN_PRECISIONS } from "@/lib/origins";
 import { MAX_RECORDING_NOTE } from "@/lib/constants";
+import { localPath } from "@/lib/local-path";
 
 export async function saveProfile(formData: FormData) {
   const supabase = createClient();
@@ -61,7 +62,7 @@ export async function saveRecordingNote(formData: FormData) {
   // Where the form was: the account page (default) or an entry page. Only a
   // path on this site is honoured — the same guard as everywhere else.
   const raw = String(formData.get("back") ?? "").trim();
-  const back = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/account?show=recordings";
+  const back = localPath(raw, "/account?show=recordings");
   const withFlag = (flag: string) => `${back}${back.includes("?") ? "&" : "?"}${flag}`;
   if (!id) redirect(back);
 
