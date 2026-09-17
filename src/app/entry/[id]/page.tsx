@@ -11,7 +11,6 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { LEGAL_CONTACT } from "@/components/Legal";
 import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
-import SignInButton from "@/components/SignInButton";
 import PlayButton from "@/components/PlayButton";
 import { formatDate } from "@/lib/dates";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
@@ -263,13 +262,25 @@ export default async function EntryPage({
 
         <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} />
 
-        {user ? (
-          <div className="border border-dashed border-rule p-4">
-            {capped ? (
-              cappedNote
-            ) : (
+        {/* The recorder is for everyone. A signed-out visitor records first
+            and is asked to sign in only when they choose a take; the take is
+            held in their browser across the trip to Google and saved on
+            return (Recorder.tsx explains). The one thing sign-in still gates
+            is the cap, which only a known contributor can be measured
+            against. */}
+        <div className="border border-dashed border-rule p-4">
+          {user && capped ? (
+            cappedNote
+          ) : (
+            <>
+              {!user && !entry.audio_url && headwordRecs.length === 0 && (
+                <p className="mb-3 text-sm text-inkSoft">
+                  No recording yet. If you know how this is said, your recording is the one thing
+                  this page is missing.
+                </p>
+              )}
               <Recorder
-                userId={user.id}
+                userId={user?.id ?? null}
                 entryId={entry.id}
                 isEditor={canDelete}
                 kind="headword"
@@ -279,25 +290,8 @@ export default async function EntryPage({
                     : "Be the first to say this word"
                 }
               />
-            )}
-          </div>
-        ) : (
-          !entry.audio_url &&
-          headwordRecs.length === 0 && (
-            <div className="border border-dashed border-rule p-4">
-              <p className="text-sm text-inkSoft">
-                No recording yet. If you know how this is said, your recording is the one thing this
-                page is missing.
-              </p>
-              {/* Recording it is the valuable act, so it gets the filled button;
-                  asking someone else to is the fallback, as a text link. */}
-              <div className="mt-3 flex flex-wrap items-center gap-4">
-                <SignInButton
-                  next={`/entry/${entry.id}`}
-                  label="Sign in and record it"
-                  className="inline-flex items-center gap-2 border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer [&>svg]:hidden"
-                />
-                <form action={requestWord}>
+              {!user && !entry.audio_url && headwordRecs.length === 0 && (
+                <form action={requestWord} className="mt-3">
                   <input type="hidden" name="entry_id" value={entry.id} />
                   <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
                   <input type="hidden" name="back" value={`/entry/${entry.id}`} />
@@ -305,10 +299,10 @@ export default async function EntryPage({
                     Can&apos;t? Ask for a recording
                   </button>
                 </form>
-              </div>
-            </div>
-          )
-        )}
+              )}
+            </>
+          )}
+        </div>
       </section>
 
       <ol className="space-y-5">

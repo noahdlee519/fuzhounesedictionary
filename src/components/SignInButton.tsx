@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { startGoogleSignIn } from "@/lib/supabase/sign-in";
 
 // Kicks off Google OAuth. After Google, the user returns to /auth/callback,
 // which sets the session and redirects to `next`.
@@ -20,33 +20,12 @@ export default function SignInButton({
   async function signIn() {
     setError(null);
     setBusy(true);
-    const supabase = createClient();
-
-    /* Come back to the host the browser is ACTUALLY on, never to a build-time
-       site URL.
-
-       This is what made signing in take two attempts. Sign-in uses PKCE: the
-       browser writes a code-verifier cookie before leaving for Google, and the
-       callback has to read that same cookie to exchange the code for a session.
-       A cookie belongs to one host. So when NEXT_PUBLIC_SITE_URL pointed at a
-       different host than the one being browsed, the verifier was written on one
-       host and looked for on another, the exchange failed, and the user landed
-       back signed out — on the other host. Trying again from there worked,
-       because by then both halves were on the same host.
-
-       window.location.origin is right on every host at once: the apex domain,
-       www, the vercel.app URL, a preview deployment, and localhost. Each host
-       must be listed under Redirect URLs in the Supabase dashboard. */
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-
+    // Shared with the recorder; the reasoning about the return address is
+    // in src/lib/supabase/sign-in.ts.
+    const err = await startGoogleSignIn(next);
     // Reached only if the redirect to Google never happened.
     if (err) {
-      setError(err.message);
+      setError(err);
       setBusy(false);
     }
   }

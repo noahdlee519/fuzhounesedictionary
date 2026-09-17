@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MAX_RECORDING_NOTE } from "@/lib/constants";
 import { saveRecording } from "@/lib/audio-upload";
+import { heldTake, holdTake, releaseTake } from "@/lib/held-take";
+import { startGoogleSignIn } from "@/lib/supabase/sign-in";
 import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
 
@@ -12,6 +14,18 @@ import TakeControls, { recBtn } from "./TakeControls";
    Record a word that already exists and save it straight away: the entry
    page and the Improve list. Capture is in useRecorder, the buttons in
    TakeControls; this file is the saving and the note.
+
+   RECORDING BEFORE SIGNING IN
+
+   Anyone may press record; only saving needs an account. The order matters.
+   Every step between arriving and hearing your own voice loses people, and
+   "sign in with Google" was the first step. Now it is the last: a visitor
+   records, listens back, chooses the take — and only then, on "Use this",
+   is asked to sign in. The take is held in the browser (src/lib/held-take)
+   across the trip to Google, and when the page comes back with a user it
+   saves the held take by itself and says so. The person does the hard part
+   with nothing asked of them, and the sign-in is what finishes it rather
+   than what starts it.
    --------------------------------------------------------------------------- */
 
 type Kind = "headword" | "example";
@@ -25,7 +39,9 @@ export default function Recorder({
   onSaved,
   isEditor = false,
 }: {
-  userId: string;
+  /** Absent when the visitor is signed out: they can still record, and are
+      sent to sign in when they choose a take. */
+  userId?: string | null;
   entryId: string;
   kind?: Kind;
   senseId?: string;
@@ -50,11 +66,89 @@ export default function Recorder({
   const [savedId, setSavedId] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState("");
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  // "held": a take from before sign-in is being saved on return; "sending":
+  // the visitor chose a take and is on the way to Google.
+  const [resuming, setResuming] = useState<"held" | "sending" | null>(null);
+  // Bumped by "Try again" after a failed save on return.
+  const [attempt, setAttempt] = useState(0);
+  const [heldFailed, setHeldFailed] = useState(false);
+
+  /* On return from sign-in, the held take for this word is saved without
+     another click. Only with a user, and only for the kind this recorder is
+     for — the example-sentence recorders on the same page share the entry
+     id. `cancelled` is checked before the upload, so React's development
+     double-run of effects cannot save the take twice: the first run is
+     cancelled while it is still reading the store. */
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      const held = await heldTake(entryId);
+      if (cancelled || !held || held.kind !== kind || (held.senseId ?? null) !== (senseId ?? null)) return;
+      setResuming("held");
+      setHeldFailed(false);
+      setError(null);
+      try {
+        const saved = await saveRecording(supabase, {
+          userId,
+          entryId,
+          kind,
+          senseId,
+          blob: held.blob,
+          seconds: held.seconds,
+          note: held.note,
+        });
+        await releaseTake(entryId);
+        if (cancelled) return;
+        setSavedId(saved.id);
+        setSavedNote(saved.note);
+        setNoteState("idle");
+        setDone(true);
+        onSaved?.();
+        router.refresh();
+      } catch (e: any) {
+        // The take is still held, so "Try saving it again" can have another go
+        // once whatever went wrong — a cap, the network — is past.
+        if (!cancelled) {
+          setError(e?.message ?? "Could not save the recording you made before signing in.");
+          setHeldFailed(true);
+        }
+      } finally {
+        if (!cancelled) setResuming(null);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, entryId, kind, senseId, attempt]);
 
   async function save() {
     if (!rec.take) return;
     setSaving(true);
     setError(null);
+
+    if (!userId) {
+      // Hold the take, then go and sign in; the effect above saves it on the
+      // way back. If the browser will not hold it, say so rather than lose
+      // a recording someone just made.
+      const held = await holdTake({
+        entryId, kind, senseId: senseId ?? null,
+        blob: rec.take.blob, seconds: rec.take.seconds, note, heldAt: Date.now(),
+      });
+      if (!held) {
+        setError("This browser cannot keep the recording while you sign in. Sign in first, then record it again.");
+        setSaving(false);
+        return;
+      }
+      setResuming("sending");
+      const err = await startGoogleSignIn(`${window.location.pathname}${window.location.search}`);
+      if (err) {
+        setError(err);
+        setResuming(null);
+        setSaving(false);
+      }
+      return;
+    }
+
     try {
       const saved = await saveRecording(supabase, {
         userId,
@@ -161,10 +255,35 @@ export default function Recorder({
     );
   }
 
+  if (resuming === "held") {
+    return (
+      <p className="text-sm text-inkSoft" role="status">
+        Saving the recording you made before signing in…
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-2">
       {label && (
         <p className="meta text-inkFaint">{label}</p>
+      )}
+      {!userId && !rec.take && !rec.recording && (
+        <p className="text-sm text-inkSoft">
+          You can record first and sign in after — the recording waits for you.
+        </p>
+      )}
+      {heldFailed && !rec.take && (
+        <p className="flex flex-wrap items-center gap-3 text-sm text-inkSoft">
+          <span>Your recording from before signing in is still here.</span>
+          <button
+            type="button"
+            onClick={() => setAttempt((n) => n + 1)}
+            className={`${recBtn} border-lacquer text-lacquer hover:bg-lacquer hover:text-paper`}
+          >
+            Try saving it again
+          </button>
+        </p>
       )}
 
       <TakeControls
@@ -187,7 +306,9 @@ export default function Recorder({
             disabled={saving}
             className={`${recBtn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}
           >
-            {saving ? "Saving…" : "Use this"}
+            {saving
+              ? resuming === "sending" ? "Opening Google…" : "Saving…"
+              : userId ? "Use this" : "Use this — sign in to save it"}
           </button>
         }
       />
