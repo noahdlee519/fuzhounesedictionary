@@ -17,6 +17,8 @@ export interface RecordingRow {
   audio_url: string;
   status: string;
   note?: string | null;
+  /** Someone other than the contributor, speaking (recording_speaker.sql). */
+  speaker_name?: string | null;
   origin_area: string | null;
   origin_locality: string | null;
   created_at: string;
@@ -57,7 +59,8 @@ export default function RecordingList({
         const who = r.contributor?.display_name;
         const note = (r.note ?? "").trim();
         const mine = Boolean(viewerId && r.contributor?.id === viewerId);
-        const label = `${note || (r.kind === "example" ? "example sentence" : "the word")}${who ? `, recorded by ${who}` : ""}`;
+        const speaker = (r.speaker_name ?? "").trim();
+        const label = `${note || (r.kind === "example" ? "example sentence" : "the word")}${speaker ? `, said by ${speaker}` : ""}${who ? `, recorded by ${who}` : ""}`;
         return (
           <li key={r.id} className="flex flex-wrap items-start gap-x-3 gap-y-2">
             <div className="pt-0.5">
@@ -78,6 +81,9 @@ export default function RecordingList({
                 fallback?.trim() && <p className="text-[15px] leading-snug text-ink">{fallback.trim()}</p>
               )}
               <p className="meta text-inkFaint">
+                {/* Someone else speaking comes first: it is their voice and
+                    their district; the account holder made the recording. */}
+                {speaker && <span className="text-inkSoft">said by {speaker} · </span>}
                 {who && r.contributor?.id ? (
                   <>
                     recorded by{" "}

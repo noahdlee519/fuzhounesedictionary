@@ -9,6 +9,8 @@ import { heldTake, holdTake, releaseTake } from "@/lib/held-take";
 import { startGoogleSignIn } from "@/lib/supabase/sign-in";
 import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
+import SpeakerFields from "./SpeakerFields";
+import type { Speaker } from "@/lib/audio-upload";
 
 /* ---------------------------------------------------------------------------
    Record a word that already exists and save it straight away: the entry
@@ -57,6 +59,10 @@ export default function Recorder({
   // A line to go with the take: the sentence being read, or how the speaker
   // would put it. Optional; shown beside the play button once approved.
   const [note, setNote] = useState("");
+  // Who is speaking: null is the account holder; otherwise someone they are
+  // recording (SpeakerFields). Kept across takes, so a run of words with the
+  // same grandmother is set once.
+  const [speaker, setSpeaker] = useState<Speaker | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -97,6 +103,7 @@ export default function Recorder({
           blob: held.blob,
           seconds: held.seconds,
           note: held.note,
+          speaker: held.speaker ?? null,
         });
         await releaseTake(entryId);
         if (cancelled) return;
@@ -123,6 +130,10 @@ export default function Recorder({
 
   async function save() {
     if (!rec.take) return;
+    if (speaker && !speaker.name.trim()) {
+      setError("Add the speaker's name, or choose “Me”.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -132,7 +143,7 @@ export default function Recorder({
       // a recording someone just made.
       const held = await holdTake({
         entryId, kind, senseId: senseId ?? null,
-        blob: rec.take.blob, seconds: rec.take.seconds, note, heldAt: Date.now(),
+        blob: rec.take.blob, seconds: rec.take.seconds, note, speaker, heldAt: Date.now(),
       });
       if (!held) {
         setError("This browser cannot keep the recording while you sign in. Sign in first, then record it again.");
@@ -158,6 +169,7 @@ export default function Recorder({
         blob: rec.take.blob,
         seconds: rec.take.seconds,
         note,
+        speaker,
       });
       setSavedId(saved.id);
       setSavedNote(saved.note);
@@ -312,6 +324,18 @@ export default function Recorder({
           </button>
         }
       />
+
+      {rec.take && !rec.recording && (
+        <SpeakerFields
+          value={speaker}
+          onChange={(s) => {
+            setSpeaker(s);
+            setError(null);
+          }}
+          disabled={saving}
+          idBase={`spk-${entryId}-${kind}${senseId ? `-${senseId}` : ""}`}
+        />
+      )}
 
       {rec.take && !rec.recording && (
         <label className="block max-w-md">

@@ -14,6 +14,8 @@
    profile — and every call here swallows that into a null or a false, so
    the recorder can fall back to "sign in first" rather than break. */
 
+import type { Speaker } from "./audio-upload";
+
 export type HeldKind = "headword" | "example";
 
 export interface HeldTake {
@@ -23,6 +25,8 @@ export interface HeldTake {
   blob: Blob;
   seconds: number;
   note: string;
+  /** Someone else speaking (lib/audio-upload); absent for the account holder. */
+  speaker?: Speaker | null;
   heldAt: number;
 }
 

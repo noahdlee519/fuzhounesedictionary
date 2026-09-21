@@ -141,7 +141,9 @@ export default async function EntryPage({
     // repairs the relationship itself; this does not wait for it.
     supabase
       .from("recordings")
-      .select("id, kind, sense_id, audio_url, status, note, origin_area, origin_locality, created_at, contributor_id")
+      // "*" rather than a column list so speaker_name comes through once
+      // supabase/recording_speaker.sql has run, and nothing breaks before.
+      .select("*")
       .eq("entry_id", params.id)
       .order("created_at", { ascending: true }),
   ]);

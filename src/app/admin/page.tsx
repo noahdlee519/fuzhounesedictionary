@@ -81,7 +81,7 @@ export default async function AdminPage() {
       // it. See supabase/recordings_profiles_fk.sql.
       supabase
         .from("recordings")
-        .select("id, entry_id, kind, audio_url, note, origin_area, origin_locality, created_at, contributor_id, entry:entries(hanzi, romanization, headword)")
+        .select("*, entry:entries(hanzi, romanization, headword)")
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
       supabase
@@ -251,6 +251,9 @@ export default async function AdminPage() {
                     </span>
                   </div>
                   <div className="mt-3"><PlayButton src={r.audio_url} label={`${e?.romanization || e?.headword || "recording"}${c?.display_name ? `, recorded by ${c.display_name}` : ""}`} /></div>
+                  {r.speaker_name && (
+                    <p className="mt-2 meta text-inkSoft">said by {r.speaker_name}, recorded by {c?.display_name || "the contributor"}</p>
+                  )}
                   {r.note && (
                     <p className="romanization mt-2 text-sm text-inkSoft">{r.note}</p>
                   )}
