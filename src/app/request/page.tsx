@@ -2,7 +2,7 @@ import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import SignInButton from "@/components/SignInButton";
+import SignInGate from "@/components/SignInGate";
 import { translator } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import ContributeTabs from "@/components/ContributeTabs";
@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Wanted words",
+  title: "Request a word",
   description:
     "Ask for a Fuzhounese word that is missing from the dictionary, or for a recording of one that has none yet.",
   alternates: { canonical: "/request" },
@@ -78,8 +78,8 @@ export default async function WantedPage({
         <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">{notice}</p>
       )}
 
-      <section className="border border-rule bg-surface p-5">
-        {user ? (
+      {user ? (
+        <section className="border border-rule bg-surface p-5">
           <form action={requestWord} className="space-y-3">
             <input type="hidden" name="back" value="/request" />
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
@@ -92,17 +92,19 @@ export default async function WantedPage({
                 <input name="note" placeholder="What it means, or where you heard it" className={inputCls} />
               </label>
             </div>
-            <SubmitButton pending="Sending…" className="border border-lacquer bg-lacquer px-4 py-2 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60">
+            <SubmitButton pending="Sending…" className="border border-lacquer bg-lacquer px-4 py-2 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60">
               Request this word
             </SubmitButton>
           </form>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-inkSoft">{t("wanted.signin")}</p>
-            <SignInButton next="/request" label={t("nav.signin")} className="btn btn-ghost btn-sm" />
-          </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <SignInGate
+          kind="wanted"
+          title="Sign in to request a word"
+          text="Ask for a word that is missing, or for a recording of one that has none, and upvote the requests you want filled first. Speakers see the list and fill it."
+          next="/request"
+        />
+      )}
 
       <section className="space-y-3">
         <h2 className="meta text-inkFaint">

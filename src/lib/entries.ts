@@ -29,6 +29,7 @@ export function toCard(e: any, extraRecordings = 0): CardProps {
     headword: e.headword,
     pos: s?.part_of_speech ?? null,
     gloss: s?.definition_en ?? null,
+    senseNo: (s?.sort ?? 0) + 1,
     recordings: (e.audio_url ? 1 : 0) + extraRecordings,
   };
 }
@@ -111,11 +112,25 @@ export async function recordingSummary(
 /** Rows with senses joined → cards with live recording counts and the
  *  recording each card plays, in two round trips for the whole page. */
 export async function toCards(supabase: { from: (t: string) => any }, rows: any[]): Promise<CardProps[]> {
-  const summary = await recordingSummary(supabase, rows.map((r) => r.id));
+  const ids = rows.map((r) => r.id);
+  const [summary, meanings] = await Promise.all([recordingSummary(supabase, ids), senseCounts(supabase, ids)]);
   return rows.map((r) => {
     const s = summary.get(r.id);
-    return { ...toCard(r, s?.count ?? 0), audio: s?.top ?? r.audio_url ?? null };
+    return { ...toCard(r, s?.count ?? 0), audio: s?.top ?? r.audio_url ?? null, senses: meanings.get(r.id) };
   });
+}
+
+/** How many meanings each entry has. The cards' own joined senses cannot
+ *  say: a filter narrows them to the meanings that matched, and the English
+ *  order brings one per row. An empty map if the query fails, and the cards
+ *  then simply do not number their meaning. */
+async function senseCounts(supabase: { from: (t: string) => any }, ids: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (!ids.length) return out;
+  const { data, error } = await supabase.from("senses").select("entry_id").in("entry_id", ids);
+  if (error) return out;
+  for (const r of (data ?? []) as { entry_id: string }[]) out.set(r.entry_id, (out.get(r.entry_id) ?? 0) + 1);
+  return out;
 }
 
 /** "福州 · Hók-ciŭ" — the word as a human would name it in a page title. */

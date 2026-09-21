@@ -2,6 +2,9 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
+  // hover: utilities apply only on devices that really hover, so a tap on a
+  // phone does not leave a button stuck in its hover state.
+  future: { hoverOnlyWhenSupported: true },
   // <html data-theme> is set before first paint (layout.tsx) to the stored
   // choice or the system preference, so dark: classes follow the switch too.
   darkMode: ["selector", '[data-theme="dark"]'],

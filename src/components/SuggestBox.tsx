@@ -128,7 +128,7 @@ export default function SuggestBox({
 
         <SubmitButton
           pending="Sending…"
-          className="border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           Send for review
         </SubmitButton>

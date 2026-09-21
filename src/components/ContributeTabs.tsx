@@ -15,10 +15,15 @@ import { getLang } from "@/lib/lang";
    The Review tab carries the number of items waiting, so an editor sees at
    a glance whether there is anything to do. */
 
-export type ContributeTab = "add" | "improve" | "wanted" | "review";
+export type ContributeTab = "record" | "add" | "improve" | "wanted" | "review";
 
+/* Record leads. It is the action the site exists for, and it used to be the
+   one action missing from this strip — the hub had a tile for it, but once
+   you were on any other Contribute page it was gone. It is the Improve list
+   narrowed to words with no recording, so it shares that route. */
 const TABS: { key: ContributeTab | "overview"; href: string; label: Key }[] = [
   { key: "overview", href: "/contribute", label: "tab.overview" },
+  { key: "record", href: "/improve?need=recording", label: "tab.record" },
   { key: "add", href: "/submit", label: "tab.add" },
   { key: "improve", href: "/improve", label: "tab.improve" },
   { key: "wanted", href: "/request", label: "tab.wanted" },
@@ -48,7 +53,10 @@ export default async function ContributeTabs({ active }: { active: ContributeTab
           {t("nav.contribute")}
         </Link>
       </h1>
-      <nav aria-label="Ways to contribute" className="-mb-px mt-7 flex gap-x-6 overflow-x-auto whitespace-nowrap">
+      {/* Wraps on a narrow screen. It used to scroll instead, with nothing to
+          show that it did, so at 390px the fourth tab — the one you were on —
+          sat cut off at the edge. Five short labels make two tidy rows. */}
+      <nav aria-label="Ways to contribute" className="-mb-px mt-7 flex flex-wrap gap-x-6 gap-y-1">
         {tabs.map((tab) => {
           const on = tab.key === active;
           return (

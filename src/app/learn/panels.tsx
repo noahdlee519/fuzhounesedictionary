@@ -27,7 +27,7 @@ const Num = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Block = ({ id, children }: { id?: string; children: React.ReactNode }) => (
-  <div id={id} className="scroll-mt-24 space-y-2">{children}</div>
+  <div id={id} className="scroll-mt-24 space-y-3">{children}</div>
 );
 
 /* Anchors that live inside a panel, so a link like "#tones" can open the
@@ -94,8 +94,8 @@ const features = (
         <ToneChart />
       </div>
       <p className="text-sm text-inkFaint">
-        The word under each box carries that tone. The two short lines are the entering tones, cut
-        off by the glottal stop.
+        The word at the foot of each box carries that tone, with its meaning in English. The two
+        short lines are the entering tones, cut off by the glottal stop.
       </p>
     </Block>
 
@@ -195,6 +195,8 @@ const features = (
 
 /* ------------------------------------------------------------------------ */
 
+const ALPHABET_COLS = ["15%", "10%", "45%", "30%"];
+
 const orthography = (
   <>
     <Block>
@@ -272,6 +274,7 @@ const orthography = (
       </P>
       <Table
         head={["Consonants", "IPA", "Sounds like", "Example"]}
+        widths={ALPHABET_COLS}
         rows={[
           [<Rom>b</Rom>, "p", "p in spin (no puff of air)", <><Han>八</Han> <Rom>báik</Rom>, eight</>],
           [<Rom>p</Rom>, "pʰ", "p in pin (with the puff)", <><Han>鼻</Han> <Rom>pĭ</Rom>, nose</>],
@@ -289,8 +292,13 @@ const orthography = (
           [<Rom>s</Rom>, "s", "s in see", <><Han>山</Han> <Rom>săng</Rom>, mountain</>],
         ]}
       />
+      {/* A gap before each table after the first, so consonants, vowels and
+          endings read as three charts rather than one long one. Each chart's
+          footnote sits tight under it, in the same small grey type. */}
+      <div className="!mt-10 space-y-3">
       <Table
         head={["Vowels", "IPA", "Sounds like", "Example"]}
+        widths={ALPHABET_COLS}
         rows={[
           [<Rom>a</Rom>, "a", "a in father", <><Han>花</Han> <Rom>huă</Rom>, flower</>],
           [<Rom>a̤</Rom>, "ɛ", "e in bed", <><Han>洗</Han> <Rom>sā̤</Rom>, to wash</>],
@@ -301,14 +309,17 @@ const orthography = (
           [<Rom>ṳ</Rom>, "y", "ee with the lips rounded, as in French tu", <><Han>雨</Han> <Rom>ṳ̄</Rom>, rain</>],
         ]}
       />
-      <P>
+      <p className="text-sm text-inkFaint">
         The vowels combine: <Rom>ia</Rom>, <Rom>ua</Rom>, <Rom>ie</Rom>, <Rom>uo</Rom>, <Rom>io</Rom>,{" "}
         <Rom>ai</Rom>, <Rom>au</Rom>, <Rom>iu</Rom>, <Rom>ui</Rom>, <Rom>eu</Rom> and so on, each said
         as its letters in sequence: <Han>天</Han> <Rom>tiĕng</Rom>, <Han>花</Han> <Rom>huă</Rom>,{" "}
         <Han>狗</Han> <Rom>gāu</Rom>, <Han>手</Han> <Rom>chiū</Rom>.
-      </P>
+      </p>
+      </div>
+      <div className="!mt-10 space-y-3">
       <Table
         head={["Endings", "IPA", "Sounds like", "Example"]}
+        widths={ALPHABET_COLS}
         rows={[
           [<Rom>-ng</Rom>, "ŋ", "ng in sing", <><Han>心</Han> <Rom>sĭng</Rom>, heart</>],
           [<Rom>-h</Rom>, "ʔ", "the catch in “uh-oh”; the syllable stops short", <><Han>白</Han> <Rom>băh</Rom>, white</>],
@@ -320,6 +331,7 @@ const orthography = (
         say <Rom>a̤</Rom> closer to <i>e</i> in <i>bed</i>, and <Rom>o̤</Rom> closer to <i>o</i>; the
         values given are the traditional ones the spelling was built on.
       </p>
+      </div>
     </Block>
   </>
 );

@@ -8,8 +8,8 @@ import Assistant from "./Assistant";
    large the dictionary is and what to try. Optionally a small "Ask the
    assistant" button that unfolds the assistant panel under the box. */
 
-const FULL = "Type English, 漢字, or romanization—e.g. eat, 食, siah";
-const SHORT = "English, 漢字 or romanization";
+const FULL = "Search for a word";
+const SHORT = "Search for a word";
 
 const NARROW = "(max-width: 639px)";
 
@@ -97,8 +97,10 @@ export default function SearchBar({
       </form>
 
       {(hint || assistant || after) && (
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1">
-          {hint ? <p className="footnote">{hint}</p> : <span />}
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          {/* The hint is inset a hair to sit under the text in the box; the
+              button is not, so its right edge lines up with the box's. */}
+          {hint ? <p className="footnote px-1">{hint}</p> : <span />}
           {after}
           {assistant && (
             <button
@@ -118,7 +120,9 @@ export default function SearchBar({
       )}
       {assistant && (
         <div id={`${id}-ask`} className={askOpen ? "mt-4" : ""}>
-          <Assistant open={askOpen} signedIn={signedIn} />
+          {/* onHeld: back from signing in with a question held, the panel
+              opens to show it being asked. */}
+          <Assistant open={askOpen} signedIn={signedIn} onHeld={() => setAskOpen(true)} />
         </div>
       )}
     </div>

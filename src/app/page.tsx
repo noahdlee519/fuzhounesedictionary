@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HeroMark from "@/components/HeroMark";
 import SearchBar from "@/components/SearchBar";
 import PlayButton from "@/components/PlayButton";
 import AskSection from "@/components/AskSection";
@@ -9,8 +10,6 @@ import { one, recordingCounts, firstSense } from "@/lib/entries";
 import { getSessionUser } from "@/lib/auth";
 import { searchContributors, type ContributorHit } from "@/lib/contributors";
 import { missionTally, topContributors, type MissionTally, type TopContributor } from "@/lib/public-stats";
-import { originArea } from "@/lib/origins";
-import { formatDate } from "@/lib/dates";
 import { translator, samples } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { getSafe } from "@/lib/safe";
@@ -22,8 +21,8 @@ export const dynamic = "force-dynamic";
 
 /* ---------------------------------------------------------------------------
    The home page, in the 9 Sep 2026 design. Without a query: the mission in
-   two lines, the search, two doors (learner, speaker), four modules of live
-   content, and the assistant.
+   two lines, the search, the assistant, two doors (speaker, learner), and
+   three modules of live content.
    With a query: the search box and the results as rows.
    --------------------------------------------------------------------------- */
 
@@ -43,39 +42,6 @@ function anchored(text: string) {
   );
 }
 
-interface MiniRow {
-  id: string;
-  hanzi: string | null;
-  romanization: string | null;
-  headword: string;
-  meta: string;
-  audio: string | null;
-}
-
-/* A compact row: play button, characters + romanization, one grey line. */
-function Mini({ r, label }: { r: MiniRow; label: string }) {
-  return (
-    <div className="mini">
-      {r.audio ? (
-        <PlayButton src={r.audio} size="xs" label={label} />
-      ) : (
-        <span className="inline-block h-9 w-9 shrink-0 rounded-full border border-dashed border-ruleStrong" aria-hidden="true" />
-      )}
-      <Link href={`/entry/${r.id}`} className="min-w-0 flex-1">
-        {r.hanzi ? (
-          <>
-            <span className="han text-[19px] font-medium">{r.hanzi}</span>{" "}
-            <span className="romanization text-xs text-inkSoft">{r.romanization || r.headword}</span>
-          </>
-        ) : (
-          <span className="text-[17px] font-semibold">{r.romanization || r.headword}</span>
-        )}
-        <div className="text-xs leading-[1.35] text-inkSoft">{r.meta}</div>
-      </Link>
-    </div>
-  );
-}
-
 function ResultRow({ r, recordings }: { r: SearchRow; recordings: number }) {
   return (
     <Link
@@ -88,7 +54,10 @@ function ResultRow({ r, recordings }: { r: SearchRow; recordings: number }) {
         {r.short_gloss}
         {(r.sense_count ?? 0) > 1 && <span className="text-inkMute"> · {r.sense_count} meanings</span>}
       </span>
-      <span className="shrink-0 text-xs text-inkMute">{recordings ? `${recordings} ♪` : "—"}</span>
+      {/* Words, not a ♪ glyph, so a screen reader says what the number is. */}
+      <span className="shrink-0 text-xs text-inkMute">
+        {recordings ? (recordings === 1 ? "1 recording" : `${recordings} recordings`) : "no recording"}
+      </span>
     </Link>
   );
 }
@@ -207,29 +176,14 @@ export default async function Home({
 
   /* ------------------------------------------------------------------- home */
   let tally: MissionTally | null = null;
-  let newest: MiniRow[] = [];
   let wanted: { id: string; term: string; votes: number; entry_id: string | null }[] = [];
-  let wotd: (MiniRow & { gloss: string | null }) | null = null;
+  let wotd: { id: string; hanzi: string | null; romanization: string | null; headword: string; audio: string | null; gloss: string | null } | null = null;
   let top: TopContributor[] = [];
 
   try {
-    const [numbers, people, { data: recs, error: recsErr }, { data: wants }] = await Promise.all([
+    const [numbers, people, { data: wants }] = await Promise.all([
       missionTally(),
       topContributors(4).catch(() => [] as TopContributor[]),
-      // No embeds: the word and the speaker are looked up by id below. This
-      // query asked for both through PostgREST and came back empty in
-      // production while every count on the page said there were dozens of
-      // recordings — and because the error was dropped on the floor, the
-      // module read as "no recordings yet" rather than as broken. Whatever
-      // the join was unhappy about, two id lookups cannot be unhappy about
-      // anything; it is the same shape topContributors already uses. Extra
-      // rows are asked for because the dedupe below thins the list.
-      supabase
-        .from("recordings")
-        .select("entry_id, audio_url, created_at, origin_area, contributor_id")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false })
-        .limit(48),
       supabase
         .from("word_requests_ranked")
         .select("id, term, votes, entry_id")
@@ -241,48 +195,6 @@ export default async function Home({
     tally = numbers;
     top = people;
     wanted = (wants ?? []) as typeof wanted;
-
-    // A query that returns nothing and a query that failed look identical by
-    // the time they reach the page; say which it was.
-    if (recsErr) console.error("home: newest recordings query failed:", recsErr.message);
-
-    // One recording per word, newest first, then the words and the speakers
-    // those rows point at.
-    const rows = (recs ?? []) as any[];
-    const pick: any[] = [];
-    const seen = new Set<string>();
-    for (const r of rows) {
-      if (!r.entry_id || seen.has(r.entry_id)) continue;
-      seen.add(r.entry_id);
-      pick.push(r);
-      if (pick.length === 12) break; // headroom: some words may not be approved
-    }
-    if (pick.length) {
-      const who = new Map<string, string | null>();
-      const peopleIds = [...new Set(pick.map((r) => r.contributor_id).filter(Boolean))];
-      const [{ data: ents }, { data: profs }] = await Promise.all([
-        supabase
-          .from("entries")
-          .select("id, hanzi, romanization, headword")
-          .in("id", pick.map((r) => r.entry_id))
-          .eq("status", "approved"),
-        peopleIds.length
-          ? supabase.from("profiles").select("id, display_name").in("id", peopleIds)
-          : Promise.resolve({ data: [] } as any),
-      ]);
-      for (const p of (profs ?? []) as any[]) who.set(p.id, p.display_name ?? null);
-      const byId = new Map(((ents ?? []) as any[]).map((e) => [e.id, e]));
-      for (const r of pick) {
-        const e = byId.get(r.entry_id);
-        if (!e) continue; // the word is not approved, or is gone
-        const where = originArea(r.origin_area);
-        newest.push({
-          id: e.id, hanzi: e.hanzi, romanization: e.romanization, headword: e.headword, audio: r.audio_url,
-          meta: [who.get(r.contributor_id) ?? null, where ? `${where.label} ${where.hanzi}` : null, formatDate(r.created_at)].filter(Boolean).join(" · "),
-        });
-        if (newest.length === 4) break;
-      }
-    }
 
     // Word of the day: one voiced entry, the same for everyone all day.
     const ids = numbers?.voicedIds ?? [];
@@ -300,7 +212,7 @@ export default async function Home({
       wotd = {
         id: w.id, hanzi: w.hanzi, romanization: w.romanization, headword: w.headword,
         audio: (wRec as any[])?.[0]?.audio_url ?? w.audio_url ?? null,
-        gloss: firstSense<any>(w.senses)?.definition_en ?? null, meta: "",
+        gloss: firstSense<any>(w.senses)?.definition_en ?? null,
       };
       // Rather than an explicit word standing at the top of the home page all
       // day, the module simply sits out; tomorrow's word takes its place.
@@ -313,24 +225,15 @@ export default async function Home({
   const words = tally?.words ?? 0;
   const voiced = tally?.voiced ?? 0;
   const silent = Math.max(0, words - voiced);
-  const modules = [wotd, true, true, top.length > 0].filter(Boolean).length;
+  const modules = [wotd, true, top.length > 0].filter(Boolean).length;
 
   return (
     <div className="-my-10">
       {(searchParams.deleted || searchParams.auth_error) && <div className="pt-6">{notices}</div>}
 
-      {/* Hero. The word for the language itself stands in the empty space to
-          the right at 5% ink, dropped a little below the top so it sits
-          beside the headline rather than above it; on a phone it shrinks and
-          fades further so the headline stays the thing you read. */}
-      <section className="relative pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
-        <span
-          aria-hidden="true"
-          lang="zh-Hant"
-          className="han pointer-events-none absolute -right-2 top-12 select-none whitespace-nowrap text-[clamp(72px,11vw,150px)] font-bold leading-none text-ink opacity-[.05] max-[760px]:top-2 max-[760px]:opacity-[.035]"
-        >
-          福州話
-        </span>
+      {/* Hero, with the name of the language as a watermark (HeroMark). */}
+      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+        <HeroMark />
         <div className="relative">
           <h1 className="display max-w-[24ch] [text-wrap:balance]">{t("hero.1")}</h1>
           <p className="lede read relative mt-6">
@@ -341,68 +244,52 @@ export default async function Home({
         </div>
       </section>
 
-      {/* Search, and the assistant right under it: the two ways of asking
-          the dictionary something, before the page offers anything else. */}
-      <section className="relative">
+      {/* Search. The size of the dictionary sits over the box at the left,
+          where it reads as a label for it; the line under the box is only
+          what to try. */}
+      <section className="relative pb-10">
+        {words > 0 && <p className="footnote mb-2 px-1">{t("hint.count", { n: words.toLocaleString() })}</p>}
         <SearchBar
           signedIn={!!user}
           placeholderFull={t("search.full")}
           placeholderShort={t("search.short")}
           label={t("search.label")}
-          hint={
-            <>
-              {words ? `${t("hint.count", { n: words.toLocaleString() })} ` : ""}
-              {t("hint.try")}
-            </>
-          }
-          after={
-            <Link href="#ask" className="link text-[13px]">
-              {t("ask.link")}
-            </Link>
-          }
+          hint={t("hint.try")}
         />
       </section>
 
-      {/* Assistant */}
-      <section id="ask" className="sec scroll-mt-16">
-        <h2 className="h1">{t("ask.eyebrow")}</h2>
-        <AskSection
-          signedIn={!!user}
-          samples={samples(lang)}
-          s={{
-            own: t("ask.own"),
-            placeholderIn: t("ask.placeholder.in"),
-            placeholderOut: t("ask.placeholder.out"),
-            note: t("ask.note"),
-            btn: t("ask.btn"),
-            example: t("ask.example"),
-            signin: t("ask.signin"),
-            looking: t("ask.looking"),
-          }}
-        />
+      {/* The assistant, straight after search and in a panel of its own, so
+          it reads as the second way to find something rather than a feature
+          at the bottom of the page. Its field is as large as the search box;
+          the panel and the heading are what tell the two apart. */}
+      <section id="ask" className="scroll-mt-20 pb-14">
+        <div className="rounded-sm bg-surface p-6 sm:p-9">
+          <h2 className="h1">{t("ask.eyebrow")}</h2>
+          <p className="mt-2 max-w-[56ch] text-inkSoft [text-wrap:balance]">{t("ask.lede")}</p>
+          <AskSection
+            signedIn={!!user}
+            samples={samples(lang)}
+            s={{
+              label: t("ask.eyebrow"),
+              own: t("ask.own"),
+              placeholderIn: t("ask.placeholder.in"),
+              placeholderOut: t("ask.placeholder.out"),
+              note: t("ask.note"),
+              example: t("ask.example"),
+              signin: t("ask.signin"),
+              looking: t("ask.looking"),
+              gate: t("ask.gate"),
+            }}
+          />
+        </div>
       </section>
+
       <hr className="rule-bleed" />
 
-      {/* Two doors */}
+      {/* Two doors. The paragraphs are balanced so no line is left holding
+          a single word at the widths where the column is narrow. */}
       <section className="sec">
         <div className="grid gap-14 md:grid-cols-2 max-[900px]:gap-11">
-          <div>
-            <p className="eyebrow">{t("nav.learn")}</p>
-            <h2 className="h1 mt-2">
-              {t("door.learn.h1")}
-              <br />
-              {t("door.learn.h2")}
-            </h2>
-            <p className="mt-3 max-w-[34ch] text-inkSoft">{t("door.learn.p")}</p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/learn" className="btn btn-primary">
-                {t("door.learn.btn")}
-              </Link>
-              <Link href="/browse" className="linkq">
-                {t("door.learn.link")}
-              </Link>
-            </div>
-          </div>
           <div>
             <p className="eyebrow">{t("nav.contribute")}</p>
             <h2 className="h1 mt-2">
@@ -410,7 +297,7 @@ export default async function Home({
               <br />
               {t("door.contribute.h2")}
             </h2>
-            <p className="mt-3 max-w-[34ch] text-inkSoft">{t("door.contribute.p")}</p>
+            <p className="mt-3 max-w-[38ch] text-inkSoft [text-wrap:balance]">{t("door.contribute.p")}</p>
             {tally && (
               <p className="mt-4 text-[13px] text-inkSoft">
                 {t("door.contribute.counter", { silent: silent.toLocaleString(), voiced: voiced.toLocaleString() })
@@ -427,46 +314,61 @@ export default async function Home({
               </Link>
             </div>
           </div>
+          <div>
+            <p className="eyebrow">{t("nav.learn")}</p>
+            <h2 className="h1 mt-2">
+              {t("door.learn.h1")}
+              <br />
+              {t("door.learn.h2")}
+            </h2>
+            <p className="mt-3 max-w-[38ch] text-inkSoft [text-wrap:balance]">{t("door.learn.p")}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link href="/learn" className="btn btn-primary">
+                {t("door.learn.btn")}
+              </Link>
+              <Link href="/browse" className="btn btn-ghost">
+                {t("door.learn.link")}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
       <hr className="rule-bleed" />
 
-      {/* Four modules */}
+      {/* Three modules: the word of the day, what people are asking for,
+          and who has given the most. */}
       <section className="sec">
-        <div className={`grid gap-10 max-[900px]:grid-cols-2 max-[760px]:grid-cols-1 ${modules >= 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
+        <div className={`grid gap-10 max-[900px]:grid-cols-2 max-[760px]:grid-cols-1 ${modules >= 3 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+          {/* The word itself is the point of this module, so it is drawn
+              large, and the button is a loudspeaker rather than a play
+              triangle: it plays a sound, not a video. */}
+          {/* The whole card opens the word; the audio button sits above the
+              card's link (z-10), so pressing it plays rather than navigates. */}
           {wotd && (
-            <div className="self-start rounded-sm bg-accentSoft p-5">
-              <h3 className="h3 mb-4">{t("mod.wotd")}</h3>
-              <Link href={`/entry/${wotd.id}`}>
+            <div className="group relative self-start rounded-sm bg-accentSoft p-6">
+              <h3 className="h3 mb-3">{t("mod.wotd")}</h3>
+              <Link
+                href={`/entry/${wotd.id}`}
+                className="block after:absolute after:inset-0 after:content-['']"
+                aria-label={`${t("mod.wotd")}: ${wotd.hanzi ?? ""} ${wotd.romanization || wotd.headword}`}
+              >
                 {wotd.hanzi ? (
-                  <div className="han text-[44px] leading-[1.1]">{wotd.hanzi}</div>
+                  <div className="han text-[72px] font-medium leading-[1.05] transition-colors group-hover:text-lacquer">{wotd.hanzi}</div>
                 ) : (
-                  <div className="text-[32px] font-semibold leading-[1.1] tracking-tight">{wotd.romanization || wotd.headword}</div>
+                  <div className="text-[44px] font-semibold leading-[1.1] tracking-tight transition-colors group-hover:text-lacquer">{wotd.romanization || wotd.headword}</div>
                 )}
               </Link>
-              {wotd.hanzi && <div className="romanization mt-2 text-sm">{wotd.romanization || wotd.headword}</div>}
-              {wotd.gloss && <p className="mt-2 text-sm text-inkSoft">{wotd.gloss}</p>}
-              {wotd.audio && (
-                <div className="mt-4">
-                  <PlayButton src={wotd.audio} size="sm" label={`${t("mod.play")} ${wotd.hanzi || wotd.headword}`} />
-                </div>
-              )}
+              <div className="mt-3 flex items-center gap-3">
+                {wotd.audio && (
+                  <span className="relative z-10">
+                    <PlayButton src={wotd.audio} size="sm" label={`${t("mod.play")} ${wotd.hanzi || wotd.headword}`} />
+                  </span>
+                )}
+                {wotd.hanzi && <span className="romanization text-xl">{wotd.romanization || wotd.headword}</span>}
+              </div>
+              {wotd.gloss && <p className="mt-3 text-[15px] text-inkSoft">{wotd.gloss}</p>}
             </div>
           )}
-
-          <div>
-            <h3 className="h3 mb-4">{t("mod.newest")}</h3>
-            {newest.length ? (
-              newest.map((r) => <Mini key={r.id} r={r} label={`${t("mod.play")} ${r.hanzi || r.headword}`} />)
-            ) : (
-              <p className="text-sm text-inkSoft">
-                {t("mod.noRecordings")}{" "}
-                <Link href="/improve?need=recording" className="link">
-                  {t("mod.beFirst")}
-                </Link>
-              </p>
-            )}
-          </div>
 
           <div>
             <h3 className="h3 mb-4">{t("mod.requested")}</h3>
@@ -506,7 +408,6 @@ export default async function Home({
             <div>
               <h3 className="h3 mb-4">{t("mod.top")}</h3>
               {top.map((p) => {
-                const area = originArea(p.origin_area);
                 return (
                   <Link key={p.id} href={`/contributor/${p.id}`} className="mini group">
                     <Avatar src={p.avatar_url} name={p.display_name} size={36} className="ring-1 ring-rule" />
@@ -516,7 +417,6 @@ export default async function Home({
                       </span>
                       <span className="block text-xs leading-[1.35] text-inkSoft">
                         {p.recordings === 1 ? t("mod.recording") : t("mod.recordings", { n: p.recordings })}
-                        {area ? ` · ${area.label} ${area.hanzi}` : ""}
                       </span>
                     </span>
                   </Link>

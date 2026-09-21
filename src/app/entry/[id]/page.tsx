@@ -18,6 +18,7 @@ import DeleteEntry from "@/components/DeleteEntry";
 import SavedNotice from "@/components/SavedNotice";
 import type { VoteState } from "@/components/VoteButtons";
 import BackLink from "@/components/BackLink";
+import SuggestEdit from "@/components/SuggestEdit";
 import EditLink from "@/components/EditLink";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 
@@ -90,6 +91,7 @@ interface RelatedWord {
   hanzi: string | null;
   romanization: string | null;
   headword: string;
+  senses?: { definition_en: string | null; sort: number | null }[];
 }
 async function relatedWords(
   supabase: ReturnType<typeof createClient>,
@@ -100,7 +102,7 @@ async function relatedWords(
   if (!chars.length) return [];
   const { data } = await supabase
     .from("entries")
-    .select("id, hanzi, romanization, headword")
+    .select("id, hanzi, romanization, headword, senses(definition_en, sort)")
     .eq("status", "approved")
     .neq("id", id)
     .or(chars.map((c) => `hanzi.ilike.%${c}%`).join(","))
@@ -120,7 +122,7 @@ export default async function EntryPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { saved?: string; problem?: string };
+  searchParams: { saved?: string; problem?: string; edit?: string };
 }) {
   const supabase = createClient();
   // None of these depend on each other, so they go out together. Recordings
@@ -205,38 +207,70 @@ export default async function EntryPage({
   );
 
   const senses = sortSenses(entry.senses);
+  // The take the big button at the top plays: the best-liked reading of the
+  // word (up minus down), the earliest when tied; the legacy file otherwise.
+  const bestTake = [...headwordRecs].sort((a, b) => {
+    const va = votes.get(a.id), vb = votes.get(b.id);
+    return (vb ? vb.up - vb.down : 0) - (va ? va.up - va.down : 0);
+  })[0];
+  const topAudio = bestTake?.audio_url ?? entry.audio_url ?? null;
+  const voiceCount = headwordRecs.length + (entry.audio_url ? 1 : 0);
   const contributor = one(entry.contributor);
   const credit = contributor?.display_name ?? undefined;
   const wordOrigin = formatOrigin(entry.origin_area, entry.origin_locality);
 
   return (
-    <article className="space-y-7">
+    <article className="space-y-9">
       <BackLink
         fallback="/"
         fallbackLabel="← Back to search"
         className="meta text-inkFaint hover:text-lacquer"
       />
 
-      <header className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-rule pb-5">
-        {entry.hanzi && <h1 className="font-display text-6xl font-extrabold leading-none">{entry.hanzi}</h1>}
-        <span className="romanization font-display text-3xl font-semibold text-lacquer">
-          {entry.romanization || entry.headword}
-        </span>
-        {entry.ipa && <span className="text-inkFaint">/{entry.ipa}/</span>}
-        {/* && binds tighter than ?: — the old form fell into the else branch
-            and drew an empty bordered pill on every entry with no origin. */}
-        {wordOrigin && entry.origin_area ? (
-          <Link
-            href={`/browse?origin=${encodeURIComponent(entry.origin_area)}`}
-            className="meta text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
-          >
-            {wordOrigin}
-          </Link>
-        ) : entry.variety ? (
-          <span className="meta text-inkSoft ring-1 ring-rule px-2 py-1">
-            {entry.variety}
-          </span>
-        ) : null}
+      {/* The word, how it is said, and the best take to hear it — then the
+          meaning straight after. A visitor from search came for the answer;
+          the invitation to record comes once they have it (Impeccable
+          critique, 21 Sep 2026). */}
+      <header className="border-b border-rule pb-6">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          {entry.hanzi ? (
+            <h1 className="han text-[clamp(48px,9vw,72px)] font-bold leading-none">{entry.hanzi}</h1>
+          ) : null}
+          <div className="flex items-center gap-4">
+            {topAudio && (
+              <PlayButton src={topAudio} size="lg" label={`${entryTitle(entry)}, said aloud`} />
+            )}
+            {entry.hanzi ? (
+              <span className="romanization text-3xl font-semibold text-lacquer">
+                {entry.romanization || entry.headword}
+              </span>
+            ) : (
+              <h1 className="romanization text-4xl font-semibold text-lacquer">
+                {entry.romanization || entry.headword}
+              </h1>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {entry.ipa && <span className="text-inkSoft">/{entry.ipa}/</span>}
+          {/* && binds tighter than ?: — the old form fell into the else branch
+              and drew an empty bordered pill on every entry with no origin. */}
+          {wordOrigin && entry.origin_area ? (
+            <Link
+              href={`/browse?origin=${encodeURIComponent(entry.origin_area)}`}
+              className="meta text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
+            >
+              {wordOrigin}
+            </Link>
+          ) : entry.variety ? (
+            <span className="meta text-inkSoft ring-1 ring-rule px-2 py-1">{entry.variety}</span>
+          ) : null}
+          {voiceCount > 0 && (
+            <a href="#recordings" className="meta text-inkSoft hover:text-lacquer">
+              {voiceCount === 1 ? "1 recording" : `${voiceCount} recordings`} ↓
+            </a>
+          )}
+        </div>
       </header>
 
       {(searchParams.saved || searchParams.problem) && (
@@ -249,7 +283,46 @@ export default async function EntryPage({
         </p>
       )}
 
-      <section id="recordings" className="scroll-mt-20 space-y-3">
+      <ol className="space-y-6">
+        {senses.map((s, i) => (
+          <li key={s.id} className="border-l-2 border-lacquer pl-5">
+            {s.part_of_speech && (
+              <div className="meta italic text-lacquer">{s.part_of_speech}</div>
+            )}
+            {/* Numbered only when there is more than one, so "1." says at a
+                glance that another meaning follows. */}
+            <p className={s.part_of_speech ? "mt-1 text-lg" : "text-lg"}>
+              {senses.length > 1 && <span className="mr-1.5 tabular-nums text-inkMute">{i + 1}.</span>}
+              {s.definition_en}
+            </p>
+            {s.gloss_zh && <p className="text-inkSoft">中文：{s.gloss_zh}</p>}
+            {s.example && (
+              <p className="mt-1 text-sm">
+                <span className="romanization text-inkSoft">{s.example}</span>
+                {s.example_gloss && <span className="text-inkFaint">—{s.example_gloss}</span>}
+              </p>
+            )}
+            {s.example && (
+              <div className="mt-2 space-y-2">
+                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} fallback={s.example_gloss ?? null} />
+                {user && !capped && (
+                  <Recorder
+                    userId={user.id}
+                    entryId={entry.id}
+                    isEditor={canDelete}
+                    kind="example"
+                    senseId={s.id}
+                    label="Read this sentence aloud"
+                  />
+                )}
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      <section id="recordings" className="scroll-mt-20 space-y-4">
+        <h2 className="meta text-inkFaint">{voiceCount ? "Recordings" : "Say this word"}</h2>
         {/* the legacy single-file column still plays, if it holds anything */}
         {entry.audio_url && (
           <div className="flex items-center gap-3">
@@ -260,7 +333,7 @@ export default async function EntryPage({
           </div>
         )}
 
-        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} />
+        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} fallback={senses[0]?.definition_en ?? null} />
 
         {/* The recorder is for everyone. A signed-out visitor records first
             and is asked to sign in only when they choose a take; the take is
@@ -305,55 +378,56 @@ export default async function EntryPage({
         </div>
       </section>
 
-      <ol className="space-y-5">
-        {senses.map((s, i) => (
-          <li key={s.id} className="border-l-2 border-lacquer pl-5">
-            <div className="flex items-baseline gap-2 meta text-inkFaint">
-              <span className="tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-              {s.part_of_speech && <span className="italic text-lacquer">{s.part_of_speech}</span>}
-            </div>
-            <p className="mt-1 text-lg">{s.definition_en}</p>
-            {s.gloss_zh && <p className="text-inkSoft">中文：{s.gloss_zh}</p>}
-            {s.example && (
-              <p className="mt-1 text-sm">
-                <span className="romanization text-inkSoft">{s.example}</span>
-                {s.example_gloss && <span className="text-inkFaint">—{s.example_gloss}</span>}
-              </p>
-            )}
-            {s.example && (
-              <div className="mt-2 space-y-2">
-                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} />
-                {user && !capped && (
-                  <Recorder
-                    userId={user.id}
-                    entryId={entry.id}
-                    isEditor={canDelete}
-                    kind="example"
-                    senseId={s.id}
-                    label="Read this sentence aloud"
-                  />
-                )}
-              </div>
-            )}
-          </li>
-        ))}
-      </ol>
-
       {related.length > 0 && (
         <section className="space-y-2">
           <h2 className="meta text-inkFaint">Related words</h2>
-          <ul className="flex flex-wrap gap-2">
-            {related.map((r) => (
-              <li key={r.id}>
-                <Link
-                  href={`/entry/${r.id}`}
-                  className="inline-flex items-baseline gap-1.5 border border-rule px-2.5 py-1 text-[13px] transition-colors hover:border-lacquer hover:text-lacquer"
-                >
-                  {r.hanzi && <span className="font-display font-semibold">{r.hanzi}</span>}
-                  <span className="romanization text-inkSoft">{r.romanization || r.headword}</span>
-                </Link>
-              </li>
-            ))}
+          {/* Hovering (or tabbing to) a word shows what it means. The panel
+              is anchored to the row, not the chip, and dropped below it, so
+              it stays inside the column however the chips wrap — the same
+              rule as the filter tips on Browse. */}
+          <ul className="relative flex flex-wrap gap-2">
+            {related.map((r) => {
+              const meanings = sortSenses(r.senses)
+                .map((m) => (m.definition_en ?? "").trim())
+                .filter(Boolean);
+              return (
+                <li key={r.id} className="tip-host group">
+                  <Link
+                    href={`/entry/${r.id}`}
+                    className="inline-flex items-baseline gap-1.5 border border-rule px-2.5 py-1 text-[13px] transition-colors hover:border-lacquer hover:text-lacquer"
+                  >
+                    {r.hanzi && <span className="font-display font-semibold">{r.hanzi}</span>}
+                    <span className="romanization text-inkSoft">{r.romanization || r.headword}</span>
+                  </Link>
+                  {meanings.length > 0 && (
+                    <div
+                      role="tooltip"
+                      className="tip pointer-events-none invisible absolute left-0 top-[calc(100%+8px)] z-30 w-max max-w-[min(20rem,calc(100vw-2rem))] border border-ruleStrong bg-paper px-3 py-2.5 text-[13px] leading-snug text-inkSoft opacity-0 shadow-[0_2px_10px_rgb(0_0_0/.09)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+                    >
+                      <p className="mb-1 text-ink">
+                        {r.hanzi && <span className="font-display font-semibold">{r.hanzi} </span>}
+                        <span className="romanization">{r.romanization || r.headword}</span>
+                        {meanings.length > 1 && (
+                          <span className="meta ml-2 text-inkFaint">{meanings.length} meanings</span>
+                        )}
+                      </p>
+                      {meanings.length === 1 ? (
+                        <p>{meanings[0]}</p>
+                      ) : (
+                        <ol className="space-y-0.5">
+                          {meanings.slice(0, 4).map((m, i) => (
+                            <li key={i}>
+                              <span className="tabular-nums text-inkMute">{i + 1}.</span> {m}
+                            </li>
+                          ))}
+                          {meanings.length > 4 && <li className="text-inkMute">and {meanings.length - 4} more</li>}
+                        </ol>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
@@ -403,12 +477,6 @@ export default async function EntryPage({
           {/* Anyone can flag an entry; the terms say what happens next. The
               subject carries the page so the report is usable as sent. */}
           <a
-            href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Suggested edit: ${entryTitle(entry)} (${SITE_URL}${here})`)}&body=${encodeURIComponent("What should change, and why:\n\n")}`}
-            className="meta text-inkFaint hover:text-lacquer"
-          >
-            Suggest an edit
-          </a>
-          <a
             href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Report: ${entryTitle(entry)} (${SITE_URL}${here})`)}`}
             className="meta text-inkFaint hover:text-lacquer"
           >
@@ -426,6 +494,8 @@ export default async function EntryPage({
         )}
         </span>
       </div>
+
+      <SuggestEdit entryId={entry.id} signedIn={Boolean(user)} status={searchParams.edit} />
     </article>
   );
 }

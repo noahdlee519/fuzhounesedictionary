@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/* Three chips under "How it works" — Features, Orthography, Sources — each
-   opening one panel. One panel at a time; the first is open on arrival;
-   pressing the open one folds it away. The panel bodies are server-rendered
+/* Three folder tabs under "How it works" — Features, Orthography, Sources —
+   each showing one panel. One panel at a time; the first is open on arrival. The panel bodies are server-rendered
    and handed in as children, so this file holds only the switch. */
 
 const NO_ANCHORS: Record<string, string> = {};
@@ -28,13 +27,19 @@ export default function LearnPanels({
    *  JavaScript runs). */
   initial?: string;
 }) {
-  const known = (k?: string | null) => (k && panels.some((p) => p.key === k) ? k : null);
+  // The Sources tab's key is "reading" (older links use it); "sources", the
+  // name on the tab, opens it too.
+  const ALIASES: Record<string, string> = { sources: "reading" };
+  const known = (k?: string | null) => {
+    const key = k ? ALIASES[k] ?? k : null;
+    return key && panels.some((p) => p.key === key) ? key : null;
+  };
   const [open, setOpen] = useState<string | null>(known(initial) ?? panels[0]?.key ?? null);
 
   /* Keep the address in step, so the panel someone is reading is what they
      copy and share. replaceState rather than a navigation: no history entry,
      no re-render, and the hash is dropped since it named the old panel. */
-  const choose = (key: string | null) => {
+  const choose = (key: string) => {
     setOpen(key);
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
@@ -81,9 +86,13 @@ export default function LearnPanels({
     return () => window.removeEventListener("hashchange", follow);
   }, [anchors]);
 
+  /* Folder tabs: the open tab shares the panel's background and has no
+     bottom edge, and it sits one pixel over the panel's top border, so the
+     tab and the page below it read as one sheet. The closed tabs sit behind,
+     a shade darker. One is always open — a folder does not close. */
   return (
-    <section ref={top} className="scroll-mt-20 space-y-6">
-      <div role="tablist" aria-label="About Fuzhounese" className="flex flex-wrap gap-2">
+    <section ref={top} className="scroll-mt-20">
+      <div role="tablist" aria-label="About Fuzhounese" className="relative z-10 -mb-px flex gap-1">
         {panels.map((p) => {
           const active = p.key === open;
           return (
@@ -93,10 +102,14 @@ export default function LearnPanels({
               role="tab"
               id={`tab-${p.key}`}
               aria-selected={active}
-              aria-expanded={active}
               aria-controls={`panel-${p.key}`}
-              onClick={() => choose(active ? null : p.key)}
-              className={"chip" + (active ? " chip-on" : "")}
+              onClick={() => choose(p.key)}
+              className={
+                "ui min-w-0 rounded-t-sm border border-rule px-4 py-2.5 text-sm font-medium transition-colors active:bg-surface sm:px-5 " +
+                (active
+                  ? "border-b-surface bg-surface text-ink"
+                  : "bg-surface2 text-inkSoft hover:text-ink")
+              }
             >
               {p.label}
             </button>
@@ -110,7 +123,7 @@ export default function LearnPanels({
           role="tabpanel"
           id={`panel-${current.key}`}
           aria-labelledby={`tab-${current.key}`}
-          className="page-fade space-y-5 rounded-sm border border-rule bg-surface p-5 sm:p-7"
+          className="space-y-8 rounded-b-sm rounded-tr-sm border border-rule bg-surface p-5 sm:p-8"
         >
           {current.body}
 

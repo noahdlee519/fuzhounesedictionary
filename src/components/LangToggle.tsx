@@ -49,7 +49,7 @@ export default function LangToggle({ lang, className = "" }: { lang: Lang; class
         onClick={() => choose(other)}
         lang={other === "zh" ? "zh-Hant" : "en"}
         aria-label={other === "zh" ? "切換到中文" : "Switch to English"}
-        className={`ui inline-flex h-8 items-center rounded-sm border border-ruleStrong px-2.5 text-xs font-semibold text-inkSoft transition-colors hover:text-ink lg:hidden ${className}`}
+        className={`tap-sq ui inline-flex h-8 items-center rounded-sm border border-ruleStrong px-2.5 text-xs font-semibold text-inkSoft transition-colors hover:text-ink lg:hidden ${className}`}
       >
         {other === "zh" ? "中文" : "EN"}
       </button>

@@ -86,9 +86,22 @@ function Section({
   );
 }
 
-export const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) => (
-  <div className="overflow-x-auto">
-    <table className="w-full min-w-[32rem] border-collapse text-left text-[15px]">
+/* A wide table scrolls sideways on a phone. The `.scroll-x` shadows are what
+   say so: a soft edge appears on whichever side has more, and goes when you
+   reach it. Without them the consonant table at 390px looked cut off at two
+   of its four columns, under a sentence that says there are three cases. */
+/* `widths` fixes the columns, so tables stacked one under another (the
+   consonants, vowels and endings) line their columns up. */
+export const Table = ({ head, rows, widths }: { head: string[]; rows: React.ReactNode[][]; widths?: string[] }) => (
+  <div className="scroll-x overflow-x-auto">
+    <table className={`w-full min-w-[32rem] border-collapse text-left text-[15px] ${widths ? "table-fixed" : ""}`}>
+      {widths && (
+        <colgroup>
+          {widths.map((w, i) => (
+            <col key={i} style={{ width: w }} />
+          ))}
+        </colgroup>
+      )}
       <thead>
         <tr>
           {head.map((h, i) => (
@@ -125,23 +138,25 @@ export const Table = ({ head, rows }: { head: string[]; rows: React.ReactNode[][
 const TONES: {
   name?: string; pitch: string; levels: number[]; short?: boolean; extra?: boolean;
   han?: string; buc?: string;
+  /** what the example word means, in English */
+  en?: string;
   /** the romanization is a dictionary entry in tone digits, not a reconstructed mark */
   cited?: boolean;
 }[] = [
-  { name: "陰平", pitch: "44", levels: [4, 4], han: "天", buc: "tiĕng" },
-  { name: "陽平", pitch: "53", levels: [5, 3], han: "儂", buc: "nè̤ng" },
-  { name: "上聲", pitch: "31", levels: [3, 1], han: "我", buc: "nguāi" },
-  { name: "陰去", pitch: "213", levels: [2, 1, 3], han: "四", buc: "sé" },
-  { name: "陽去", pitch: "242", levels: [2, 4, 2], han: "二", buc: "nê" },
-  { name: "陰入", pitch: "23", levels: [2, 3], short: true, han: "福", buc: "hók" },
-  { name: "陽入", pitch: "5", levels: [5, 5], short: true, han: "日", buc: "nĭk" },
+  { name: "陰平", pitch: "44", levels: [4, 4], han: "天", buc: "tiĕng", en: "sky" },
+  { name: "陽平", pitch: "53", levels: [5, 3], han: "儂", buc: "nè̤ng", en: "person" },
+  { name: "上聲", pitch: "31", levels: [3, 1], han: "我", buc: "nguāi", en: "I, me" },
+  { name: "陰去", pitch: "213", levels: [2, 1, 3], han: "四", buc: "sé", en: "four" },
+  { name: "陽去", pitch: "242", levels: [2, 4, 2], han: "二", buc: "nê", en: "two" },
+  { name: "陰入", pitch: "23", levels: [2, 3], short: true, han: "福", buc: "hók", en: "good fortune" },
+  { name: "陽入", pitch: "5", levels: [5, 5], short: true, han: "日", buc: "nĭk", en: "day, sun" },
   // The eighth is one of the two tones (21 / 24) that only surface inside a
   // word, so its example is the first syllable of a two-syllable entry: 八 is
   // baik on its own and 21 at the front of 八音. It replaced 二八天, which
   // showed the same thing but has no entry here — an example a reader cannot
   // look up is not much of an example. 八音 is in the dictionary, from the
   // same printed source, and it happens to mean "the eight tones".
-  { pitch: "21", levels: [2, 1], extra: true, han: "八音", buc: "beik21 ing44", cited: true },
+  { pitch: "21", levels: [2, 1], extra: true, han: "八音", buc: "beik21 ing44", en: "the eight tones", cited: true },
 ];
 
 function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean; extra?: boolean }) {
@@ -194,11 +209,11 @@ function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean; extra
 }
 
 export const ToneChart = () => (
-  <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
+  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
     {TONES.map((t) => (
       <figure
         key={t.pitch}
-        className="border border-rule bg-surface p-3"
+        className="border border-rule bg-paper p-3.5"
       >
         <div className="text-rule">
           <ToneGlyph levels={t.levels} short={t.short} extra={t.extra} />
@@ -228,6 +243,7 @@ export const ToneChart = () => (
             )}
           </div>
         )}
+        {t.en && <p className="mt-0.5 text-[13px] italic leading-snug text-inkSoft">{t.en}</p>}
       </figure>
     ))}
   </div>

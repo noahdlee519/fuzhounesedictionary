@@ -1,6 +1,8 @@
 import Link from "next/link";
+import HeroMark from "@/components/HeroMark";
 import { redirect } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
+import FilterPanel from "@/components/FilterPanel";
 import SearchBar from "@/components/SearchBar";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -164,7 +166,7 @@ export default async function BrowsePage({
   const englishQuery = () => {
     let q = supabase
       .from("senses")
-      .select("definition_en, part_of_speech, entry:entries!inner(id, hanzi, romanization, headword, audio_url, origin_area)", { count: "exact" })
+      .select("definition_en, part_of_speech, sort, entry:entries!inner(id, hanzi, romanization, headword, audio_url, origin_area)", { count: "exact" })
       .eq("entry.status", "approved");
     /* Which meaning stands for the word here. With no part-of-speech filter
        it is the first one, so the list is one row per word. With a filter it
@@ -213,7 +215,7 @@ export default async function BrowsePage({
     // the first — the one the sort put here — is the one that is kept.
     const seen = new Set<string>();
     const rows = ((data ?? []) as any[])
-      .map((r) => ({ ...one<any>(r.entry), senses: [{ definition_en: r.definition_en, part_of_speech: r.part_of_speech, sort: 0 }] }))
+      .map((r) => ({ ...one<any>(r.entry), senses: [{ definition_en: r.definition_en, part_of_speech: r.part_of_speech, sort: r.sort ?? 0 }] }))
       .filter((e) => e.id && !seen.has(e.id) && seen.add(e.id));
     entries = await toCards(supabase, rows);
     total = (entryCount as any)?.count ?? 0;
@@ -295,7 +297,8 @@ export default async function BrowsePage({
   return (
     <div className="-my-10">
       {/* Hero, in the same shape as Learn, Contribute and About. */}
-      <section className="pb-12 pt-20 max-[760px]:pb-8 max-[760px]:pt-11">
+      <section className="relative isolate pb-12 pt-20 max-[760px]:pb-8 max-[760px]:pt-11">
+        <HeroMark />
         <p className="eyebrow">{t("nav.browse")}</p>
         <h1 className="display mt-2">{t("browse.h")}</h1>
         <p className="lede read mt-6">{t("browse.lede")}</p>
@@ -309,25 +312,43 @@ export default async function BrowsePage({
         className="scroll-mt-3 space-y-8 py-12 max-[760px]:py-8"
       >
       {/* The same search as the home page, here because this is where people
-          arrive looking for a word. It submits to the home page's results. */}
-      <SearchBar focus={false} id="browse-search" signedIn={Boolean(user)} />
+          arrive looking for a word. It submits to the home page's results.
+          "Ask the assistant" beside it folds the assistant open and shut. */}
+      <SearchBar
+        focus={false}
+        id="browse-search"
+        signedIn={Boolean(user)}
+        assistant
+        placeholderFull={t("search.full")}
+        placeholderShort={t("search.short")}
+        label={t("search.label")}
+      />
 
+      {/* On a phone, behind one "Filters" button (FilterPanel); wider, as is. */}
+      <FilterPanel summary={[pos, origin ? originArea(origin)!.label : ""].filter(Boolean).join(" · ")}>
       <div className="space-y-2">
-        <p className="meta text-inkFaint">Part of speech</p>
-        {/* relative: the info panels are positioned against this row, so they
-            stay inside the content column however the chips wrap */}
-        <div className="relative flex flex-wrap gap-2">
-          {chip("All", hrefWith({ pos: "" }), !pos)}
-          {POS_CHIPS.map((p) =>
-            chip(p, hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p))
-          )}
-        </div>
+        {/* Both filters fold away, open by default — the same <details> idiom
+            as the guide sections, so they need no JavaScript. A chosen filter
+            still shows in the count line below even when its row is folded. */}
+        <details open className="group/pos">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 meta text-inkFaint marker:content-none hover:text-lacquer [&::-webkit-details-marker]:hidden">
+            Part of speech
+            <span aria-hidden className="text-[10px] transition-transform group-open/pos:rotate-90">
+              &#9656;
+            </span>
+          </summary>
+          {/* relative: the info panels are positioned against this row, so they
+              stay inside the content column however the chips wrap */}
+          <div className="relative mt-2 flex flex-wrap gap-2">
+            {chip("All", hrefWith({ pos: "" }), !pos)}
+            {POS_CHIPS.map((p) =>
+              chip(p, hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p))
+            )}
+          </div>
+        </details>
 
-        {/* Collapsible, open by default — the same <details> idiom as the guide
-            sections, so it needs no JavaScript. A chosen origin still shows in
-            the count line above even when this is folded away. */}
         <details open className="group pt-2">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 meta text-inkFaint marker:content-none hover:text-lacquer">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 meta text-inkFaint marker:content-none hover:text-lacquer [&::-webkit-details-marker]:hidden">
             Origin
             <span
               aria-hidden
@@ -349,6 +370,7 @@ export default async function BrowsePage({
           </div>
         </details>
       </div>
+      </FilterPanel>
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <div className="flex flex-wrap items-center gap-2">

@@ -14,6 +14,9 @@ export interface CardProps {
   /** How many meanings the word has. Above one, the card says so, because
    *  the gloss it shows is only the meaning that matched the search. */
   senses?: number;
+  /** Which meaning the gloss is, counting from 1: shown before it when the
+   *  word has more than one, so the number itself says there are others. */
+  senseNo?: number;
   /** A line under the gloss: who read it and where, on the home page feed. */
   caption?: string;
   /** Where the word is from, for the card's footer. */
@@ -36,7 +39,7 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
   const href = `/entry/${entry.id}`;
 
   return (
-    <div className="relative flex min-h-[150px] gap-3 bg-paper p-5 transition-colors hover:bg-surface2">
+    <div className="relative flex gap-3 bg-paper p-4 transition-colors hover:bg-surface2 sm:min-h-[150px] sm:p-5">
       <Link href={href} className="min-w-0 flex-1 after:absolute after:inset-0 after:content-['']">
         {entry.hanzi ? (
           <div className="han text-[32px] font-medium leading-[1.15]">{entry.hanzi}</div>
@@ -48,6 +51,7 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
         )}
         {entry.gloss && (
           <p className="mt-1.5 line-clamp-2 text-[13px] text-inkSoft">
+            {(entry.senses ?? 0) > 1 && <span className="tabular-nums text-inkMute">{entry.senseNo ?? 1}. </span>}
             {entry.gloss}
             {(entry.senses ?? 0) > 1 && <span className="text-inkMute"> · {entry.senses} meanings</span>}
           </p>

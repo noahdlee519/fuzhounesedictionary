@@ -6,11 +6,19 @@
    Tokens. Adopted 9 Sep 2026 from the "type-focused" mock-up: white ground,
    near-black type, two greys for hierarchy, hairline rules, one red. The old
    names (paper, ink, ink-soft, rule, lacquer…) are kept so every page keeps
-   working; only the values changed. `ink-faint` stays at the darker grey
-   (4.6:1 on white) because it is used on 11–12px labels; `ink-mute` is the
-   mock-up's lighter grey, for decoration and text of 14px and up only.
+   working; only the values changed. `ink-faint` is the darker grey (5.1:1
+   on white), used on 11–12px labels. `ink-mute` is the lighter one, and it
+   is the lightest grey that still passes AA for body text: 4.5:1 on white.
+   It was #8E8E93 (3.3:1) until 21 Sep 2026, on the theory that it was only
+   for decoration — but it was on every hint, caption and footer line, and
+   an automated check found it on nineteen. Dark mode's value already passed.
    --------------------------------------------------------------------------- */
 :root {
+  /* Motion (Emil Kowalski's curves): a strong ease-out for anything that
+     responds to the user, ease-in-out for something moving on screen. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
   color-scheme: light dark;
 
   --paper:        #FFFFFF;
@@ -19,14 +27,14 @@
   --ink:          #1D1D1F;
   --ink-soft:     #6E6E73;
   --ink-faint:    #6E6E73;
-  --ink-mute:     #8E8E93;
+  --ink-mute:     #76767B;
   --rule:         rgba(0, 0, 0, .08);
   --rule-strong:  rgba(0, 0, 0, .14);
   --lacquer:      #C5311D;
   --lacquer-ink:  #FFFFFF;
   --lacquer-soft: rgba(197, 49, 29, .10);
   --green:        #2E7D4F;
-  --amber:        #B7791F;
+  --amber:        #9A6414; /* was #B7791F, 3.6:1 on white; now 5:1 */
   --shadow:       0 12px 40px rgba(0, 0, 0, .12);
 }
 
@@ -147,17 +155,20 @@ body {
   .lede { font-size: 21px; line-height: 1.45; color: var(--ink-soft); }
   @media (max-width: 760px) { .lede { font-size: 18px; } }
   .footnote { font-size: 13px; color: var(--ink-mute); line-height: 1.5; }
+  /* --ink-mute clears 4.5:1 on paper but not on the grey panels (4.1:1 on
+     --surface, flagged by Impeccable), so a footnote on a panel steps up a shade. */
+  .bg-surface .footnote { color: var(--ink-soft); }
 
   .btn { font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px;
     border-radius: 2px; border: 1px solid transparent; font-size: 15px; font-weight: 700;
     cursor: pointer; background: none; white-space: nowrap; text-align: center;
-    transition: transform .12s ease, background .16s ease, opacity .16s ease, border-color .16s ease; }
-  .btn:active { transform: scale(.98); }
+    transition: transform 160ms var(--ease-out), background .16s ease, opacity .16s ease, border-color .16s ease; }
+  .btn:active { transform: scale(.97); }
   .btn-primary { background: var(--lacquer); color: var(--lacquer-ink); }
-  .btn-primary:hover { opacity: .9; }
+  @media (hover: hover) and (pointer: fine) { .btn-primary:hover { opacity: .9; } }
   .btn-ghost { border-color: var(--ink); color: var(--ink); }
-  .btn-ghost:hover { background: var(--surface); }
+  @media (hover: hover) and (pointer: fine) { .btn-ghost:hover { background: var(--surface); } }
   .btn-sm { min-height: 36px; padding: 0 14px; font-size: 13px; }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
 
@@ -167,10 +178,11 @@ body {
   .linkq:hover { color: var(--ink); }
 
   .chip { font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif;
-    display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 2px;
+    display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 2px;
     border: 1px solid var(--rule-strong); background: none; font-size: 15px; font-weight: 400; color: var(--ink-soft);
-    white-space: nowrap; cursor: pointer; transition: color .12s ease, border-color .12s ease; }
-  .chip:hover { color: var(--ink); border-color: var(--ink-mute); }
+    white-space: nowrap; cursor: pointer; transition: color .12s ease, border-color .12s ease, transform 160ms var(--ease-out); }
+  .chip:active { transform: scale(.97); }
+  @media (hover: hover) and (pointer: fine) { .chip:hover { color: var(--ink); border-color: var(--ink-mute); } }
   .chip-on, .chip[aria-pressed="true"], .chip[aria-current] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .chip-on:hover { color: var(--paper); }
 
@@ -394,3 +406,61 @@ input[type="search"]::-webkit-search-decoration {
 @media (max-width: 767px) {
   html [id] { scroll-margin-top: 7rem; }
 }
+
+/* Scroll shadows for a sideways-scrolling table. Two backgrounds scroll with
+   the content (they are the "covers" that sit over the edges when you are
+   at them) and two stay put (the shadows). At the start, the left cover hides
+   the left shadow; scroll, and it moves away, and the shadow shows. No
+   JavaScript, and nothing at all when the table fits. */
+.scroll-x {
+  /* The covers must match whatever the table sits on, or they show as a
+     pale band; a grey panel sets --scroll-bg to its own colour. */
+  --scroll-bg: var(--paper);
+  background:
+    linear-gradient(to right, var(--scroll-bg) 30%, transparent),
+    linear-gradient(to left, var(--scroll-bg) 30%, transparent) 100% 0,
+    linear-gradient(to right, rgba(0, 0, 0, .14), rgba(0, 0, 0, 0)),
+    linear-gradient(to left, rgba(0, 0, 0, .14), rgba(0, 0, 0, 0)) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+.bg-surface .scroll-x { --scroll-bg: var(--surface); }
+
+/* The navigation bar (NavProgress): one continuous deceleration towards 90%,
+   where it waits for the page. One from/to pair so the curve runs once — with
+   more stops it re-ran per segment and the bar surged in bursts. */
+@keyframes nav-progress { from { transform: scaleX(0); } to { transform: scaleX(.9); } }
+.nav-progress-run { animation: nav-progress 8s var(--ease-out) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress-run { animation: none; transform: scaleX(.6); }
+}
+
+/* A small spinning ring for work that takes a moment: the assistant thinking. */
+.spinner { display: inline-block; width: 1em; height: 1em; border-radius: 9999px;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: spin .7s linear infinite; vertical-align: -0.125em; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } }
+
+/* Touch targets. On a finger (coarse pointer) every small control in the
+   header, and every filter chip, gets at least 44px to hit — the Impeccable
+   review measured the nav links at 29px, the toggles and Sign in at 32px,
+   the chips at 37px. A mouse keeps the compact sizes. */
+@media (pointer: coarse) {
+  .tap { min-height: 44px !important; } /* beats Sign in's !min-h-[32px] */
+  .tap-sq { min-height: 44px; min-width: 44px; }
+  .chip { min-height: 44px; }
+}
+
+/* A theme switch changes every colour at once. Without this, the elements
+   that carry a hover transition fade on their own clocks while the rest snap,
+   and grey boxes float on a black page for a moment. ThemeToggle adds the
+   class for one frame around the switch. */
+html.no-tx *, html.no-tx *::before, html.no-tx *::after { transition: none !important; }
+
+/* Hover tips (related words): a short wait before one opens, so a pointer
+   passing over does not flash a panel; closing is immediate. */
+.tip { transition: opacity 125ms var(--ease-out), visibility 0s linear 125ms; }
+.tip-host:hover .tip { transition: opacity 125ms var(--ease-out) 250ms, visibility 0s linear 250ms; }
+.tip-host:focus-within .tip { transition: opacity 125ms var(--ease-out); }

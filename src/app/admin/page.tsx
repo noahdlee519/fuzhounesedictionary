@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 const chip =
   "meta text-inkSoft ring-1 ring-rule px-2 py-0.5";
 const btn =
-  "border px-4 py-1.5 meta transition-colors";
+  "border px-4 py-1.5 meta transition-[color,background-color,border-color,transform] active:scale-[.97]";
 
 export default async function AdminPage() {
   const { user, profile } = await getSessionUser();
@@ -169,7 +169,7 @@ export default async function AdminPage() {
                     >
                       {e?.romanization || e?.headword}
                     </Link>
-                    <span className={chip}>{s.kind}</span>
+                    <span className={chip}>{s.kind === "edit" ? "suggested edit" : s.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto meta text-inkFaint">
                       {formatDateTime(s.created_at)}
@@ -178,7 +178,7 @@ export default async function AdminPage() {
                   </div>
 
                   <div className="mt-3 border-l-2 border-lacquer pl-3">
-                    <p className={s.kind === "ipa" ? "text-lg" : "text-lg"}>{s.value}</p>
+                    <p className={s.kind === "edit" ? "whitespace-pre-line" : "text-lg"}>{s.value}</p>
                     {s.value_gloss && <p className="text-sm text-inkSoft">{s.value_gloss}</p>}
                     {sense?.definition_en && (
                       <p className="mt-1 meta text-inkFaint">
@@ -192,9 +192,16 @@ export default async function AdminPage() {
                       <input type="hidden" name="id" value={s.id} />
                       <input type="hidden" name="entry_id" value={s.entry_id} />
                       <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer disabled:opacity-60`}>
-                        ✓ Publish
+                        {/* An edit is made by hand in the entry editor;
+                            approving it only marks it done. */}
+                        {s.kind === "edit" ? "✓ Done" : "✓ Publish"}
                       </SubmitButton>
                     </form>
+                    {s.kind === "edit" && (
+                      <Link href={`/admin/edit/${s.entry_id}`} className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+                        Edit the entry
+                      </Link>
+                    )}
                     <form action={rejectSuggestion} className="flex items-center gap-2">
                       <input type="hidden" name="id" value={s.id} />
                       <input type="hidden" name="entry_id" value={s.entry_id} />

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import HeroMark from "@/components/HeroMark";
 import type { Metadata } from "next";
 import Avatar from "@/components/Avatar";
+import ContributeIcon from "@/components/ContributeIcon";
 import { createClient } from "@/lib/supabase/server";
 import { one } from "@/lib/entries";
 import { topContributors, type TopContributor } from "@/lib/public-stats";
@@ -166,10 +168,11 @@ export default async function ContributePage() {
   return (
     <div className="-my-10">
       {/* Hero */}
-      <section className="pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+        <HeroMark />
         <p className="eyebrow">{t("nav.contribute")}</p>
         <h1 className="display mt-2 max-w-[18ch] [text-wrap:balance]">{t("hub.h")}</h1>
-        <p className="lede read mt-6">{t("hub.lede")}</p>
+        <p className="lede read mt-6 [text-wrap:pretty]">{t("hub.lede")}</p>
       </section>
       <hr className="rule-bleed" />
 
@@ -177,13 +180,19 @@ export default async function ContributePage() {
       <section className="sec">
         <div className="grid gap-x-12 md:grid-cols-2">
           {WAYS.map((w) => (
-            <Link key={w.key} href={w.href} className="group block border-b border-rule py-5">
-              <p className="eyebrow inline-flex items-center gap-1.5">
-                <Clock className="h-3 w-3 shrink-0 opacity-70" />
-                {t(`hub.${w.key}.time` as Key)}
-              </p>
-              <h2 className="h3 mt-2 text-lacquer transition-opacity group-hover:opacity-80">{t(`hub.${w.key}.h` as Key)}</h2>
-              <p className="mt-2 max-w-[44ch] text-sm leading-relaxed text-inkSoft">{t(`hub.${w.key}.p` as Key)}</p>
+            <Link key={w.key} href={w.href} className="group flex items-start gap-4 border-b border-rule py-5">
+              {/* The action's icon, the same one its sign-in box carries. */}
+              <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accentSoft text-lacquer transition-colors group-hover:bg-lacquer group-hover:text-paper">
+                <ContributeIcon kind={w.key} className="h-[22px] w-[22px]" />
+              </span>
+              <span className="min-w-0">
+                <span className="eyebrow inline-flex items-center gap-1.5">
+                  <Clock className="h-3 w-3 shrink-0 opacity-70" />
+                  {t(`hub.${w.key}.time` as Key)}
+                </span>
+                <h2 className="h3 mt-1 text-lacquer">{t(`hub.${w.key}.h` as Key)}</h2>
+                <p className="mt-2 max-w-[44ch] text-sm leading-relaxed text-inkSoft">{t(`hub.${w.key}.p` as Key)}</p>
+              </span>
             </Link>
           ))}
         </div>

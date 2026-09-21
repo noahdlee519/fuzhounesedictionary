@@ -39,7 +39,7 @@ export default function VoteButtons({
   const btn = (value: 1 | -1, glyph: string, label: string, n: number) => {
     const active = state.mine === value;
     const cls =
-      "inline-flex items-center gap-1.5 border px-2 py-0.5 text-[13px] tabular-nums transition-colors disabled:cursor-not-allowed " +
+      "inline-flex items-center gap-1.5 border px-2 py-0.5 text-[13px] tabular-nums transition-[color,background-color,border-color,transform] active:scale-[.95] disabled:cursor-not-allowed disabled:active:scale-100 " +
       (active
         ? "border-lacquer bg-lacquer text-paper"
         : "border-rule text-inkFaint hover:border-lacquer hover:text-lacquer disabled:opacity-60 disabled:hover:border-rule disabled:hover:text-inkFaint");

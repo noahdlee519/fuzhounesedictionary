@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -5,6 +6,7 @@ import localFont from "next/font/local";
 import Header from "@/components/Header";
 import NavMemory from "@/components/NavMemory";
 import PageFade from "@/components/PageFade";
+import NavProgress from "@/components/NavProgress";
 import { Analytics } from "@vercel/analytics/next";
 import { LICENSE } from "@/lib/constants";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
@@ -151,6 +153,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="flex min-h-screen flex-col antialiased">
         <NavMemory />
+        {/* useSearchParams needs a Suspense boundary to keep pages static. */}
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:border focus:border-lacquer focus:bg-paper focus:px-3 focus:py-2 focus:text-sm"

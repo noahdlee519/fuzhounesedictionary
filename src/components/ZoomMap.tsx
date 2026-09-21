@@ -57,7 +57,7 @@ export default function ZoomMap({
         alt={alt}
         width={width}
         height={height}
-        className="block w-full transition-transform duration-300 ease-out motion-reduce:transition-none"
+        className="block w-full transition-transform duration-[250ms] ease-[cubic-bezier(0.77,0,0.175,1)] motion-reduce:transition-none"
         style={
           origin
             ? { transform: `scale(${scale})`, transformOrigin: `${origin.x}% ${origin.y}%` }

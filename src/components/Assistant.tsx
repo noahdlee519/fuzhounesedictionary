@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import SignInButton from "./SignInButton";
+import { holdQuestion, takeQuestion } from "@/lib/held-question";
 
 /* "Ask the dictionary" — the panel under the search bar.
 
@@ -19,23 +20,6 @@ interface Turn {
 }
 
 const STARTERS = ["How do you say house?", "What is a measure word?", "Which words are from Changle?"];
-
-/* Shown to signed-out visitors in place of a live answer. Kept to things the
-   dictionary is sure of. */
-export const SAMPLES = [
-  {
-    q: "How do you say house?",
-    a: "厝 chuó is the everyday word for a house or home. The entry has recordings you can play, and a note from a speaker on how they use it.",
-  },
-  {
-    q: "Does 八 only mean eight?",
-    a: "No. 八 báik is the number eight, and a separate entry 八 báik is the verb to know or recognise, as in a speaker's note \u201cI already know\u201d. Search results show which meaning matched.",
-  },
-  {
-    q: "Which words are from Changle?",
-    a: "Every word and recording carries where its contributor's Fuzhounese is from. The Browse page can be filtered to Changle 長樂, and each entry page names the district beside each recording.",
-  },
-];
 
 /* One conversation per browser tab. Kept small (the last 40 turns) and read
    inside try/catch: private windows and some embedded views throw on access. */
@@ -62,7 +46,16 @@ function storeTurns(turns: Turn[]) {
   }
 }
 
-export default function Assistant({ open, signedIn }: { open: boolean; signedIn: boolean }) {
+export default function Assistant({
+  open,
+  signedIn,
+  onHeld,
+}: {
+  open: boolean;
+  signedIn: boolean;
+  /** Called when a question held from before a sign-in is about to be asked. */
+  onHeld?: () => void;
+}) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,6 +63,10 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
   const inputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const loaded = useRef(false);
+  // A question typed while signed out, waiting on the sign-in.
+  const [gated, setGated] = useState<string | null>(null);
+  // A question held from before a sign-in, to send once history is restored.
+  const [held, setHeld] = useState<string | null>(null);
 
   // Save on every change — but not before the restore below has run, or the
   // empty first render would wipe the stored conversation. Effects run in
@@ -82,6 +79,14 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
   useEffect(() => {
     setTurns(loadTurns());
     loaded.current = true;
+    if (signedIn) {
+      const q = takeQuestion();
+      if (q) {
+        setHeld(q);
+        onHeld?.();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -92,40 +97,30 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
     endRef.current?.scrollIntoView({ block: "nearest" });
   }, [turns, busy]);
 
-  if (!open) return null;
+  // Runs after the restore above has landed, so the question goes out with
+  // the conversation it belongs to.
+  useEffect(() => {
+    if (!held) return;
+    setHeld(null);
+    send(held);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [held]);
 
-  if (!signedIn) {
-    return (
-      <section aria-label="Ask the dictionary" className="page-fade space-y-4 border border-rule bg-surface p-5">
-        <p className="text-sm text-inkSoft">
-          Ask about a word, a meaning or how the language works. Answers come from the dictionary
-          itself, so it is only as good as the entries. It is not a perfect tool and has limitations,
-          especially with translating sentences.
-        </p>
-        {/* Two exchanges of the kind it handles, so the value shows before the
-            sign-in. Fixed text, not live answers. */}
-        <div className="space-y-3 border-l-2 border-rule pl-4">
-          {SAMPLES.map((ex) => (
-            <div key={ex.q} className="space-y-1">
-              <p className="font-display font-semibold text-ink">{ex.q}</p>
-              <p className="text-sm leading-relaxed text-inkSoft">{ex.a}</p>
-            </div>
-          ))}
-          <p className="meta text-inkFaint">Example answers</p>
-        </div>
-        <p className="text-sm text-inkSoft">
-          Sign in to ask your own.
-        </p>
-        <SignInButton next="/" label="Sign in with Google" />
-      </section>
-    );
-  }
+  if (!open) return null;
 
   async function send(question: string) {
     const q = question.trim();
     if (!q || busy) return;
     setNotice(null);
     setDraft("");
+    /* Signed out: the question is held in the browser, and the panel asks
+       for a sign-in to see the answer. Back from Google, it is sent on
+       arrival (below). */
+    if (!signedIn) {
+      holdQuestion(q);
+      setGated(q);
+      return;
+    }
     const history = turns.slice(-6);
     setTurns((t) => [...t, { role: "user", content: q }]);
     setBusy(true);
@@ -153,85 +148,21 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
     }
   }
 
+  /* The same shape as the home page's Ask section: the field first, the
+     size of the search box, with suggested questions as boxes under it and
+     the conversation below those. No paragraph of explanation — one line
+     under it says where the answers come from. */
+  const talking = turns.length > 0 || gated || busy || notice;
   return (
-    <section
-      aria-label="Ask the dictionary"
-      className="page-fade border border-rule bg-surface"
-    >
-      <div className="max-h-[50vh] space-y-4 overflow-y-auto px-5 pt-5 pb-4">
-        {turns.length === 0 && (
-          <div className="space-y-3">
-            <p className="text-sm text-inkSoft">
-              Ask about a word, a meaning or how the language works. Answers come from data
-              composing the dictionary. It is not a perfect tool and has limitations, especially
-              with translating sentences.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {STARTERS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => send(s)}
-                  className="border border-rule px-2.5 py-1 text-[13px] text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {turns.map((t, i) =>
-          t.role === "user" ? (
-            <p key={i} className="font-display font-semibold text-ink">
-              {t.content}
-            </p>
-          ) : (
-            <div key={i} className="space-y-2 border-l-2 border-lacquer pl-4 text-inkSoft">
-              <Answer text={t.content} />
-            </div>
-          )
-        )}
-
-        {turns.length > 0 && !busy && (
-          <p className="!mt-2 text-right">
-            <button
-              type="button"
-              onClick={() => {
-                setTurns([]);
-                setNotice(null);
-              }}
-              className="meta text-inkFaint transition-colors hover:text-lacquer"
-            >
-              Clear conversation
-            </button>
-          </p>
-        )}
-
-        {busy && (
-          <p aria-live="polite" className="meta text-inkFaint">
-            Looking…
-          </p>
-        )}
-        {notice && (
-          <p role="alert" className="text-sm text-lacquer">
-            {notice}
-          </p>
-        )}
-        {/* scroll anchor; !mt-0 keeps it out of the space-y rhythm, or it adds
-            a blank 16px under whatever is last */}
-        <div ref={endRef} className="!mt-0" />
-      </div>
-
+    <section aria-label="Ask the dictionary" className="page-fade rounded-sm bg-surface p-5 sm:p-7">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           send(draft);
         }}
-        className="flex border-t border-rule"
       >
         <label htmlFor="ask-input" className="sr-only">
-          Your question
+          Ask the assistant
         </label>
         <input
           id="ask-input"
@@ -239,19 +170,91 @@ export default function Assistant({ open, signedIn }: { open: boolean; signedIn:
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           maxLength={500}
-          placeholder="Ask the dictionary…"
+          placeholder="Ask anything—e.g. how do I say “I love eating dingbianhu”?"
           autoComplete="off"
-          // pt/pb split by a pixel: the serif sits high in the box otherwise.
-          className="w-full bg-transparent px-5 pt-[13px] pb-[11px] outline-none placeholder:text-inkFaint"
+          disabled={busy}
+          className="ui h-14 w-full min-w-0 rounded-sm border border-ink bg-paper px-5 text-[17px] tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus-visible:outline-none disabled:cursor-not-allowed"
+          enterKeyHint="send"
         />
-        <button
-          type="submit"
-          disabled={busy || !draft.trim()}
-          className="shrink-0 border-l border-rule px-5 meta text-inkSoft transition-colors hover:text-lacquer disabled:opacity-40"
-        >
-          Ask
-        </button>
       </form>
+
+      {turns.length === 0 && !gated && (
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          {STARTERS.map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => send(q)}
+              className="min-h-[44px] rounded-sm border border-ruleStrong bg-paper px-4 py-2.5 text-left text-sm transition-colors hover:border-inkMute"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {talking && (
+        <div
+          aria-live="polite"
+          className="mt-6 max-h-[50vh] space-y-4 overflow-y-auto rounded-sm border border-rule bg-paper px-[22px] py-5 text-[17px] leading-[1.55]"
+        >
+          {turns.map((t, i) =>
+            t.role === "user" ? (
+              <p key={i} className="font-semibold text-ink">
+                {t.content}
+              </p>
+            ) : (
+              <div key={i} className="space-y-2 border-l-2 border-lacquer pl-4 text-inkSoft">
+                <Answer text={t.content} />
+              </div>
+            )
+          )}
+
+          {gated && (
+            <div className="space-y-2">
+              <p className="font-semibold text-ink">{gated}</p>
+              <p className="text-inkSoft">Sign in to see the answer. Your question will be asked as soon as you are back.</p>
+              <div className="pt-2">
+                <SignInButton
+                  next={typeof window === "undefined" ? "/" : window.location.pathname + window.location.search}
+                  label="Sign in"
+                  className="btn btn-primary [&>svg]:hidden"
+                />
+              </div>
+            </div>
+          )}
+
+          {busy && (
+            <p className="flex items-center gap-2.5 text-inkSoft">
+              <span className="spinner text-lacquer" aria-hidden />
+              Looking…
+            </p>
+          )}
+          {notice && (
+            <p role="alert" className="text-lacquer">
+              {notice}
+            </p>
+          )}
+          {/* scroll anchor; !mt-0 keeps it out of the space-y rhythm */}
+          <div ref={endRef} className="!mt-0" />
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <p className="footnote">Answers come from the dictionary itself.</p>
+        {turns.length > 0 && !busy && (
+          <button
+            type="button"
+            onClick={() => {
+              setTurns([]);
+              setNotice(null);
+            }}
+            className="footnote transition-colors hover:text-lacquer"
+          >
+            Clear conversation
+          </button>
+        )}
+      </div>
     </section>
   );
 }

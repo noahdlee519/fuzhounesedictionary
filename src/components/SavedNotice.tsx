@@ -41,7 +41,7 @@ export default function SavedNotice({
       role="status"
       aria-live="polite"
       className={
-        "meta text-lacquer transition-opacity duration-700 motion-reduce:transition-none " +
+        "meta text-lacquer transition-opacity duration-200 motion-reduce:transition-none " +
         (gone ? "opacity-0" : "opacity-100")
       }
     >

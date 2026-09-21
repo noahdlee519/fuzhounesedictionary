@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HeroMark from "@/components/HeroMark";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 const LIST_PARAMS = ["page", "pos", "origin", "sort", "dir"] as const;
 
 /* The Learn page, in the 9 Sep 2026 design: a hero, "How it works" as three
-   chips that open the panels, then "Basic lessons" — the starter words in
+   folder tabs over their panels, then "Basic lessons" — the starter words in
    groups (the mock-up's phrasebook, drawn from the dictionary itself). */
 
 export default async function LearnPage({
@@ -47,11 +48,11 @@ export default async function LearnPage({
   } catch {
     /* the section is simply left out */
   }
-  const starterCount = starter.reduce((n, s) => n + s.words.length, 0);
 
   return (
     <div className="-my-10">
-      <section className="pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+        <HeroMark />
         <p className="eyebrow">{t("nav.learn")}</p>
         <h1 className="display mt-2 max-w-[26ch]">
           {t("learn.h1")}
@@ -103,7 +104,6 @@ export default async function LearnPage({
           <hr className="rule-bleed" />
           <section id="start" className="sec scroll-mt-16">
             <h2 className="h2">{t("learn.start.h")}</h2>
-            <p className="read mt-3 text-inkSoft">{t("learn.start.lede", { n: starterCount })}</p>
             <div className="mt-8 grid gap-x-8 gap-y-10 min-[480px]:grid-cols-2 lg:grid-cols-3">
               {starter.map((g) => (
                 // min-w-0: a grid column must not grow to fit a long gloss that truncates.

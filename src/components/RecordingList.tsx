@@ -30,8 +30,14 @@ export default function RecordingList({
   back,
   viewerId,
   votes,
+  fallback,
 }: {
   recordings: RecordingRow[];
+  /** Shown in place of a note on a recording that has none: the word's
+   *  English meaning (or, for a sentence, its translation), so every row says
+   *  what is being said. Display only — the note itself stays empty, and the
+   *  speaker can still write one. */
+  fallback?: string | null;
   compact?: boolean;
   /** Editors get a delete control on every row. */
   canDelete?: boolean;
@@ -61,12 +67,15 @@ export default function RecordingList({
             <div className="min-w-[11rem] flex-1 space-y-1">
               {/* The speaker's line about the take — the sentence they read,
                   or how they would put it. On your own recording it is
-                  editable in place; with no note there is nothing here at all,
-                  and the note is added from the account page instead. */}
+                  editable in place. With no note, the word's English meaning
+                  stands in (Noah, 21 Sep 2026), and a note is still added
+                  from the account page. */}
               {mine && note ? (
                 <RecordingNoteEditor id={r.id} note={note} back={back ?? "/account?show=recordings"} compact />
+              ) : note ? (
+                <p className="romanization text-[15px] leading-snug text-ink">{note}</p>
               ) : (
-                note && <p className="romanization text-[15px] leading-snug text-ink">{note}</p>
+                fallback?.trim() && <p className="text-[15px] leading-snug text-ink">{fallback.trim()}</p>
               )}
               <p className="meta text-inkFaint">
                 {who && r.contributor?.id ? (

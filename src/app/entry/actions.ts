@@ -39,3 +39,39 @@ export async function voteRecording(formData: FormData) {
   revalidatePath(back.split("#")[0]);
   redirect(back);
 }
+
+/* A suggested edit to a word: free text, into the same review queue as IPA
+   and example suggestions (kind 'edit', supabase/suggest_edit.sql). The
+   database holds it at 'pending' for anyone but an editor, and an editor
+   makes the change by hand. */
+export async function suggestEdit(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const entryId = String(formData.get("entry_id") ?? "").trim();
+  const here = entryId ? `/entry/${entryId}` : "/";
+  if (!user || !entryId) redirect(here);
+
+  const value = String(formData.get("value") ?? "").trim().slice(0, 500);
+  if (!value) redirect(`${here}?edit=empty#suggest`);
+
+  const { error } = await supabase.from("suggestions").insert({
+    entry_id: entryId,
+    kind: "edit",
+    sense_id: null,
+    value,
+    contributor_id: user.id,
+  });
+  if (error) {
+    const msg =
+      error.code === "23505"
+        ? "You have already sent that suggestion for this word."
+        : error.code === "23514" && /kind/.test(error.message)
+          ? "Suggestions are not switched on yet. Please try again later."
+          : error.message;
+    redirect(`${here}?edit=${encodeURIComponent(msg)}#suggest`);
+  }
+  revalidatePath("/admin");
+  redirect(`${here}?edit=sent#suggest`);
+}

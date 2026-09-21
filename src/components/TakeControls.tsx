@@ -9,7 +9,7 @@ import type { Take } from "./useRecorder";
    the form is sent. */
 
 export const recBtn =
-  "inline-flex items-center gap-2 border px-3 py-1.5 meta transition-colors disabled:opacity-50";
+  "inline-flex items-center gap-2 border px-3 py-1.5 meta transition-[color,background-color,border-color,transform] active:scale-[.97] disabled:opacity-50";
 
 export default function TakeControls({
   recording,

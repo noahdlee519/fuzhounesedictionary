@@ -7,8 +7,8 @@ import { useEffect, useRef, useState } from "react";
    Four sizes: `lg` (72px, the entry page's audio hero), `md` (56px, the
    word cards on Browse), `sm` (44px, lists) and `xs` (36px, dense rows). All
    of them are the red disc with a white glyph — Noah's call, 10 Sep 2026;
-   the outlined xs was dropped. The triangle becomes a square while the clip
-   plays. Starting one clip stops any other on the page, so two takes of the
+   the outlined xs was dropped. The glyph is a loudspeaker, whose sound waves
+   pulse while the clip plays. Starting one clip stops any other on the page, so two takes of the
    same word never overlap. */
 
 export default function PlayButton({
@@ -17,6 +17,7 @@ export default function PlayButton({
   size = "sm",
   className = "",
   showDuration = false,
+  glyph: kind = "speaker",
 }: {
   src: string;
   /** What is being played, for screen readers: "Play 厝 chuó, recorded by Mei". */
@@ -25,6 +26,9 @@ export default function PlayButton({
   className?: string;
   /** Print the clip's length beside the button. */
   showDuration?: boolean;
+  /** A loudspeaker by default, so the button reads as sound rather than as
+   *  a video's play triangle (Noah, 21 Sep 2026). "play" keeps the triangle. */
+  glyph?: "play" | "speaker";
 }) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -95,7 +99,19 @@ export default function PlayButton({
         title={failed ? "This recording could not be loaded" : undefined}
         className={`inline-flex shrink-0 items-center justify-center rounded-full bg-lacquer text-white transition-[transform,opacity] hover:opacity-90 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-40 ${box}`}
       >
-        {playing ? (
+        {kind === "speaker" ? (
+          <svg width={glyph + 4} height={glyph + 4} viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" />
+            <path
+              d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6.3 6.3 0 0 1 0 9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              className={playing ? "animate-pulse" : ""}
+            />
+          </svg>
+        ) : playing ? (
           <svg width={glyph} height={glyph} viewBox="0 0 12 12" aria-hidden="true">
             <rect x="2" y="2" width="8" height="8" rx="1" fill="currentColor" />
           </svg>

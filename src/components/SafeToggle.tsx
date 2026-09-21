@@ -49,8 +49,8 @@ export default function SafeToggle({
       >
         <span
           className={
-            "absolute top-[2px] h-[12px] w-[12px] rounded-full transition-[left] " +
-            (safe ? "left-[16px] bg-paper" : "left-[2px] bg-ink")
+            "absolute left-[2px] top-[2px] h-[12px] w-[12px] rounded-full transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] " +
+            (safe ? "translate-x-[14px] bg-paper" : "translate-x-0 bg-ink")
           }
         />
       </span>

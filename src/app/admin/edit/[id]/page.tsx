@@ -120,7 +120,7 @@ export default async function EditEntryPage({
         <label className="block"><span className="text-sm font-medium">Notes</span>
           <textarea name="notes" defaultValue={entry.notes ?? ""} rows={2} className={cls} /></label>
 
-        <button className="border border-lacquer bg-lacquer px-8 py-3 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer">Save changes</button>
+        <button className="border border-lacquer bg-lacquer px-8 py-3 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer">Save changes</button>
       </form>
 
       {/* Outside the edit form: a form cannot nest inside another form. */}

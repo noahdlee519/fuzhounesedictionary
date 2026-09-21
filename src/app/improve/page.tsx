@@ -3,9 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import SignInButton from "@/components/SignInButton";
-import { translator } from "@/lib/i18n";
-import { getLang } from "@/lib/lang";
+import SignInGate from "@/components/SignInGate";
 import ContributeTabs from "@/components/ContributeTabs";
 import Recorder from "@/components/Recorder";
 import SavedNotice from "@/components/SavedNotice";
@@ -13,6 +11,7 @@ import SuggestBox, { type SenseOption } from "@/components/SuggestBox";
 import { formatOrigin, ORIGIN_AREAS, ORIGIN_GROUPS, originArea } from "@/lib/origins";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 import { sortSenses } from "@/lib/entries";
+import { missionTally } from "@/lib/public-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -32,26 +31,35 @@ const PAGE_SIZE = 25;
 export default async function ImprovePage({
   searchParams,
 }: {
-  searchParams: { page?: string; origin?: string; need?: string; sent?: string; problem?: string };
+  searchParams: { page?: string; origin?: string; need?: string; sent?: string; problem?: string; n?: string };
 }) {
   const { user, profile } = await getSessionUser();
 
   if (!user) {
     const recording = searchParams.need === "recording";
+    const tally = recording ? await missionTally().catch(() => null) : null;
+    const silent = tally ? Math.max(0, tally.words - tally.voiced) : null;
     return (
       <div className="space-y-8">
-        <ContributeTabs active="improve" />
-        <div className="max-w-lg space-y-4 rounded-sm border border-rule bg-surface p-8">
-          <p className="h3">{recording ? "Sign in to record a word" : "Sign in to improve a word"}</p>
-          <p className="text-inkSoft">
-            {recording
-              ? "Pick a word that has no recording yet and say it into your phone or laptop. It takes about thirty seconds, and where your Fuzhounese is from is saved with it."
-              : "This page is a list of every word still missing something—a recording, IPA, an example sentence—with a record button beside each one."}
+        <ContributeTabs active={recording ? "record" : "improve"} />
+        <SignInGate
+          kind={recording ? "record" : "improve"}
+          title={recording ? "Sign in to record a word" : "Sign in to improve a word"}
+          text={
+            recording
+              ? "Pick a word that has no recording yet and say it into your phone or laptop. One take is enough, and where your Fuzhounese is from is saved with it."
+              : "Fill in what a word is missing: its pronunciation in IPA, or an example sentence. An editor reads it before it appears, and it is credited to you."
+          }
+          next={recording ? "/improve?need=recording" : "/improve"}
+        />
+        {/* How much there is to do: the number from the same tally the home
+            page uses, so the two never disagree. */}
+        {recording && silent !== null && silent > 0 && (
+          <p className="max-w-2xl text-inkSoft">
+            <span className="h2 mr-2 align-baseline tabular-nums text-lacquer">{silent.toLocaleString()}</span>
+            {silent === 1 ? "word in the dictionary still has no recording." : "words in the dictionary still have no recording."}
           </p>
-          <div className="flex justify-center">
-            <SignInButton next={recording ? "/improve?need=recording" : "/improve"} label={translator(getLang())("signin.google")} />
-          </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -144,6 +152,24 @@ export default async function ImprovePage({
     </Link>
   );
 
+  /* Quick record: one word at a time, big, with the recorder under it and a
+     "Next word" that moves along — so a speaker can say ten words in a row
+     without scanning the list. It walks the words on this page that still
+     need a recording and that this person has not recorded to the cap, then
+     turns to the next page. */
+  const recordable =
+    need === "recording" && !error
+      ? (rows as any[]).filter((r) => r.needs_recording && (takes[r.id] ?? 0) < MAX_RECORDINGS_PER_WORD)
+      : [];
+  const n = Math.max(0, parseInt(searchParams.n ?? "0", 10) || 0);
+  const quick = recordable.length ? recordable[n % recordable.length] : null;
+  const quickNext =
+    n + 1 < recordable.length
+      ? `${href(origin, page)}&n=${n + 1}#quick`
+      : hasNext
+        ? `${href(origin, page + 1)}#quick`
+        : `${href(origin, 1)}#quick`;
+
   const sentLabel =
     searchParams.sent === "ipa"
       ? "IPA sent for review"
@@ -153,14 +179,14 @@ export default async function ImprovePage({
 
   return (
     <div className="space-y-8">
-      <ContributeTabs active="improve" />
+      <ContributeTabs active={need === "recording" ? "record" : "improve"} />
       <section className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
             {need === "recording" ? (
               <>
-                None of the words listed here has a recording yet. Press the button beside one and
-                say it—about thirty seconds—and an editor will check it before it appears.
+                None of the words listed here has a recording yet. Press the button beside one, say
+                it, and an editor will check it before it appears.
               </>
             ) : (
               <>
@@ -169,7 +195,7 @@ export default async function ImprovePage({
               </>
             )}{" "}
             Words people are waiting for are under{" "}
-            <Link href="/request" className="text-lacquer hover:underline">Wanted</Link>.
+            <Link href="/request" className="text-lacquer hover:underline">Request a word</Link>.
           </p>
           {!error && (
             <span className="meta text-inkFaint">
@@ -218,6 +244,33 @@ export default async function ImprovePage({
           </div>
         </div>
       </section>
+
+      {quick && (
+        <section id="quick" className="scroll-mt-24 rounded-sm border border-rule bg-surface p-6 sm:p-8">
+          <p className="eyebrow">Quick record</p>
+          <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            {quick.hanzi && <span className="han text-[56px] font-bold leading-none">{quick.hanzi}</span>}
+            <span className="romanization text-2xl font-semibold text-lacquer">{quick.romanization || quick.headword}</span>
+          </div>
+          {quick.short_gloss && <p className="mt-2 text-lg text-inkSoft">{quick.short_gloss}</p>}
+          <div className="mt-5">
+            <Recorder
+              key={quick.id}
+              userId={user.id}
+              entryId={quick.id}
+              isEditor={Boolean(profile?.is_editor)}
+              kind="headword"
+              label="Say this word"
+            />
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-rule pt-4">
+            <Link href={quickNext} className="btn btn-ghost btn-sm">
+              Next word →
+            </Link>
+            <span className="footnote">Don&apos;t know this one? Skip it. Every word on the list below works the same way.</span>
+          </div>
+        </section>
+      )}
 
       {error && (
         <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">

@@ -11,8 +11,8 @@ import ThemeToggle from "./ThemeToggle";
 /* The header, after the 9 Sep 2026 redesign: one 56px row, sticky, with a
    frosted background so the page shows through as it scrolls under it.
 
-   Wide:   wordmark … Browse Learn Contribute About · EN/中文 · ☾ · search · Sign in
-   Narrow: wordmark … search · Sign in
+   Wide:   wordmark … search · Browse Learn Contribute About · EN/中文 · ☾ · Sign in
+   Narrow: wordmark · search … Sign in
            Browse Learn Contribute About … EN/中文 · ☾
 
    The same elements at every width, reordered with flex `order`, so the two
@@ -30,7 +30,7 @@ export default async function Header() {
 export function HeaderView({ user, profile }: SessionShape) {
   const lang = getLang();
   const t = translator(lang);
-  const navLink = "ui rounded-sm px-1.5 py-2 text-[13px] font-medium leading-none transition-colors md:px-2.5 md:text-sm";
+  const navLink = "tap ui inline-flex items-center rounded-sm px-1.5 py-2 text-[13px] font-medium leading-none transition-colors md:px-2.5 md:text-sm";
 
   return (
     <header className="sticky top-0 z-40 border-b border-rule bg-paper">
@@ -48,25 +48,34 @@ export function HeaderView({ user, profile }: SessionShape) {
             <span className="han text-[17px] font-bold leading-none">
               <span className="text-lacquer">福州</span>話
             </span>
-            {/* The domain shows wherever there is room for it: on the two-row
-                layout the top line holds only the wordmark, the search and the
-                account, so it fits from 560px; on the one-row layout it has to
-                wait until 920, where it stops squeezing the search box. */}
-            <span className="hidden text-sm font-medium text-ink min-[560px]:inline md:hidden min-[920px]:inline">
+            {/* The domain shows at every width but one band: on a phone the
+                search pill beside it gives way instead (Noah, 21 Sep 2026);
+                on the one-row layout between 768 and 920 there is no room
+                for it next to the links, the toggles and the search. */}
+            <span className="text-sm font-medium text-ink md:hidden min-[920px]:inline">
               <span className="text-lacquer">fuzhou</span>nese.org
             </span>
           </span>
         </NavLink>
 
-        {/* 2. The links, with the two toggles at their far end. Wide: its
-            natural width, right after the wordmark. Narrow: a second line of
-            its own, the links scrolling sideways if they must.
+        {/* 2. The search pill. Wide: pushed right, just before the links
+            (Noah, 21 Sep 2026); it keeps a set width and shrinks before
+            anything else does. On a phone it fills the top line between the
+            wordmark and the account. Absent on the home page and Browse,
+            which have the big box (HeaderSearch) — then the links take the
+            push to the right themselves ([form+&] below). */}
+        <HeaderSearch
+          className="order-2 min-w-0 flex-1 basis-0 md:ml-auto md:w-[248px] md:min-w-[104px] md:flex-initial md:basis-auto"
+          placeholder={t("search.header")}
+          placeholderShort={t("search.header.short")}
+          label={t("search.label")}
+        />
 
-            At medium widths this used to shrink below the width of the links
-            while `md:overflow-visible` let them keep drawing, so "Contribute"
-            and "About" ran underneath the toggles. Nothing here shrinks now;
-            the search pill beside it is what gives way. */}
-        <div className="order-3 flex min-w-0 basis-full items-center gap-x-3 pb-2 md:order-2 md:ml-auto md:w-auto md:min-w-0 md:flex-none md:basis-auto md:pb-0">
+        {/* 3. The links, with the two toggles at their far end. Wide: pushed
+            to the right. Narrow: a second line of its own, the links
+            scrolling sideways if they must. Nothing here shrinks; the search
+            pill is what gives way. */}
+        <div className="order-4 flex min-w-0 basis-full items-center gap-x-3 pb-2 md:order-3 md:ml-auto md:w-auto md:[form+&]:ml-0 md:min-w-0 md:flex-none md:basis-auto md:pb-0">
           <nav
             aria-label="Site"
             className="nav-strip -ml-1.5 flex min-w-0 flex-1 items-center gap-x-1 overflow-x-auto whitespace-nowrap md:-ml-2.5 md:flex-none md:overflow-visible"
@@ -82,11 +91,9 @@ export function HeaderView({ user, profile }: SessionShape) {
           </div>
         </div>
 
-        {/* 3. Search pill and the account, at the end of the top row. This
-            group takes what is left and the pill shrinks into it, down to a
-            width that still shows a word or two of the placeholder. */}
-        <div className="order-2 ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 md:order-3 md:ml-0 md:flex-initial">
-          <HeaderSearch className="min-w-0 flex-1 basis-[120px] sm:w-[248px] sm:flex-none md:flex-initial md:min-w-[104px]" placeholder={t("search.header")} label={t("search.label")} />
+        {/* 4. The account, at the end of the top row. ml-auto keeps it at the
+            right on a phone when there is no search pill to push it there. */}
+        <div className="order-3 ml-auto flex shrink-0 items-center md:order-4 md:ml-0">
           {user ? (
             <NavLink
               href="/account"
@@ -104,7 +111,7 @@ export function HeaderView({ user, profile }: SessionShape) {
             </NavLink>
           ) : (
             <SignInButton
-              className="btn btn-primary shrink-0 !min-h-[32px] !px-3.5 !text-[13px] [&>svg]:hidden"
+              className="tap btn btn-primary shrink-0 !min-h-[32px] !px-3.5 !text-[13px] [&>svg]:hidden"
               label={t("nav.signin")}
             />
           )}

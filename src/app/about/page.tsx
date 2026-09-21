@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HeroMark from "@/components/HeroMark";
 import type { Metadata } from "next";
 import ZoomMap from "@/components/ZoomMap";
 import { FUJIAN_MAP } from "./fujian-map";
@@ -124,17 +125,20 @@ export default async function AboutPage() {
   return (
     <article className="-my-10">
       {/* Hero: the story */}
-      <section className="pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+        <HeroMark />
         <p className="eyebrow">{t("nav.about")}</p>
         <h1 className="h1 mt-2 max-w-[30ch] [text-wrap:balance]">{t("about.h")}</h1>
         <p className="lede read mt-6 text-ink">{t("about.p1")}</p>
         <p className="read mt-5 text-[17px] leading-relaxed text-inkSoft">{t("about.p2")}</p>
         <p className="read mt-4 text-[17px] leading-relaxed text-inkSoft">{t("about.p3")}</p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Link href="/submit" className="btn btn-primary">
+          {/* The page that earns the most trust ends on the ask that matters:
+              a recording, not a new word. */}
+          <Link href="/improve?need=recording" className="btn btn-primary">
             {t("about.btn")}
           </Link>
-          <Link href="/browse" className="linkq">
+          <Link href="/browse" className="btn btn-ghost">
             {t("about.link")}
           </Link>
         </div>
@@ -195,18 +199,7 @@ export default async function AboutPage() {
           </div>
           <div>
             <h2 className="h2">{t("about.help.h")}</h2>
-            {list(["about.help.1", "about.help.2", "about.help.3", "about.help.4"], community)}
-            <p className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              <Link href="/improve?need=recording" className="link">
-                {t("about.help.record")}
-              </Link>
-              <Link href="/submit" className="link">
-                {t("about.help.add")}
-              </Link>
-              <Link href="/request" className="link">
-                {t("about.help.wanted")}
-              </Link>
-            </p>
+            {list(["about.help.2", "about.help.3", "about.help.4"], community)}
           </div>
         </div>
       </section>

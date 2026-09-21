@@ -28,7 +28,7 @@ export default function DeleteRecording({
         <span className="text-xs text-inkSoft">Remove this recording for good?</span>
         <SubmitButton
           pending="Deleting…"
-          className="border border-lacquer bg-lacquer px-2 py-0.5 meta text-paper transition-colors hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="border border-lacquer bg-lacquer px-2 py-0.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           Yes, delete
         </SubmitButton>

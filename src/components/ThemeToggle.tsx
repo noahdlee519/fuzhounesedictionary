@@ -26,7 +26,12 @@ export default function ThemeToggle({
 
   const toggle = () => {
     const next = !dark;
-    document.documentElement.dataset.theme = next ? "dark" : "light";
+    // Every colour changes in the same frame (globals.css, .no-tx).
+    const root = document.documentElement;
+    root.classList.add("no-tx");
+    root.dataset.theme = next ? "dark" : "light";
+    void getComputedStyle(document.body).opacity;
+    requestAnimationFrame(() => root.classList.remove("no-tx"));
     try {
       localStorage.setItem("theme", next ? "dark" : "light");
     } catch {}
@@ -43,7 +48,7 @@ export default function ThemeToggle({
         title={label}
         onClick={toggle}
         disabled={dark === null}
-        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-ruleStrong text-inkSoft transition-colors hover:text-ink disabled:opacity-60 ${className}`}
+        className={`tap-sq inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-ruleStrong text-inkSoft transition-colors hover:text-ink disabled:opacity-60 ${className}`}
       >
         {dark ? (
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -79,8 +84,8 @@ export default function ThemeToggle({
       >
         <span
           className={
-            "absolute top-[2px] h-[12px] w-[12px] rounded-full transition-[left] " +
-            (dark ? "left-[16px] bg-paper" : "left-[2px] bg-ink")
+            "absolute left-[2px] top-[2px] h-[12px] w-[12px] rounded-full transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] " +
+            (dark ? "translate-x-[14px] bg-paper" : "translate-x-0 bg-ink")
           }
         />
       </span>
