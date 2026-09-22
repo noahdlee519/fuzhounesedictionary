@@ -7,7 +7,9 @@ import SearchBar from "@/components/SearchBar";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PARTS_OF_SPEECH } from "@/lib/constants";
-import { one, toCards } from "@/lib/entries";
+import { one, toCards, CARD_EMBEDS, withCardEmbeds } from "@/lib/entries";
+import { unstable_cache } from "next/cache";
+import { createClient as createAnonClient } from "@supabase/supabase-js";
 import { filterTally, hasUpdatedAt } from "@/lib/public-stats";
 import { translator } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
@@ -18,6 +20,31 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
+
+/* How many words a filter matches. An exact count over every approved word
+   is the slowest part of the page (about a tenth of a second), and it is the
+   same for every visitor, so it is counted once a minute per filter and
+   shared, rather than on every visit. Public data, read with the anon key. */
+const browseTotal = unstable_cache(
+  async (pos: string, origin: string, safe: boolean): Promise<number | null> => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    const db = createAnonClient(url, key, { auth: { persistSession: false } });
+    const joinSenses = Boolean(pos) || safe;
+    let q = db
+      .from("entries")
+      .select(`id, senses${joinSenses ? "!inner" : ""}(definition_en, part_of_speech)`, { count: "exact", head: true })
+      .eq("status", "approved");
+    if (pos) q = q.eq("senses.part_of_speech", pos);
+    if (origin) q = q.eq("origin_area", origin);
+    if (safe) q = withoutExplicit(q, "senses.definition_en");
+    const { count, error } = await q;
+    return error ? null : count ?? null;
+  },
+  ["browse-total-v1"],
+  { revalidate: 60 }
+);
 
 
 /* ---------------------------------------------------------------------------
@@ -134,19 +161,18 @@ export default async function BrowsePage({
   const lang = sort === "en" ? "en" : "fz";
 
   const supabase = createClient();
-  // For the assistant's sign-in gate under the search box; cache() shares
-  // the lookup with the header, so this costs nothing extra.
-  const { user } = await getSessionUser();
   const senseCols = "definition_en, part_of_speech, sort";
   /* An inner join whenever a filter reaches into the meanings: PostgREST only
      drops the parent row when the embed is inner, so with a plain join a
      filtered-out meaning would leave the word behind with an empty senses
      array. */
   const joinSenses = Boolean(pos) || safe;
-  const cols = `id, hanzi, romanization, headword, audio_url, senses${joinSenses ? "!inner" : ""}(${senseCols})`;
+  // The recordings and the meaning count come along in the same query
+  // (CARD_EMBEDS), so the cards need no lookups of their own.
+  const cols = `id, hanzi, romanization, headword, audio_url, senses${joinSenses ? "!inner" : ""}(${senseCols}), ${CARD_EMBEDS}`;
 
-  const base = (head = false) => {
-    let q = supabase.from("entries").select(cols, { count: "exact", head }).eq("status", "approved");
+  const base = () => {
+    let q = withCardEmbeds(supabase.from("entries").select(cols).eq("status", "approved"));
     if (pos) q = q.eq("senses.part_of_speech", pos);
     if (origin) q = q.eq("origin_area", origin);
     // A word whose only meaning is explicit disappears; one that also means
@@ -166,7 +192,7 @@ export default async function BrowsePage({
   const englishQuery = () => {
     let q = supabase
       .from("senses")
-      .select("definition_en, part_of_speech, sort, entry:entries!inner(id, hanzi, romanization, headword, audio_url, origin_area)", { count: "exact" })
+      .select("definition_en, part_of_speech, sort, entry:entries!inner(id, hanzi, romanization, headword, audio_url, origin_area)")
       .eq("entry.status", "approved");
     /* Which meaning stands for the word here. With no part-of-speech filter
        it is the first one, so the list is one row per word. With a filter it
@@ -196,17 +222,21 @@ export default async function BrowsePage({
      not words. The number on screen and the paging are words, so they come
      from the same entries query the Fuzhounese order pages — one HEAD, no
      rows, alongside the others. */
-  const [list, tally, entryCount] = await Promise.all([
+  // Everything the page needs that does not depend on anything else, at
+  // once: the words, the chip tally, the total (both cached for a minute),
+  // and who is signed in (for the assistant's sign-in gate under the box).
+  const [list, tally, cachedTotal, { user }] = await Promise.all([
     listQuery,
     filterTally(),
-    lang === "en" ? base(true) : Promise.resolve(null),
+    browseTotal(pos, origin, safe).catch(() => null),
+    getSessionUser(),
   ]);
+  total = cachedTotal ?? 0;
 
   if (lang === "fz") {
-    const { data, count, error } = list;
+    const { data, error } = list;
     if (error) failed = true;
     entries = await toCards(supabase, data ?? []);
-    total = count ?? 0;
   } else {
     const { data, error } = list;
     if (error) failed = true;
@@ -218,7 +248,6 @@ export default async function BrowsePage({
       .map((r) => ({ ...one<any>(r.entry), senses: [{ definition_en: r.definition_en, part_of_speech: r.part_of_speech, sort: r.sort ?? 0 }] }))
       .filter((e) => e.id && !seen.has(e.id) && seen.add(e.id));
     entries = await toCards(supabase, rows);
-    total = (entryCount as any)?.count ?? 0;
   }
 
   const posCounts = new Map(Object.entries(tally.pos));
@@ -241,11 +270,14 @@ export default async function BrowsePage({
     return `/browse${s ? `?${s}` : ""}#words`;
   };
 
+  // Without the count (it could not be had), page on what came back: a full
+  // page suggests another, and the page number the visitor asked for stands.
+  if (cachedTotal === null) total = from + entries.length + (entries.length === PAGE_SIZE ? 1 : 0);
   const hasNext = from + PAGE_SIZE < total;
   // At least 1, so an empty filter never reads "page 1 of 0".
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   // A typed page past the end lands on the last page rather than an empty one.
-  if (!failed && page > totalPages) {
+  if (!failed && cachedTotal !== null && page > totalPages) {
     redirect(hrefWith({ page: totalPages > 1 ? String(totalPages) : "" }));
   }
 

@@ -102,7 +102,8 @@ export default async function LearnPage({
       {starter.length > 0 && (
         <>
           <hr className="rule-bleed" />
-          <section id="start" className="sec scroll-mt-16">
+          {/* data-back-zone: a word opened from here gets "Back to Basic lessons" (BackLink). */}
+          <section id="start" data-back-zone="lessons" className="sec scroll-mt-16">
             <h2 className="h2">{t("learn.start.h")}</h2>
             <div className="mt-8 grid gap-x-8 gap-y-10 min-[480px]:grid-cols-2 lg:grid-cols-3">
               {starter.map((g) => (

@@ -59,7 +59,10 @@ export async function saveEdit(formData: FormData) {
       hanzi: (String(formData.get("hanzi") ?? "").trim() || null),
       romanization: (String(formData.get("romanization") ?? "").trim() || null),
       ipa: (String(formData.get("ipa") ?? "").trim() || null),
-      audio_url: (String(formData.get("audio_url") ?? "").trim() || null),
+      // audio_url is deliberately not here: the edit form no longer has the
+      // field (Noah, 22 Sep 2026), and writing it from a missing field would
+      // wipe a word's original recording on every save. Recordings are added
+      // and removed on the word page.
       origin_area: (() => {
         const a = String(formData.get("origin_area") ?? "").trim();
         return ORIGIN_AREA_CODES.includes(a) ? a : null;

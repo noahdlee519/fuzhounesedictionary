@@ -19,7 +19,8 @@ export default function DeleteEntry({
   return (
     <details className={`group inline-block ${className}`}>
       <summary className="inline-block cursor-pointer list-none border border-rule px-2 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
-        Delete word
+        <span className="group-open:hidden">Delete word</span>
+        <span className="hidden group-open:inline">Cancel</span>
       </summary>
       <form action={deleteEntry} className="mt-2 max-w-md space-y-2 border border-lacquer bg-surface p-3">
         <input type="hidden" name="id" value={id} />

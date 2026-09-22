@@ -12,6 +12,7 @@ import type { SearchRow } from "@/lib/types";
 import { one, recordingCounts, firstSense, audioCredit, type AudioCredit } from "@/lib/entries";
 import { getSessionUser } from "@/lib/auth";
 import { searchContributors, type ContributorHit } from "@/lib/contributors";
+import { toTraditional } from "@/lib/chinese";
 import { missionTally, topContributors, contributorCount, type MissionTally, type TopContributor } from "@/lib/public-stats";
 import { translator, samples } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
@@ -101,12 +102,21 @@ export default async function Home({
     let people: ContributorHit[] = [];
     let errored = false;
     try {
-      const [{ data, error }, found] = await Promise.all([
+      /* Simplified characters are searched as typed and as traditional
+         (lib/chinese), and the two lists merged: the converted results first,
+         then anything only the original found. Close matches (search_v3's
+         `fuzzy`) are kept only if neither search found anything exactly. */
+      const trad = toTraditional(q);
+      const [{ data, error }, alt, found] = await Promise.all([
         supabase.rpc("search_entries", { q }),
+        trad !== q ? supabase.rpc("search_entries", { q: trad }) : Promise.resolve(null),
         searchContributors(supabase, q).catch(() => [] as ContributorHit[]),
       ]);
       if (error) throw error;
-      rows = (data ?? []) as SearchRow[];
+      const lists = [((alt?.data ?? []) as SearchRow[]), (data ?? []) as SearchRow[]];
+      const exact = lists.flat().filter((r) => !r.fuzzy);
+      const seen = new Set<string>();
+      rows = (exact.length ? exact : lists.flat()).filter((r) => !seen.has(r.id) && seen.add(r.id));
       /* The filter works on the meaning the search matched, so a word that
          also means something ordinary keeps its place and shows that other
          meaning; a word whose match is the explicit one drops out. */
@@ -136,6 +146,8 @@ export default async function Home({
           hint={
             errored
               ? t("results.unavailable")
+              : rows.length > 0 && rows.every((r) => r.fuzzy)
+              ? t("results.close", { q })
               : (rows.length === 1 ? t("results.one", { q }) : t("results.for", { n: rows.length, q })) +
                 (people.length ? ` · ${people.length === 1 ? t("results.person") : t("results.people", { n: people.length })}` : "")
           }

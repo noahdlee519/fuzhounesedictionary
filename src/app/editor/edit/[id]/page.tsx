@@ -87,8 +87,6 @@ export default async function EditEntryPage({
               </optgroup>
             ))}
           </select></label>
-        <label className="block"><span className="text-sm font-medium">Audio URL</span>
-          <input name="audio_url" defaultValue={entry.audio_url ?? ""} className={cls} /></label>
 
         <fieldset className="space-y-4">
           <legend className="meta text-inkFaint">Meanings</legend>

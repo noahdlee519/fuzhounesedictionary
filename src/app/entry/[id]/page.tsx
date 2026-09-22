@@ -170,10 +170,16 @@ export default async function EntryPage({
     for (const p of (profs ?? []) as any[]) speakers.set(p.id, { id: p.id, display_name: p.display_name ?? null });
   }
 
-  const recordings: RecordingRow[] = (recRows ?? []).map((r: any) => ({
-    ...r,
-    contributor: speakers.get(r.contributor_id) ?? null,
-  }));
+  // A rejected take is off the page for everyone, editors and its own
+  // contributor included (Noah, 22 Sep 2026: "if I rejected it, why does it
+  // still exist"). The row and its file stay, so a reject can be undone from
+  // the database; Delete on the review page removes both for good.
+  const recordings: RecordingRow[] = (recRows ?? [])
+    .filter((r: any) => r.status !== "rejected")
+    .map((r: any) => ({
+      ...r,
+      contributor: speakers.get(r.contributor_id) ?? null,
+    }));
 
   // Thumbs up/down: public totals from the view, plus the viewer's own votes.
   // Both tolerate the table not existing yet (supabase/recording_votes.sql).

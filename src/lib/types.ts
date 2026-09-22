@@ -63,6 +63,9 @@ export interface SearchRow {
   origin_locality: string | null;
   /** How many meanings the word has. The gloss shown is the one that matched. */
   sense_count: number;
+  /** A close match rather than an exact one: returned only when nothing
+   *  matched exactly (supabase/search_v3.sql). Absent before that migration. */
+  fuzzy?: boolean;
 }
 
 export interface Recording {

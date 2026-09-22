@@ -57,6 +57,9 @@ export default function ZoomMap({
         alt={alt}
         width={width}
         height={height}
+        // Below the fold on a phone: fetched when it is about to be seen.
+        loading="lazy"
+        decoding="async"
         className="block w-full transition-transform duration-[250ms] ease-[cubic-bezier(0.77,0,0.175,1)] motion-reduce:transition-none"
         style={
           origin

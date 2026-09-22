@@ -10,7 +10,8 @@ export default function WithdrawRecording({ id, back }: { id: string; back: stri
   return (
     <details className="group inline-block">
       <summary className="inline-block cursor-pointer list-none meta text-inkFaint transition-colors hover:text-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
-        {L("Remove", "移除")}
+        <span className="group-open:hidden">{L("Remove", "移除")}</span>
+        <span className="hidden group-open:inline">{L("Cancel", "取消")}</span>
       </summary>
       <form action={withdrawRecordingForm} className="mt-1.5 flex flex-wrap items-center gap-2">
         <input type="hidden" name="id" value={id} />

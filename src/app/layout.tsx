@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import ReviewBadge from "@/components/ReviewBadge";
 import LangProvider from "@/components/LangProvider";
 import TipFlip from "@/components/TipFlip";
+import FooterLink from "@/components/FooterLink";
 import NavMemory from "@/components/NavMemory";
 import PageFade from "@/components/PageFade";
 import NavProgress from "@/components/NavProgress";
@@ -156,7 +157,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="flex min-h-screen flex-col antialiased">
         <LangProvider lang={lang}>
-        <NavMemory />
+        {/* NavMemory reads the query string (useSearchParams), so it needs its own Suspense boundary. */}
+        <Suspense fallback={null}>
+          <NavMemory />
+        </Suspense>
         {/* useSearchParams needs a Suspense boundary to keep pages static. */}
         <Suspense fallback={null}>
           <NavProgress />
@@ -193,16 +197,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </span>
           </Link>
           <nav aria-label="Footer" className="mt-4 flex flex-wrap gap-x-7 gap-y-2">
-            <Link href="/browse" className="linkq">{t("nav.browse")}</Link>
-            <Link href="/learn" className="linkq">{t("nav.learn")}</Link>
-            <Link href="/about" className="linkq">{t("nav.about")}</Link>
-            <Link href="/contribute" className="linkq inline-flex items-start">
+            {/* The page you are on is in bold (FooterLink). */}
+            <FooterLink href="/browse" className="linkq">{t("nav.browse")}</FooterLink>
+            <FooterLink href="/learn" className="linkq">{t("nav.learn")}</FooterLink>
+            <FooterLink href="/about" className="linkq">{t("nav.about")}</FooterLink>
+            <FooterLink href="/contribute" also={["/add", "/improve", "/request", "/editor"]} className="linkq inline-flex items-start">
               {t("nav.contribute")}
               {/* Editors: the same count as on the header's Contribute. */}
               <Suspense fallback={null}>
                 <ReviewBadge className="ml-1 -translate-y-1.5" />
               </Suspense>
-            </Link>
+            </FooterLink>
           </nav>
           <p className="footnote mt-6 max-w-[60ch]">{t("footer.blurb")}</p>
           <p className="footnote mt-1.5">

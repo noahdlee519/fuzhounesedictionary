@@ -11,7 +11,8 @@ export default function DeleteRequest({ id, back, className = "" }: { id: string
   return (
     <details className={`group relative shrink-0 ${className}`}>
       <summary className="-my-1 cursor-pointer list-none rounded-sm px-1.5 py-1 meta text-inkFaint transition-colors hover:text-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden">
-        {L("Delete", "刪除")}
+        <span className="group-open:hidden">{L("Delete", "刪除")}</span>
+        <span className="hidden group-open:inline">{L("Cancel", "取消")}</span>
       </summary>
       <form
         action={deleteRequest}

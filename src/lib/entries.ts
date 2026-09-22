@@ -90,15 +90,13 @@ export interface RecordingSummary {
 }
 
 /** For each entry, how many approved recordings it has and which one a card
- *  should play. Two round trips (recordings, then their vote totals); both
- *  tolerate their table not existing yet. */
+ *  should play. Fetches the recordings, then summarises them
+ *  (summarizeRecordings); both tolerate their table not existing yet. */
 export async function recordingSummary(
   supabase: { from: (t: string) => any },
   ids: string[]
 ): Promise<Map<string, RecordingSummary>> {
-  const out = new Map<string, RecordingSummary>();
-  if (!ids.length) return out;
-
+  if (!ids.length) return new Map();
   const { data, error } = await supabase
     .from("recordings")
     // "*" so speaker_name comes through once recording_speaker.sql has run.
@@ -106,20 +104,38 @@ export async function recordingSummary(
     .eq("status", "approved")
     .in("entry_id", ids)
     .order("created_at", { ascending: true });
-  if (error || !data?.length) return out;
-  const rows = data as {
-    id: string; entry_id: string; kind: string; audio_url: string; created_at: string;
-    contributor_id?: string | null; speaker_name?: string | null; origin_area?: string | null;
-  }[];
+  if (error || !data?.length) return new Map();
+  return summarizeRecordings(supabase, data as RecRow[]);
+}
 
+type RecRow = {
+  id: string; entry_id: string; kind: string; audio_url: string; created_at: string; status?: string;
+  contributor_id?: string | null; speaker_name?: string | null; origin_area?: string | null;
+};
+
+/** The summary from recordings already in hand (oldest first). The vote
+ *  totals and the contributors' names are fetched together, in one round
+ *  trip rather than two: the names are looked up for everyone who made one
+ *  of these takes, before knowing which take will be chosen. */
+export async function summarizeRecordings(
+  supabase: { from: (t: string) => any },
+  rows: RecRow[]
+): Promise<Map<string, RecordingSummary>> {
+  const out = new Map<string, RecordingSummary>();
+  if (!rows.length) return out;
+  const people = [...new Set(rows.map((r) => r.contributor_id).filter(Boolean))] as string[];
+  const [{ data: totals }, { data: profs }] = await Promise.all([
+    supabase.from("recording_vote_totals").select("recording_id, up, down").in("recording_id", rows.map((r) => r.id)),
+    people.length
+      ? supabase.from("profiles").select("id, display_name").in("id", people)
+      : Promise.resolve({ data: [] }),
+  ]);
   const score = new Map<string, number>();
-  const { data: totals } = await supabase
-    .from("recording_vote_totals")
-    .select("recording_id, up, down")
-    .in("recording_id", rows.map((r) => r.id));
   for (const t of (totals ?? []) as any[]) score.set(t.recording_id, Number(t.up) - Number(t.down));
+  const names = new Map<string, string | null>();
+  for (const p of (profs ?? []) as any[]) names.set(p.id, p.display_name ?? null);
 
-  const byEntry = new Map<string, typeof rows>();
+  const byEntry = new Map<string, RecRow[]>();
   for (const r of rows) byEntry.set(r.entry_id, [...(byEntry.get(r.entry_id) ?? []), r]);
   for (const [entryId, recs] of byEntry) {
     // Readings of the word itself before example sentences; then the votes;
@@ -132,28 +148,35 @@ export async function recordingSummary(
     out.set(entryId, {
       count: recs.length,
       top: best?.audio_url ?? null,
-      topBy: best?.contributor_id ?? null, // an id for now; a name below
+      topBy: best?.contributor_id ? names.get(best.contributor_id) ?? null : null,
       topSpeaker: best?.speaker_name ?? null,
       topOrigin: best?.origin_area ?? null,
     });
   }
-
-  // The names behind those takes, in one lookup.
-  const who = [...new Set([...out.values()].map((s) => s.topBy).filter(Boolean))] as string[];
-  const names = new Map<string, string | null>();
-  if (who.length) {
-    const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", who);
-    for (const p of (profs ?? []) as any[]) names.set(p.id, p.display_name ?? null);
-  }
-  for (const s of out.values()) s.topBy = s.topBy ? names.get(s.topBy) ?? null : null;
   return out;
+}
+
+/** What a list query can embed so toCards needs no lookups of its own: every
+ *  meaning's count and the approved recordings, oldest first. Add it to the
+ *  select and pass the query through withCardEmbeds. */
+export const CARD_EMBEDS = "sense_total:senses(count), recordings(*)";
+export function withCardEmbeds<Q extends { eq: (c: string, v: any) => Q; order: (c: string, o: any) => Q }>(q: Q): Q {
+  return q.eq("recordings.status", "approved").order("created_at", { referencedTable: "recordings", ascending: true });
 }
 
 /** Rows with senses joined → cards with live recording counts and the
  *  recording each card plays, in two round trips for the whole page. */
 export async function toCards(supabase: { from: (t: string) => any }, rows: any[]): Promise<CardProps[]> {
   const ids = rows.map((r) => r.id);
-  const [summary, meanings] = await Promise.all([recordingSummary(supabase, ids), senseCounts(supabase, ids)]);
+  // Rows that carry CARD_EMBEDS bring their recordings and meaning counts
+  // with them; only the votes and names are left to fetch.
+  const embedded = rows.length > 0 && rows.every((r) => Array.isArray(r.recordings) && Array.isArray(r.sense_total));
+  const [summary, meanings] = embedded
+    ? [
+        await summarizeRecordings(supabase, rows.flatMap((r) => r.recordings as RecRow[]).sort((a, b) => (a.created_at < b.created_at ? -1 : 1))),
+        new Map<string, number>(rows.map((r) => [r.id, Number(r.sense_total?.[0]?.count ?? 0)])),
+      ]
+    : await Promise.all([recordingSummary(supabase, ids), senseCounts(supabase, ids)]);
   return rows.map((r) => {
     const s = summary.get(r.id);
     return {
