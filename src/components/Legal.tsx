@@ -3,7 +3,7 @@ import Link from "next/link";
 /* Shared layout for the privacy policy and terms of service: a heading, the
    date it was last changed, and numbered sections in the site's own voice. */
 
-export const LEGAL_CONTACT = "noahlee519@gmail.com";
+export const LEGAL_CONTACT = "noahdlee519@gmail.com";
 
 export function LegalPage({
   title,

@@ -197,8 +197,8 @@ export default async function AboutPage() {
             <h2 className="h2 mt-2">Noah Lee</h2>
             <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.dev.p")}</p>
             <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-              <a href="mailto:noahlee519@gmail.com" className="link">
-                noahlee519@gmail.com
+              <a href="mailto:noahdlee519@gmail.com" className="link">
+                noahdlee519@gmail.com
               </a>
               <span aria-hidden="true" className="text-ruleStrong">|</span>
               <a href="https://noahdarwinlee.com" target="_blank" rel="noreferrer" className="link">
