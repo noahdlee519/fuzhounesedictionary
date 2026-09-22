@@ -63,7 +63,7 @@ export default async function AccountPage({
     // Everything else this person has contributed, not just their first word.
     supabase
       .from("recordings")
-      .select("id, kind, audio_url, status, note, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))")
+      .select("id, kind, audio_url, status, note, created_at, reviewed_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))")
       .eq("contributor_id", user.id)
       .order("created_at", { ascending: false }),
   ]);

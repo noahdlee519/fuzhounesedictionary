@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { recordingsTrusted } from "@/lib/trust";
 import Link from "next/link";
 import { LegalPage, Section, Ul, LEGAL_CONTACT } from "@/components/Legal";
 import { SITE_NAME } from "@/lib/site";
@@ -85,8 +86,11 @@ export default function TermsPage() {
           and remove it at any time.
         </p>
         <p>
-          Nothing appears on the site until an editor has approved it. We can decline anything, for
-          any reason, and we do not owe an explanation, though we usually give one.
+          {recordingsTrusted()
+            ? "Words, meanings and edits appear on the site only once an editor has approved them. For now, recordings appear as soon as they are saved, and an editor checks them afterwards. "
+            : "Nothing appears on the site until an editor has approved it. "}
+          We can decline or take down anything, for any reason, and we do not owe an explanation,
+          though we usually give one.
         </p>
       </Section>
 
@@ -103,7 +107,7 @@ export default function TermsPage() {
       <Section n={5} title="Reporting and removal">
         <p>
           Everything in the dictionary is contributed by its users and checked by a volunteer editor
-          before it appears. That check is not a guarantee: an entry, recording or note can still be
+          {recordingsTrusted() ? " (for now, recordings are checked just after they appear rather than before)" : " before it appears"}. That check is not a guarantee: an entry, recording or note can still be
           wrong, offensive, infringing, or about a real person. We do not monitor the site
           continuously, and we are not responsible for what a contributor submits, but we will act on
           what we are told about.

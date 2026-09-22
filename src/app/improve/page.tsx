@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { recordingsTrusted } from "@/lib/trust";
 import QuickRecord from "@/components/QuickRecord";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -264,17 +265,27 @@ export default async function ImprovePage({
           <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
             {need === "recording" ? (
               <>
-                {L(
-                  "None of the words listed here has a recording yet. Press the button beside one, say it, and an editor will check it before it appears.",
-                  "這裡列出的詞都還沒有錄音。按下旁邊的按鈕，講出來，經編輯審過後就會刊出。"
-                )}
+                {recordingsTrusted()
+                  ? L(
+                      "None of the words listed here has a recording yet. Press the button beside one and say it. For now, your recording goes live straight away, and an editor listens to it afterwards.",
+                      "這裡列出的詞都還沒有錄音。按下旁邊的按鈕，講出來。目前錄音會直接上線，之後由編輯再聽一次。"
+                    )
+                  : L(
+                      "None of the words listed here has a recording yet. Press the button beside one, say it, and an editor will check it before it appears.",
+                      "這裡列出的詞都還沒有錄音。按下旁邊的按鈕，講出來，經編輯審過後就會刊出。"
+                    )}
               </>
             ) : (
               <>
-                {L(
-                  "Each word listed here is missing something. Fill in what you can—a recording, the pronunciation, a sentence—and an editor will check it before it appears.",
-                  "這裡列出的每個詞都缺了點什麼。能補多少就補多少——錄音、發音、例句——經編輯審過後就會刊出。"
-                )}
+                {recordingsTrusted()
+                  ? L(
+                      "Each word listed here is missing something. Fill in what you can—a recording, the pronunciation, a sentence. For now, recordings go live straight away and are checked afterwards; an editor checks the rest before it appears.",
+                      "這裡列出的每個詞都缺了點什麼。能補多少就補多少——錄音、發音、例句。目前錄音會直接上線，之後再審；其他內容經編輯審過後才會刊出。"
+                    )
+                  : L(
+                      "Each word listed here is missing something. Fill in what you can—a recording, the pronunciation, a sentence—and an editor will check it before it appears.",
+                      "這裡列出的每個詞都缺了點什麼。能補多少就補多少——錄音、發音、例句——經編輯審過後就會刊出。"
+                    )}
               </>
             )}
             {L(" Words people are waiting for are under ", "有人在等的詞，列在")}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { recordingsTrusted } from "@/lib/trust";
 import HeroMark from "@/components/HeroMark";
 import SiniticTree from "@/components/SiniticTree";
 import type { Metadata } from "next";
@@ -169,7 +170,7 @@ export default async function AboutPage() {
         <div className="grid gap-14 md:grid-cols-2 max-[900px]:gap-11">
           <div>
             <h2 className="h2">{t("about.built.h")}</h2>
-            {list(["about.built.1", "about.built.2", "about.built.3", "about.built.4"])}
+            {list(["about.built.1", recordingsTrusted() ? "about.built.2.trust" : "about.built.2", "about.built.3", "about.built.4"])}
           </div>
           <div>
             <h2 className="h2">{t("about.help.h")}</h2>

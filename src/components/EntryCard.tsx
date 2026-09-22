@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PlayButton from "./PlayButton";
+import RecordPrompt from "./RecordPrompt";
 import type { AudioCredit } from "@/lib/entries";
 
 export interface CardProps {
@@ -83,10 +84,13 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
             />
           </div>
         ) : (
-          /* No recording yet: an empty dotted circle where the play button
-             would be, the size of that button. "needs a recording" is in the
-             footer, where the recording counts go. */
-          <span aria-hidden className="block h-14 w-14 shrink-0 self-start rounded-full border-2 border-dashed border-ruleStrong" />
+          /* No recording yet: a dotted circle with a microphone where the
+             play button would be, the size of that button, linking to the
+             word's recorder. Above the card's link (z-20), like the play
+             button, so it takes its own clicks. */
+          <div className="relative z-20 shrink-0 self-start">
+            <RecordPrompt entryId={entry.id} word={entry.hanzi || entry.romanization || entry.headword} />
+          </div>
         )}
       </div>
       <div className="mt-3 flex items-baseline justify-between gap-x-3 text-[11px] font-semibold tracking-[.02em] text-inkMute">

@@ -8,6 +8,7 @@ import LearnPanels from "./LearnPanels";
 import { learnPanels, panelAnchors } from "./panels";
 import { starterWords, type StarterSection } from "./starter";
 import PlayButton from "@/components/PlayButton";
+import RecordPrompt from "@/components/RecordPrompt";
 import { translator } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
@@ -115,10 +116,7 @@ export default async function LearnPage({
                       {w.audio ? (
                         <PlayButton src={w.audio} size="xs" label={`${t("mod.play")} ${w.hanzi}`} />
                       ) : (
-                        <span
-                          className="inline-block h-9 w-9 shrink-0 rounded-full border border-dashed border-ruleStrong"
-                          aria-hidden="true"
-                        />
+                        <RecordPrompt entryId={w.id} word={w.hanzi} size="xs" />
                       )}
                       <Link href={`/entry/${w.id}`} className="group min-w-0 flex-1">
                         <span className="han text-[19px] font-medium group-hover:text-lacquer">{w.hanzi}</span>{" "}

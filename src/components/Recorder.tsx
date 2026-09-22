@@ -10,7 +10,7 @@ import { startGoogleSignIn } from "@/lib/supabase/sign-in";
 import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
 import SpeakerFields from "./SpeakerFields";
-import { withdrawRecording } from "@/app/account/actions";
+import { withdrawRecording, publishOwnRecording } from "@/app/account/actions";
 import type { Speaker } from "@/lib/audio-upload";
 import { useL } from "./LangProvider";
 
@@ -73,6 +73,23 @@ export default function Recorder({
   // without leaving the page. Its own draft and status, separate from `note`,
   // which belongs to the take still on screen.
   const [savedId, setSavedId] = useState<string | null>(null);
+  // During the trust window (lib/trust) a saved take goes live at once;
+  // this says whether the last one did, for the line after saving.
+  const [live, setLive] = useState(false);
+  /* Straight after a save: ask for it to go live. The server decides (the
+     window, and that the take is the caller's own and still pending); an
+     editor's take is live already. */
+  const goLive = async (id: string) => {
+    if (isEditor) return;
+    try {
+      const fd = new FormData();
+      fd.set("id", id);
+      const { live: now } = await publishOwnRecording(fd);
+      setLive(now);
+    } catch {
+      setLive(false);
+    }
+  };
   const [savedNote, setSavedNote] = useState("");
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   // "held": a take from before sign-in is being saved on return; "sending":
@@ -111,6 +128,7 @@ export default function Recorder({
         await releaseTake(entryId);
         if (cancelled) return;
         setSavedId(saved.id);
+        await goLive(saved.id);
         setSavedNote(saved.note);
         setNoteState("idle");
         setDone(true);
@@ -175,6 +193,7 @@ export default function Recorder({
         speaker,
       });
       setSavedId(saved.id);
+      await goLive(saved.id);
       setSavedNote(saved.note);
       setNoteState("idle");
       setDone(true);
@@ -224,7 +243,13 @@ export default function Recorder({
     return (
       <div className="space-y-2 text-sm text-inkSoft">
         <p className="flex flex-wrap items-center gap-3">
-          <span>{isEditor ? L("Saved.", "已儲存。") : L("Saved. It will appear once an editor has listened to it.", "已儲存。編輯聽過後就會刊出。")}</span>
+          <span>
+            {isEditor
+              ? L("Saved.", "已儲存。")
+              : live
+                ? L("Saved, and live on the word's page now. An editor will listen to it afterwards.", "已儲存，現在已在詞條頁上線。編輯之後會再聽一次。")
+                : L("Saved. It will appear once an editor has listened to it.", "已儲存。編輯聽過後就會刊出。")}
+          </span>
           <button
             type="button"
             onClick={() => setDone(false)}

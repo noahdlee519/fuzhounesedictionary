@@ -18,6 +18,9 @@ export interface RecordingByRowProps {
   status: string;
   note?: string | null;
   created_at: string;
+  /** Empty on a take that went live in the trust window and has not been
+   *  checked by an editor yet (lib/trust); its contributor may still take it back. */
+  reviewed_at?: string | null;
   entry: {
     id: string;
     headword: string;
@@ -83,7 +86,7 @@ export default function RecordingByRow({
         </div>
       </div>
       {/* On your own page, a take still waiting for review can be taken back. */}
-      {editableNote && r.status === "pending" && (
+      {editableNote && (r.status === "pending" || (r.status === "approved" && r.reviewed_at === null)) && (
         <div className="mt-3 border-t border-rule pt-2.5">
           <WithdrawRecording id={r.id} back={back} />
         </div>

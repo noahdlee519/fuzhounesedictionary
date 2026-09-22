@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { recordingsTrusted } from "@/lib/trust";
 import HeroMark from "@/components/HeroMark";
 import type { Metadata } from "next";
 import Avatar from "@/components/Avatar";
@@ -203,7 +204,7 @@ export default async function ContributePage() {
         <HeroMark />
         <p className="eyebrow">{t("nav.contribute")}</p>
         <h1 className="display mt-2 max-w-[18ch] [text-wrap:balance]">{t("hub.h")}</h1>
-        <p className="lede read mt-6 [text-wrap:pretty]">{t("hub.lede")}</p>
+        <p className="lede read mt-6 [text-wrap:pretty]">{t(recordingsTrusted() ? "hub.lede.trust" : "hub.lede")}</p>
         {/* Editors only: the way into the review queue, with how much is
             waiting. A quiet outlined button with one red count, under the
             lede where an editor looks first. */}

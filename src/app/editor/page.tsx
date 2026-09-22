@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TRUST_RECORDINGS_FROM } from "@/lib/trust";
 import SubmitButton from "@/components/SubmitButton";
 import DeleteRecording from "@/components/DeleteRecording";
 import DeleteEntry from "@/components/DeleteEntry";
@@ -82,7 +83,9 @@ export default async function AdminPage() {
       supabase
         .from("recordings")
         .select("*, entry:entries(hanzi, romanization, headword, status)")
-        .eq("status", "pending")
+        // Waiting for review, and (lib/trust) those that went live in the
+        // trust window and no editor has checked yet.
+        .or(`status.eq.pending,and(status.eq.approved,reviewed_at.is.null,created_at.gte.${TRUST_RECORDINGS_FROM})`)
         .order("created_at", { ascending: true }),
       supabase
         .from("suggestions")
@@ -242,6 +245,11 @@ export default async function AdminPage() {
                       {e?.romanization || e?.headword}
                     </Link>
                     {origin && <span className={chip}>{origin}</span>}
+                    {r.status === "approved" && (
+                      <span className="meta px-2 py-0.5 text-lacquer ring-1 ring-lacquer" title="Went live when it was saved (trust window); not yet checked">
+                        live
+                      </span>
+                    )}
                     <span className="ml-auto meta text-inkFaint">
                       {formatDateTime(r.created_at)}
                       {c?.display_name ? ` · ${c.display_name}` : ""}
@@ -259,7 +267,7 @@ export default async function AdminPage() {
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="entry_id" value={r.entry_id} />
                       <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
-                        ✓ Publish
+                        {r.status === "approved" ? "✓ Keep" : "✓ Publish"}
                       </SubmitButton>
                     </form>
                     <form action={rejectRecording} className="flex items-center gap-2">
@@ -273,7 +281,7 @@ export default async function AdminPage() {
                         className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
                       <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
-                        ✕ Reject
+                        {r.status === "approved" ? "✕ Take down" : "✕ Reject"}
                       </SubmitButton>
                     </form>
                     {/* Reject keeps the row; this removes it and its file. */}

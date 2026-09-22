@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { recordingsTrusted } from "@/lib/trust";
 import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -209,7 +210,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Suspense>
             </FooterLink>
           </nav>
-          <p className="footnote mt-6 max-w-[60ch]">{t("footer.blurb")}</p>
+          <p className="footnote mt-6 max-w-[60ch]">{t(recordingsTrusted() ? "footer.blurb.trust" : "footer.blurb")}</p>
           <p className="footnote mt-1.5">
             {t("footer.license")}{" "}
             <a href={LICENSE.url} className="whitespace-nowrap underline hover:text-ink" target="_blank" rel="noreferrer">

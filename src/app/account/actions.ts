@@ -218,7 +218,21 @@ async function withdraw(id: string): Promise<boolean> {
     .eq("contributor_id", user.id)
     .eq("status", "pending")
     .select("id, entry_id, audio_url");
-  const row = gone?.[0];
+  let row = gone?.[0];
+  // A take published by the trust window (lib/trust) is no longer pending,
+  // so the policy above will not delete it. While no editor has checked it
+  // yet, its contributor may still take it back.
+  if (!error && !row) {
+    const { data: live } = await adminClient()
+      .from("recordings")
+      .delete()
+      .eq("id", id)
+      .eq("contributor_id", user.id)
+      .eq("status", "approved")
+      .is("reviewed_at", null)
+      .select("id, entry_id, audio_url");
+    row = live?.[0];
+  }
   if (error || !row) return false;
 
   const path = audioPath(row.audio_url);
@@ -228,6 +242,8 @@ async function withdraw(id: string): Promise<boolean> {
   }
   revalidatePath("/account");
   revalidatePath("/editor");
+  revalidatePath("/");
+  revalidatePath("/browse");
   revalidatePath(`/entry/${row.entry_id}`);
   return true;
 }
@@ -240,4 +256,36 @@ export async function withdrawRecordingForm(formData: FormData) {
   const back = localPath(String(formData.get("back") ?? "").trim(), "/account?show=recordings");
   const ok = await withdraw(String(formData.get("id") ?? "").trim());
   redirect(`${back}${back.includes("?") ? "&" : "?"}${ok ? "withdrawn=1" : "problem=withdraw"}`);
+}
+
+/* During the trust window (lib/trust), a recording its contributor has just
+   saved goes live at once. The recorder calls this straight after the
+   upload. It runs with the service role, but only on the caller's own
+   recording, only while it is still pending, and only while the window is
+   open. reviewed_at stays empty: that is what keeps it in the editors' queue
+   as "live, not yet checked" until one of them keeps it or takes it down. */
+export async function publishOwnRecording(formData: FormData): Promise<{ live: boolean }> {
+  const { recordingsTrusted } = await import("@/lib/trust");
+  if (!recordingsTrusted()) return { live: false };
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const id = String(formData.get("id") ?? "").trim();
+  if (!user || !id) return { live: false };
+  const { data, error } = await adminClient()
+    .from("recordings")
+    .update({ status: "approved", reviewed_at: null, review_notes: null })
+    .eq("id", id)
+    .eq("contributor_id", user.id)
+    .eq("status", "pending")
+    .select("entry_id");
+  const row = data?.[0];
+  if (error || !row) return { live: false };
+  revalidatePath(`/entry/${row.entry_id}`);
+  revalidatePath("/");
+  revalidatePath("/browse");
+  revalidatePath("/improve");
+  revalidatePath("/editor");
+  return { live: true };
 }
