@@ -2,6 +2,7 @@
 
 import PlayButton from "./PlayButton";
 import type { Take } from "./useRecorder";
+import { useL } from "./LangProvider";
 
 /* The three faces of a recorder: idle (a Record button), recording (Stop and
    a running clock), and a take waiting (play it back, keep it or do it
@@ -20,11 +21,11 @@ export default function TakeControls({
   onStop,
   onDiscard,
   /** Label for the take's play button, for screen readers. */
-  playLabel = "your recording",
+  playLabel,
   /** Rendered after the play button while a take is waiting (Keep / Use this). */
   keep,
   /** Wording on the idle button. */
-  recordLabel = "Record",
+  recordLabel,
   disabled = false,
 }: {
   recording: boolean;
@@ -39,6 +40,7 @@ export default function TakeControls({
   recordLabel?: string;
   disabled?: boolean;
 }) {
+  const L = useL();
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -50,7 +52,7 @@ export default function TakeControls({
             className={`${recBtn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}
           >
             <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-current" />
-            {recordLabel}
+            {recordLabel ?? L("Record", "錄音")}
           </button>
         )}
 
@@ -58,7 +60,7 @@ export default function TakeControls({
           <>
             <button type="button" onClick={onStop} className={`${recBtn} border-lacquer text-lacquer`}>
               <span aria-hidden="true" className="inline-block h-2 w-2 animate-pulse bg-current" />
-              Stop
+              {L("Stop", "停止")}
             </button>
             <span aria-live="polite" className="text-xs tabular-nums text-lacquer">
               {seconds.toFixed(1)}s
@@ -68,7 +70,7 @@ export default function TakeControls({
 
         {take && !recording && (
           <>
-            <PlayButton src={take.url} label={playLabel} />
+            <PlayButton src={take.url} label={playLabel ?? L("your recording", "你的錄音")} />
             {keep}
             <button
               type="button"
@@ -76,7 +78,7 @@ export default function TakeControls({
               disabled={disabled}
               className={`${recBtn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}
             >
-              Record again
+              {L("Record again", "重錄")}
             </button>
           </>
         )}

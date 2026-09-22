@@ -10,11 +10,13 @@ import {
   AssistantError,
   CAP_ACTOR_MICROCENTS,
 } from "@/lib/assistant";
+import { entryCards, linkedEntryIds } from "@/lib/entry-cards";
 
 export const dynamic = "force-dynamic";
 
 /* POST /api/ask  { question: string, history?: [{role, content}] }
-   → 200 { answer }            answered
+   → 200 { answer, entries }   answered; entries are cards for the words the
+                               answer links to (lib/entry-cards)
    → 400                       empty question, or not JSON
    → 401 { message }           not signed in (the assistant needs an account)
    → 429 { message }           a cap was reached (per person, per day, or burst)
@@ -68,7 +70,8 @@ export async function POST(req: Request) {
       usage: a.usage,
       cost,
     });
-    return NextResponse.json({ answer: a.text });
+    const entries = await entryCards(linkedEntryIds(a.text)).catch(() => []);
+    return NextResponse.json({ answer: a.text, entries });
   } catch (e: any) {
     if (e instanceof AssistantError) return NextResponse.json({ message: e.message }, { status: e.status });
     console.error("assistant", e?.message ?? e);

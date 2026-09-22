@@ -1,4 +1,20 @@
 import type { CardProps } from "@/components/EntryCard";
+import { originArea } from "@/lib/origins";
+
+/** What the tooltip on an audio button says: who is speaking, who recorded
+ *  it, and where their Fuzhounese is from. Null when nothing is known. */
+export interface AudioCredit {
+  title: string;
+  detail: string | null;
+}
+export function audioCredit(by: string | null, speaker: string | null, origin: string | null): AudioCredit | null {
+  const area = originArea(origin);
+  const place = area ? `${area.label} ${area.hanzi}` : null;
+  const sp = speaker?.trim();
+  if (sp) return { title: `Said by ${sp}`, detail: [by ? `recorded by ${by}` : null, place].filter(Boolean).join(" · ") || null };
+  if (by) return { title: `Recorded by ${by}`, detail: place };
+  return place ? { title: "Recorded by a contributor", detail: place } : null;
+}
 
 /** Senses in display order (the `sort` column), without mutating the input. */
 export function sortSenses<T extends { sort?: number | null }>(senses: T[] | null | undefined): T[] {
@@ -66,6 +82,11 @@ export interface RecordingSummary {
   /** The one to play from a card: the best-liked reading of the word
    *  itself (up minus down votes), the earliest when tied. */
   top: string | null;
+  /** Who made that take, and who is speaking in it if someone else, for the
+   *  tooltip on the card's audio button. */
+  topBy?: string | null;
+  topSpeaker?: string | null;
+  topOrigin?: string | null;
 }
 
 /** For each entry, how many approved recordings it has and which one a card
@@ -80,12 +101,16 @@ export async function recordingSummary(
 
   const { data, error } = await supabase
     .from("recordings")
-    .select("id, entry_id, kind, audio_url, created_at")
+    // "*" so speaker_name comes through once recording_speaker.sql has run.
+    .select("*")
     .eq("status", "approved")
     .in("entry_id", ids)
     .order("created_at", { ascending: true });
   if (error || !data?.length) return out;
-  const rows = data as { id: string; entry_id: string; kind: string; audio_url: string; created_at: string }[];
+  const rows = data as {
+    id: string; entry_id: string; kind: string; audio_url: string; created_at: string;
+    contributor_id?: string | null; speaker_name?: string | null; origin_area?: string | null;
+  }[];
 
   const score = new Map<string, number>();
   const { data: totals } = await supabase
@@ -104,8 +129,23 @@ export async function recordingSummary(
         Number(b.kind === "headword") - Number(a.kind === "headword") ||
         (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0)
     )[0];
-    out.set(entryId, { count: recs.length, top: best?.audio_url ?? null });
+    out.set(entryId, {
+      count: recs.length,
+      top: best?.audio_url ?? null,
+      topBy: best?.contributor_id ?? null, // an id for now; a name below
+      topSpeaker: best?.speaker_name ?? null,
+      topOrigin: best?.origin_area ?? null,
+    });
   }
+
+  // The names behind those takes, in one lookup.
+  const who = [...new Set([...out.values()].map((s) => s.topBy).filter(Boolean))] as string[];
+  const names = new Map<string, string | null>();
+  if (who.length) {
+    const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", who);
+    for (const p of (profs ?? []) as any[]) names.set(p.id, p.display_name ?? null);
+  }
+  for (const s of out.values()) s.topBy = s.topBy ? names.get(s.topBy) ?? null : null;
   return out;
 }
 
@@ -116,7 +156,12 @@ export async function toCards(supabase: { from: (t: string) => any }, rows: any[
   const [summary, meanings] = await Promise.all([recordingSummary(supabase, ids), senseCounts(supabase, ids)]);
   return rows.map((r) => {
     const s = summary.get(r.id);
-    return { ...toCard(r, s?.count ?? 0), audio: s?.top ?? r.audio_url ?? null, senses: meanings.get(r.id) };
+    return {
+      ...toCard(r, s?.count ?? 0),
+      audio: s?.top ?? r.audio_url ?? null,
+      audioCredit: s?.top ? audioCredit(s.topBy ?? null, s.topSpeaker ?? null, s.topOrigin ?? null) : null,
+      senses: meanings.get(r.id),
+    };
   });
 }
 

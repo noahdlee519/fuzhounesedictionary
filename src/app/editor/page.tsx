@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 const chip =
   "meta text-inkSoft ring-1 ring-rule px-2 py-0.5";
 const btn =
-  "border px-4 py-1.5 meta transition-[color,background-color,border-color,transform] active:scale-[.97]";
+  "border px-4 py-1.5 meta transition-[color,background-color,border-color,opacity,transform] active:scale-[.97]";
 
 export default async function AdminPage() {
   const { user, profile } = await getSessionUser();
@@ -47,7 +47,7 @@ export default async function AdminPage() {
         <div className="max-w-lg space-y-4 rounded-sm border border-rule bg-surface p-8">
           <p className="h3">{t("admin.signin.h")}</p>
           <p className="text-inkSoft">{t("admin.signin.p")}</p>
-          <div className="flex justify-center"><SignInButton next="/admin" label={t("signin.google")} /></div>
+          <div className="flex justify-center"><SignInButton next="/editor" label={t("signin.google")} /></div>
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ export default async function AdminPage() {
         <div className="max-w-lg space-y-3 rounded-sm border border-rule bg-surface p-8">
           <p className="h3">{t("admin.only.h")}</p>
           <p className="text-inkSoft">{t("admin.only.p", { name: profile?.display_name ?? "" })}</p>
-          <Link href="/submit" className="link">{t("admin.only.link")}</Link>
+          <Link href="/add" className="link">{t("admin.only.link")}</Link>
         </div>
       </div>
     );
@@ -81,13 +81,13 @@ export default async function AdminPage() {
       // it. See supabase/recordings_profiles_fk.sql.
       supabase
         .from("recordings")
-        .select("*, entry:entries(hanzi, romanization, headword)")
+        .select("*, entry:entries(hanzi, romanization, headword, status)")
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
       supabase
         .from("suggestions")
         .select(
-          "id, entry_id, kind, value, value_gloss, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword), sense:senses(definition_en)"
+          "id, entry_id, kind, value, value_gloss, origin_area, origin_locality, created_at, contributor:profiles(id, display_name), entry:entries(hanzi, romanization, headword, status), sense:senses(definition_en)"
         )
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
@@ -138,9 +138,7 @@ export default async function AdminPage() {
     <div className="space-y-6">
       <ContributeTabs active="review" />
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
-          What people have sent in, oldest first. Publish what is right, send back what is not.
-        </p>
+        <span />
         <span className="meta text-inkFaint">
           {waiting} waiting
         </span>
@@ -164,12 +162,12 @@ export default async function AdminPage() {
                   <div className="flex flex-wrap items-baseline gap-3">
                     {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <Link
-                      href={`/entry/${s.entry_id}`}
+                      href={e?.status === "approved" ? `/entry/${s.entry_id}` : `/editor/edit/${s.entry_id}`}
                       className="romanization font-display font-semibold text-lacquer hover:underline"
                     >
                       {e?.romanization || e?.headword}
                     </Link>
-                    <span className={chip}>{s.kind === "edit" ? "suggested edit" : s.kind}</span>
+                    <span className={s.kind === "report" ? "meta text-lacquer ring-1 ring-lacquer px-2 py-0.5" : chip}>{s.kind === "edit" ? "suggested edit" : s.kind === "report" ? "report" : s.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto meta text-inkFaint">
                       {formatDateTime(s.created_at)}
@@ -178,7 +176,7 @@ export default async function AdminPage() {
                   </div>
 
                   <div className="mt-3 border-l-2 border-lacquer pl-3">
-                    <p className={s.kind === "edit" ? "whitespace-pre-line" : "text-lg"}>{s.value}</p>
+                    <p className={s.kind === "edit" || s.kind === "report" ? "whitespace-pre-line" : "text-lg"}>{s.value}</p>
                     {s.value_gloss && <p className="text-sm text-inkSoft">{s.value_gloss}</p>}
                     {sense?.definition_en && (
                       <p className="mt-1 meta text-inkFaint">
@@ -191,14 +189,14 @@ export default async function AdminPage() {
                     <form action={approveSuggestion}>
                       <input type="hidden" name="id" value={s.id} />
                       <input type="hidden" name="entry_id" value={s.entry_id} />
-                      <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer disabled:opacity-60`}>
+                      <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
                         {/* An edit is made by hand in the entry editor;
                             approving it only marks it done. */}
-                        {s.kind === "edit" ? "✓ Done" : "✓ Publish"}
+                        {s.kind === "edit" || s.kind === "report" ? "✓ Done" : "✓ Publish"}
                       </SubmitButton>
                     </form>
-                    {s.kind === "edit" && (
-                      <Link href={`/admin/edit/${s.entry_id}`} className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}>
+                    {(s.kind === "edit" || s.kind === "report") && (
+                      <Link href={`/editor/edit/${s.entry_id}`} className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink`}>
                         Edit the entry
                       </Link>
                     )}
@@ -212,7 +210,7 @@ export default async function AdminPage() {
                         placeholder="Reason (optional)"
                         className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
-                      <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer disabled:opacity-60`}>
+                      <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
                         ✕ Reject
                       </SubmitButton>
                     </form>
@@ -238,12 +236,11 @@ export default async function AdminPage() {
                   <div className="flex flex-wrap items-baseline gap-3">
                     {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <Link
-                      href={`/entry/${r.entry_id}`}
+                      href={e?.status === "approved" ? `/entry/${r.entry_id}` : `/editor/edit/${r.entry_id}`}
                       className="romanization font-display font-semibold text-lacquer hover:underline"
                     >
                       {e?.romanization || e?.headword}
                     </Link>
-                    <span className={chip}>{r.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto meta text-inkFaint">
                       {formatDateTime(r.created_at)}
@@ -261,7 +258,7 @@ export default async function AdminPage() {
                     <form action={approveRecording}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="entry_id" value={r.entry_id} />
-                      <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer disabled:opacity-60`}>
+                      <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
                         ✓ Publish
                       </SubmitButton>
                     </form>
@@ -275,12 +272,12 @@ export default async function AdminPage() {
                         placeholder="Reason (optional)"
                         className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
-                      <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer disabled:opacity-60`}>
+                      <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
                         ✕ Reject
                       </SubmitButton>
                     </form>
                     {/* Reject keeps the row; this removes it and its file. */}
-                    <DeleteRecording id={r.id} back="/admin" className="ml-auto" />
+                    <DeleteRecording id={r.id} back="/editor" className="ml-auto" />
                   </div>
                 </div>
               );
@@ -341,7 +338,7 @@ export default async function AdminPage() {
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
                   <form action={approve}>
                     <input type="hidden" name="id" value={e.id} />
-                    <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer disabled:opacity-60`}>
+                    <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
                       ✓ Approve
                     </SubmitButton>
                   </form>
@@ -354,17 +351,17 @@ export default async function AdminPage() {
                       placeholder="Reason (optional)"
                       className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                     />
-                    <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer disabled:opacity-60`}>
+                    <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
                       ✕ Reject
                     </SubmitButton>
                   </form>
                   <Link
-                    href={`/admin/edit/${e.id}`}
+                    href={`/editor/edit/${e.id}`}
                     className="meta text-lacquer hover:underline"
                   >
                     Edit
                   </Link>
-                  <DeleteEntry id={e.id} back="/admin" className="ml-auto" />
+                  <DeleteEntry id={e.id} back="/editor" className="ml-auto" />
                 </div>
               </div>
             );

@@ -1,4 +1,4 @@
-import { deleteRecording } from "@/app/admin/actions";
+import { deleteRecording } from "@/app/editor/actions";
 import SubmitButton from "./SubmitButton";
 
 /* An editor's delete control for one recording.

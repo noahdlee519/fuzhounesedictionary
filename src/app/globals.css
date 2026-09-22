@@ -33,6 +33,7 @@
   --lacquer:      #C5311D;
   --lacquer-ink:  #FFFFFF;
   --lacquer-soft: rgba(197, 49, 29, .10);
+  --wotd-hover:   rgba(197, 49, 29, .15); /* Word of the Day card on hover */
   --green:        #2E7D4F;
   --amber:        #9A6414; /* was #B7791F, 3.6:1 on white; now 5:1 */
   --shadow:       0 12px 40px rgba(0, 0, 0, .12);
@@ -56,6 +57,7 @@
     --lacquer:      #E8503A;
     --lacquer-ink:  #0B0B0C;
     --lacquer-soft: rgba(232, 80, 58, .14);
+  --wotd-hover:   rgba(232, 80, 58, .20);
     --green:        #4FB37B;
     --amber:        #D9A13C;
     --shadow:       0 12px 40px rgba(0, 0, 0, .6);
@@ -75,6 +77,7 @@
   --lacquer:      #E8503A;
   --lacquer-ink:  #0B0B0C;
   --lacquer-soft: rgba(232, 80, 58, .14);
+  --wotd-hover:   rgba(232, 80, 58, .20);
   --green:        #4FB37B;
   --amber:        #D9A13C;
   --shadow:       0 12px 40px rgba(0, 0, 0, .6);
@@ -347,12 +350,18 @@ body {
 .nav-strip {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+}
+/* Only when the row actually runs on past the edge (NavStrip sets data-more). */
+.nav-strip[data-more] {
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
           mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
 }
 .nav-strip::-webkit-scrollbar { display: none; }
+/* [data-more] too: the Contribute badge pokes out of the row, which counts
+   as overflow, and a mask clips everything outside the box — the badge's
+   top and right were cut off on wide screens. */
 @media (min-width: 768px) {
-  .nav-strip { -webkit-mask-image: none; mask-image: none; }
+  .nav-strip, .nav-strip[data-more] { -webkit-mask-image: none; mask-image: none; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -384,6 +393,7 @@ body {
 @media (max-width: 1200px) {
   .site-margin { display: none; }
 }
+
 
 /* ---------------------------------------------------------------------------
    The search box is a real <input type="search"> (screen readers announce it
@@ -464,3 +474,46 @@ html.no-tx *, html.no-tx *::before, html.no-tx *::after { transition: none !impo
 .tip { transition: opacity 125ms var(--ease-out), visibility 0s linear 125ms; }
 .tip-host:hover .tip { transition: opacity 125ms var(--ease-out) 250ms, visibility 0s linear 250ms; }
 .tip-host:focus-within .tip { transition: opacity 125ms var(--ease-out); }
+
+/* Who recorded a clip: a small dark panel under an audio button (PlayButton
+   `credit`). Inverted colours so it reads as an overlay, not page content;
+   dropped below the button with a notch pointing up at it. Opens after a
+   short wait on hover so a pointer passing over does not flash it, at once
+   on keyboard focus; closes at once. Hover only where a real pointer hovers. */
+.audio-tip {
+  position: absolute; top: calc(100% + 10px); z-index: 40;
+  width: max-content; max-width: 15rem;
+  padding: 7px 10px; border-radius: 4px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif;
+  font-size: 12px; line-height: 1.35; font-weight: 400; letter-spacing: 0; text-align: left;
+  white-space: normal; box-shadow: 0 6px 20px rgb(0 0 0 / .14), 0 1px 3px rgb(0 0 0 / .12);
+  pointer-events: none; opacity: 0; visibility: hidden; transform: translateY(-3px) scale(.98);
+  transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out), visibility 0s linear 120ms;
+}
+.audio-tip::before {
+  content: ""; position: absolute; top: -4px; width: 8px; height: 8px;
+  background: inherit; transform: rotate(45deg); border-radius: 1px;
+}
+.audio-tip-left { left: 0; transform-origin: top left; }
+.audio-tip-left::before { left: calc(var(--btn, 44px) / 2 - 4px); }
+.audio-tip-right { right: 0; transform-origin: top right; }
+.audio-tip-right::before { right: calc(var(--btn, 44px) / 2 - 4px); }
+@media (hover: hover) and (pointer: fine) {
+  .audio-tip-host:hover .audio-tip {
+    opacity: 1; visibility: visible; transform: none;
+    transition: opacity 150ms var(--ease-out) 300ms, transform 150ms var(--ease-out) 300ms, visibility 0s linear 300ms;
+  }
+}
+.audio-tip-host:has(button:focus-visible) .audio-tip {
+  opacity: 1; visibility: visible; transform: none; transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) { .audio-tip { transform: none !important; } }
+
+/* Sample text in every input and textarea, a step fainter than the colour
+   it is given, so it never reads as something already typed in (Noah,
+   21 Sep 2026). After Tailwind's preflight, which sets it back to 1. */
+input::placeholder,
+textarea::placeholder {
+  opacity: 0.55;
+}

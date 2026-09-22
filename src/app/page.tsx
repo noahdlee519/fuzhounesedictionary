@@ -2,14 +2,17 @@ import Link from "next/link";
 import HeroMark from "@/components/HeroMark";
 import SearchBar from "@/components/SearchBar";
 import PlayButton from "@/components/PlayButton";
-import AskSection from "@/components/AskSection";
+import AskSection, { type AskSample } from "@/components/AskSection";
+import { entryCards, linkedEntryIds } from "@/lib/entry-cards";
+import DeleteRequest from "@/components/DeleteRequest";
+import RequestVote from "@/components/RequestVote";
 import ContributorCard from "@/components/ContributorCard";
 import { createClient } from "@/lib/supabase/server";
 import type { SearchRow } from "@/lib/types";
-import { one, recordingCounts, firstSense } from "@/lib/entries";
+import { one, recordingCounts, firstSense, audioCredit, type AudioCredit } from "@/lib/entries";
 import { getSessionUser } from "@/lib/auth";
 import { searchContributors, type ContributorHit } from "@/lib/contributors";
-import { missionTally, topContributors, type MissionTally, type TopContributor } from "@/lib/public-stats";
+import { missionTally, topContributors, contributorCount, type MissionTally, type TopContributor } from "@/lib/public-stats";
 import { translator, samples } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { getSafe } from "@/lib/safe";
@@ -69,7 +72,8 @@ export default async function Home({
 }) {
   const q = (searchParams.q ?? "").trim();
   const supabase = createClient();
-  const { user } = await getSessionUser();
+  const { user, profile } = await getSessionUser();
+  const isEditorView = Boolean(profile?.is_editor);
   const lang = getLang();
   const t = translator(lang);
   const safe = getSafe();
@@ -158,7 +162,7 @@ export default async function Home({
             <ul className="mt-4 space-y-2.5 text-[15px]">
               <li className="text-inkSoft">{anchored(t("results.none.ask"))}</li>
               <li>
-                <Link href={`/submit?romanization=${encodeURIComponent(q)}`} className="link">
+                <Link href={`/add?romanization=${encodeURIComponent(q)}`} className="link">
                   {t("results.none.add", { q })}
                 </Link>
               </li>
@@ -177,13 +181,16 @@ export default async function Home({
   /* ------------------------------------------------------------------- home */
   let tally: MissionTally | null = null;
   let wanted: { id: string; term: string; votes: number; entry_id: string | null }[] = [];
-  let wotd: { id: string; hanzi: string | null; romanization: string | null; headword: string; audio: string | null; gloss: string | null } | null = null;
+  let wotd: { id: string; hanzi: string | null; romanization: string | null; headword: string; audio: string | null; gloss: string | null; senses: number; credit?: AudioCredit | null } | null = null;
   let top: TopContributor[] = [];
+  let people: number | null = null;
+  const myVotes = new Set<string>();
 
   try {
-    const [numbers, people, { data: wants }] = await Promise.all([
+    const [numbers, topPeople, peopleCount, { data: wants }] = await Promise.all([
       missionTally(),
       topContributors(4).catch(() => [] as TopContributor[]),
+      contributorCount().catch(() => null),
       supabase
         .from("word_requests_ranked")
         .select("id, term, votes, entry_id")
@@ -193,8 +200,18 @@ export default async function Home({
         .limit(4),
     ]);
     tally = numbers;
-    top = people;
+    top = topPeople;
+    people = peopleCount;
     wanted = (wants ?? []) as typeof wanted;
+    // Which of these the viewer has voted for, so their ▲ shows it.
+    if (user && wanted.length) {
+      const { data: mv } = await supabase
+        .from("word_request_votes")
+        .select("request_id")
+        .eq("user_id", user.id)
+        .in("request_id", wanted.map((w) => w.id));
+      for (const v of (mv ?? []) as any[]) myVotes.add(v.request_id);
+    }
 
     // Word of the day: one voiced entry, the same for everyone all day.
     const ids = numbers?.voicedIds ?? [];
@@ -205,14 +222,23 @@ export default async function Home({
         ? supabase.from("entries").select("id, hanzi, romanization, headword, audio_url, senses(definition_en, sort)").eq("id", wotdId).maybeSingle()
         : Promise.resolve({ data: null } as any),
       wotdId
-        ? supabase.from("recordings").select("audio_url").eq("entry_id", wotdId).eq("status", "approved").order("created_at").limit(1)
+        ? supabase.from("recordings").select("*").eq("entry_id", wotdId).eq("status", "approved").order("created_at").limit(1)
         : Promise.resolve({ data: null } as any),
     ]);
     if (w) {
+      // Who recorded the take the card plays, for the tooltip on its button.
+      const take = (wRec as any[])?.[0] ?? null;
+      let by: string | null = null;
+      if (take?.contributor_id) {
+        const { data: prof } = await supabase.from("profiles").select("display_name").eq("id", take.contributor_id).maybeSingle();
+        by = (prof as any)?.display_name ?? null;
+      }
       wotd = {
         id: w.id, hanzi: w.hanzi, romanization: w.romanization, headword: w.headword,
-        audio: (wRec as any[])?.[0]?.audio_url ?? w.audio_url ?? null,
+        audio: take?.audio_url ?? w.audio_url ?? null,
+        credit: take ? audioCredit(by, take.speaker_name ?? null, take.origin_area ?? null) : null,
         gloss: firstSense<any>(w.senses)?.definition_en ?? null,
+        senses: ((w.senses as any[]) ?? []).filter((x) => x?.definition_en).length,
       };
       // Rather than an explicit word standing at the top of the home page all
       // day, the module simply sits out; tomorrow's word takes its place.
@@ -226,6 +252,22 @@ export default async function Home({
   const voiced = tally?.voiced ?? 0;
   const silent = Math.max(0, words - voiced);
   const modules = [wotd, true, top.length > 0].filter(Boolean).length;
+
+  // The example questions, each with cards for the words its written answer
+  // links to, so a signed-out visitor sees what a real answer looks like.
+  const baseSamples = samples(lang);
+  let askSamples: AskSample[] = baseSamples;
+  try {
+    const ids = [...new Set(baseSamples.flatMap((x) => linkedEntryIds(x.a)))];
+    const cards = await entryCards(ids, ids.length);
+    const byId = new Map(cards.map((c) => [c.id, c]));
+    askSamples = baseSamples.map((x) => ({
+      ...x,
+      cards: linkedEntryIds(x.a).map((id) => byId.get(id)).filter((c): c is NonNullable<typeof c> => Boolean(c)),
+    }));
+  } catch {
+    /* the examples simply show without cards */
+  }
 
   return (
     <div className="-my-10">
@@ -254,7 +296,15 @@ export default async function Home({
           placeholderFull={t("search.full")}
           placeholderShort={t("search.short")}
           label={t("search.label")}
-          hint={t("hint.try")}
+          hint={
+            <>
+              {t("hint.try")}{" "}
+              {/* The other way to find something: the assistant, just below. */}
+              <a href="#ask" className="whitespace-nowrap text-lacquer underline-offset-2 hover:underline">
+                {t("hint.ask")}
+              </a>
+            </>
+          }
         />
       </section>
 
@@ -263,17 +313,25 @@ export default async function Home({
           at the bottom of the page. Its field is as large as the search box;
           the panel and the heading are what tell the two apart. */}
       <section id="ask" className="scroll-mt-20 pb-14">
-        <div className="rounded-sm bg-surface p-6 sm:p-9">
-          <h2 className="h1">{t("ask.eyebrow")}</h2>
+        <div className="rounded-sm bg-accentSoft p-6 sm:p-9">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <h2 className="h2">{t("ask.eyebrow")}</h2>
+            {/* What it is and where its answers come from, said plainly. */}
+            <p className="meta text-inkFaint">
+              <span aria-hidden className="mr-2 inline-block h-1.5 w-1.5 -translate-y-px rounded-full bg-lacquer align-middle" />
+              {t("ask.tag")}
+            </p>
+          </div>
           <p className="mt-2 max-w-[56ch] text-inkSoft [text-wrap:balance]">{t("ask.lede")}</p>
           <AskSection
             signedIn={!!user}
-            samples={samples(lang)}
+            samples={askSamples}
             s={{
               label: t("ask.eyebrow"),
               own: t("ask.own"),
               placeholderIn: t("ask.placeholder.in"),
               placeholderOut: t("ask.placeholder.out"),
+              placeholderShort: t("ask.placeholder.short"),
               note: t("ask.note"),
               example: t("ask.example"),
               signin: t("ask.signin"),
@@ -285,6 +343,34 @@ export default async function Home({
       </section>
 
       <hr className="rule-bleed" />
+
+      {/* The dictionary in four numbers (moved from About, Noah, 21 Sep 2026):
+          words and recordings always; districts and contributors once there
+          are any. Each label has a singular form for a count of one. */}
+      {tally && (
+        <>
+          <section className="sec-sm">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
+              {[
+                [tally.words, "about.stat.words", "about.stat.word"],
+                [tally.recordings, "about.stat.recs", "about.stat.rec"],
+                [tally.districts, "about.stat.districts", "about.stat.district"],
+                [people ?? 0, "about.stat.people", "about.stat.person"],
+              ]
+                .filter(([n], i) => i < 2 || (n as number) > 0)
+                .map(([n, plural, single]) => (
+                  <p key={plural as string}>
+                    <span className="block text-[32px] font-medium leading-none tracking-tight tabular-nums text-ink sm:text-[40px]">
+                      {(n as number).toLocaleString()}
+                    </span>
+                    <span className="mt-2 block text-sm text-inkSoft">{t((n === 1 ? single : plural) as any)}</span>
+                  </p>
+                ))}
+            </div>
+          </section>
+          <hr className="rule-bleed" />
+        </>
+      )}
 
       {/* Two doors. The paragraphs are balanced so no line is left holding
           a single word at the widths where the column is narrow. */}
@@ -309,7 +395,7 @@ export default async function Home({
               <Link href="/improve?need=recording" className="btn btn-primary">
                 {t("door.contribute.btn")}
               </Link>
-              <Link href="/submit" className="btn btn-ghost">
+              <Link href="/add" className="btn btn-ghost">
                 {t("door.contribute.link")}
               </Link>
             </div>
@@ -345,7 +431,7 @@ export default async function Home({
           {/* The whole card opens the word; the audio button sits above the
               card's link (z-10), so pressing it plays rather than navigates. */}
           {wotd && (
-            <div className="group relative self-start rounded-sm bg-accentSoft p-6">
+            <div className="group relative self-start rounded-sm bg-accentSoft p-6 transition-colors duration-200 hover:z-20 hover:bg-[var(--wotd-hover)] focus-within:z-20">
               <h3 className="h3 mb-3">{t("mod.wotd")}</h3>
               <Link
                 href={`/entry/${wotd.id}`}
@@ -361,12 +447,24 @@ export default async function Home({
               <div className="mt-3 flex items-center gap-3">
                 {wotd.audio && (
                   <span className="relative z-10">
-                    <PlayButton src={wotd.audio} size="sm" label={`${t("mod.play")} ${wotd.hanzi || wotd.headword}`} />
+                    <PlayButton src={wotd.audio} size="sm" label={`${t("mod.play")} ${wotd.hanzi || wotd.headword}`} credit={wotd.credit} />
                   </span>
                 )}
-                {wotd.hanzi && <span className="romanization text-xl">{wotd.romanization || wotd.headword}</span>}
+                {wotd.hanzi && <span className="romanization text-[22px] leading-snug">{wotd.romanization || wotd.headword}</span>}
               </div>
-              {wotd.gloss && <p className="mt-3 text-[15px] text-inkSoft">{wotd.gloss}</p>}
+              {/* The same size as the romanization above it. With more than one
+                  meaning, the first is numbered and the rest are counted. */}
+              {wotd.gloss && (
+                <p className="mt-2 text-[22px] leading-snug text-inkSoft">
+                  {wotd.senses > 1 && <span className="tabular-nums text-inkMute">1. </span>}
+                  {wotd.gloss}
+                </p>
+              )}
+              {wotd.senses > 1 && (
+                <p className="mt-1.5 text-sm text-inkMute">
+                  {t(wotd.senses === 2 ? "mod.moreMeanings1" : "mod.moreMeanings", { n: wotd.senses - 1 })}
+                </p>
+              )}
             </div>
           )}
 
@@ -375,33 +473,39 @@ export default async function Home({
             {wanted.length ? (
               wanted.map((x) => (
                 <div key={x.id} className="flex items-center gap-3 border-b border-rule py-2.5 last:border-b-0">
-                  <Link
-                    href="/request"
-                    className="inline-flex h-9 min-w-[52px] items-center justify-center gap-1 rounded-sm border border-ruleStrong px-2 text-xs text-inkSoft hover:border-lacquer hover:text-lacquer"
-                    aria-label={t("mod.votes", { n: x.votes })}
-                  >
-                    ▲ {x.votes}
-                  </Link>
+                  <RequestVote
+                    id={x.id}
+                    votes={x.votes}
+                    voted={myVotes.has(x.id)}
+                    signedIn={!!user}
+                    back="/"
+                    label={t("mod.votes", { n: x.votes })}
+                  />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm">{x.term}</div>
-                    {x.entry_id ? (
-                      <Link href={`/entry/${x.entry_id}`} className="link text-xs">
-                        {t("mod.open")}
-                      </Link>
-                    ) : (
-                      <div className="text-xs text-inkMute">{t("mod.needsEntry")}</div>
-                    )}
+                    <Link href="/request" className="text-sm hover:text-lacquer">{x.term}</Link>
+                    {/* The second line, with the editors' Delete at its right on the
+                        same baseline as "needs an entry". */}
+                    <div className="flex items-baseline justify-between gap-3">
+                      {x.entry_id ? (
+                        <Link href={`/entry/${x.entry_id}`} className="link text-xs">
+                          {t("mod.open")}
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-inkMute">{t("mod.needsEntry")}</span>
+                      )}
+                      {isEditorView && <DeleteRequest id={x.id} back="/" />}
+                    </div>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-inkSoft">
-                {t("mod.nothingWaiting")}{" "}
-                <Link href="/request" className="link">
-                  {t("mod.askFor")}
-                </Link>
-              </p>
+              <p className="text-sm text-inkSoft">{t("mod.nothingWaiting")}</p>
             )}
+            <p className="mt-4">
+              <Link href="/request" className="link text-sm">
+                {t("mod.askFor")}
+              </Link>
+            </p>
           </div>
 
           {top.length > 0 && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useL } from "./LangProvider";
 
 /* The Browse filters on a phone. There they fill about three screens, and
    the words — what people came for — started below all of them. So on a
@@ -17,6 +18,7 @@ export default function FilterPanel({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const L = useL();
   return (
     <div>
       <button
@@ -27,7 +29,7 @@ export default function FilterPanel({
         className="btn btn-ghost btn-sm w-full justify-between sm:hidden"
       >
         <span>
-          Filters
+          {L("Filters", "篩選")}
           {summary && <span className="ml-2 font-normal text-inkSoft">· {summary}</span>}
         </span>
         <span aria-hidden className={"text-[10px] transition-transform " + (open ? "rotate-90" : "")}>

@@ -26,7 +26,7 @@ export default function EditLink({
       if (!ref || !ref.startsWith(window.location.origin)) return;
       const u = new URL(ref);
       // Coming from the queue or another edit: returning there is the default anyway.
-      if (u.pathname.startsWith("/admin")) return;
+      if (u.pathname.startsWith("/editor")) return;
       // The referrer never carries a fragment; put the word list's back so the
       // return lands on the list rather than the top of the page.
       const hash = u.pathname === "/learn" ? "#words" : "";
@@ -37,7 +37,7 @@ export default function EditLink({
   }, []);
 
   return (
-    <Link href={`/admin/edit/${entryId}?back=${encodeURIComponent(back)}`} className={className}>
+    <Link href={`/editor/edit/${entryId}?back=${encodeURIComponent(back)}`} className={className}>
       Edit
     </Link>
   );

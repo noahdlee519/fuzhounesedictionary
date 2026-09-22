@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { reviewCount } from "@/lib/review";
 import { translator, type Key } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
@@ -11,7 +11,7 @@ import { getLang } from "@/lib/lang";
    four names in the header. They are the same activity from four angles, so
    they share this masthead: the title "Contribute", then a tab for each,
    with Overview leading back to the hub at /contribute. The routes are
-   unchanged — /submit, /improve, /request, /admin — only the way in is one.
+   unchanged — /add, /improve, /request, /editor — only the way in is one.
    The Review tab carries the number of items waiting, so an editor sees at
    a glance whether there is anything to do. */
 
@@ -24,20 +24,11 @@ export type ContributeTab = "record" | "add" | "improve" | "wanted" | "review";
 const TABS: { key: ContributeTab | "overview"; href: string; label: Key }[] = [
   { key: "overview", href: "/contribute", label: "tab.overview" },
   { key: "record", href: "/improve?need=recording", label: "tab.record" },
-  { key: "add", href: "/submit", label: "tab.add" },
+  { key: "add", href: "/add", label: "tab.add" },
   { key: "improve", href: "/improve", label: "tab.improve" },
   { key: "wanted", href: "/request", label: "tab.wanted" },
-  { key: "review", href: "/admin", label: "tab.review" },
+  { key: "review", href: "/editor", label: "tab.review" },
 ];
-
-async function reviewCount(): Promise<number | null> {
-  const supabase = createClient();
-  const head = (table: string) =>
-    supabase.from(table).select("id", { count: "exact", head: true }).eq("status", "pending");
-  const results = await Promise.all([head("entries"), head("recordings"), head("suggestions")]);
-  // A queue whose table is missing (a migration not yet run) counts as empty.
-  return results.reduce((n, r) => n + (r.error ? 0 : r.count ?? 0), 0);
-}
 
 export default async function ContributeTabs({ active }: { active: ContributeTab }) {
   const t = translator(getLang());
@@ -73,8 +64,8 @@ export default async function ContributeTabs({ active }: { active: ContributeTab
               {tab.key === "review" && waiting !== null && waiting > 0 && (
                 <span
                   className={
-                    "ui min-w-[1.25rem] rounded-sm px-1.5 text-center text-[11px] leading-[18px] tabular-nums " +
-                    (on ? "bg-lacquer text-paper" : "border border-ruleStrong text-inkSoft")
+                    // Always red, on this tab or not: it is a count of work waiting.
+                    "ui min-w-[1.25rem] rounded-sm bg-lacquer px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums text-paper"
                   }
                   aria-label={t("tab.waiting", { n: waiting })}
                 >

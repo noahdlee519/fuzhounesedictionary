@@ -7,8 +7,7 @@ import { requestWord } from "@/app/request/actions";
 import type { EntryWithSenses, Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
 import { firstSense, sortSenses, one, entryTitle } from "@/lib/entries";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
-import { LEGAL_CONTACT } from "@/components/Legal";
+import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
 import PlayButton from "@/components/PlayButton";
@@ -18,6 +17,8 @@ import DeleteEntry from "@/components/DeleteEntry";
 import SavedNotice from "@/components/SavedNotice";
 import type { VoteState } from "@/components/VoteButtons";
 import BackLink from "@/components/BackLink";
+import TipRow from "@/components/TipRow";
+import SignInButton from "@/components/SignInButton";
 import SuggestEdit from "@/components/SuggestEdit";
 import EditLink from "@/components/EditLink";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
@@ -122,7 +123,7 @@ export default async function EntryPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { saved?: string; problem?: string; edit?: string };
+  searchParams: { saved?: string; problem?: string; edit?: string; report?: string };
 }) {
   const supabase = createClient();
   // None of these depend on each other, so they go out together. Recordings
@@ -192,6 +193,10 @@ export default async function EntryPage({
     }
   }
   const headwordRecs = recordings.filter((r) => r.kind === "headword");
+  // Only published takes speak for the word: the big button, the count and
+  // "be the first". An editor, or the person who made them, also sees takes
+  // still in review (RLS returns those to them), and they must not stand in.
+  const publishedHead = headwordRecs.filter((r) => r.status === "approved");
   const exampleRecs = (senseId: string) =>
     recordings.filter((r) => r.kind === "example" && r.sense_id === senseId);
 
@@ -211,12 +216,12 @@ export default async function EntryPage({
   const senses = sortSenses(entry.senses);
   // The take the big button at the top plays: the best-liked reading of the
   // word (up minus down), the earliest when tied; the legacy file otherwise.
-  const bestTake = [...headwordRecs].sort((a, b) => {
+  const bestTake = [...publishedHead].sort((a, b) => {
     const va = votes.get(a.id), vb = votes.get(b.id);
     return (vb ? vb.up - vb.down : 0) - (va ? va.up - va.down : 0);
   })[0];
   const topAudio = bestTake?.audio_url ?? entry.audio_url ?? null;
-  const voiceCount = headwordRecs.length + (entry.audio_url ? 1 : 0);
+  const voiceCount = publishedHead.length + (entry.audio_url ? 1 : 0);
   const contributor = one(entry.contributor);
   const credit = contributor?.display_name ?? undefined;
   const wordOrigin = formatOrigin(entry.origin_area, entry.origin_locality);
@@ -233,25 +238,28 @@ export default async function EntryPage({
           meaning straight after. A visitor from search came for the answer;
           the invitation to record comes once they have it (Impeccable
           critique, 21 Sep 2026). */}
-      <header className="border-b border-rule pb-6">
+      {/* The word on the left; on the right, the page's small print — when it
+          was added and by whom, Report, Suggest an edit — which used to take
+          three rows at the foot of the page. On a phone it drops under the word. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-10 gap-y-5 border-b border-rule pb-6">
+        <div className="min-w-0">
+        {/* Audio first, then the characters, then the romanization. */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          {topAudio && (
+            <PlayButton src={topAudio} size="lg" label={`${entryTitle(entry)}, said aloud`} />
+          )}
           {entry.hanzi ? (
-            <h1 className="han text-[clamp(48px,9vw,72px)] font-bold leading-none">{entry.hanzi}</h1>
-          ) : null}
-          <div className="flex items-center gap-4">
-            {topAudio && (
-              <PlayButton src={topAudio} size="lg" label={`${entryTitle(entry)}, said aloud`} />
-            )}
-            {entry.hanzi ? (
+            <>
+              <h1 className="han text-[clamp(48px,9vw,72px)] font-bold leading-none">{entry.hanzi}</h1>
               <span className="romanization text-3xl font-semibold text-lacquer">
                 {entry.romanization || entry.headword}
               </span>
-            ) : (
-              <h1 className="romanization text-4xl font-semibold text-lacquer">
-                {entry.romanization || entry.headword}
-              </h1>
-            )}
-          </div>
+            </>
+          ) : (
+            <h1 className="romanization text-4xl font-semibold text-lacquer">
+              {entry.romanization || entry.headword}
+            </h1>
+          )}
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
           {entry.ipa && <span className="text-inkSoft">/{entry.ipa}/</span>}
@@ -267,10 +275,30 @@ export default async function EntryPage({
           ) : entry.variety ? (
             <span className="meta text-inkSoft ring-1 ring-rule px-2 py-1">{entry.variety}</span>
           ) : null}
-          {voiceCount > 0 && (
-            <a href="#recordings" className="meta text-inkSoft hover:text-lacquer">
-              {voiceCount === 1 ? "1 recording" : `${voiceCount} recordings`} ↓
-            </a>
+        </div>
+        </div>
+
+        <div className="flex flex-col items-start gap-1.5 sm:items-end sm:pt-2 sm:text-right">
+          <p className="meta text-inkFaint">
+            Added {formatDate(entry.created_at)}
+            {contributor && (
+              <>
+                {" · contributed by "}
+                <Link href={`/contributor/${contributor.id}`} className="hover:text-lacquer">
+                  {credit || "a contributor"}
+                </Link>
+              </>
+            )}
+          </p>
+          {/* One per line: Suggest an edit, then Report — each opens its own
+              small form into the review queue. */}
+          <SuggestEdit entryId={entry.id} signedIn={Boolean(user)} status={searchParams.edit} />
+          <SuggestEdit entryId={entry.id} signedIn={Boolean(user)} status={searchParams.report} kind="report" />
+          {canDelete && (
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 sm:justify-end">
+              <EditLink entryId={entry.id} here={here} className="meta text-inkFaint hover:text-lacquer" />
+              <DeleteEntry id={entry.id} back="/learn" />
+            </div>
           )}
         </div>
       </header>
@@ -348,7 +376,7 @@ export default async function EntryPage({
             cappedNote
           ) : (
             <>
-              {!user && !entry.audio_url && headwordRecs.length === 0 && (
+              {!user && !entry.audio_url && publishedHead.length === 0 && (
                 <p className="mb-3 text-sm text-inkSoft">
                   No recording yet. If you know how this is said, your recording is the one thing
                   this page is missing.
@@ -360,40 +388,62 @@ export default async function EntryPage({
                 isEditor={canDelete}
                 kind="headword"
                 label={
-                  headwordRecs.length || entry.audio_url
-                    ? "Add your pronunciation of this word"
+                  publishedHead.length || entry.audio_url
+                    ? "Record this word on its own and/or in a sentence"
                     : "Be the first to say this word"
                 }
               />
-              {!user && !entry.audio_url && headwordRecs.length === 0 && (
-                <form action={requestWord} className="mt-3">
-                  <input type="hidden" name="entry_id" value={entry.id} />
-                  <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
-                  <input type="hidden" name="back" value={`/entry/${entry.id}`} />
-                  <button className="text-sm text-lacquer hover:underline">
-                    Can&apos;t? Ask for a recording
-                  </button>
-                </form>
+              {/* No recording yet: someone who can't record can ask for one.
+                  Asking needs an account, so signed out it is a sign-in
+                  that comes back here. */}
+              {!entry.audio_url && publishedHead.length === 0 && (
+                user ? (
+                  <form action={requestWord} className="mt-3">
+                    <input type="hidden" name="entry_id" value={entry.id} />
+                    <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
+                    <input type="hidden" name="back" value={`/entry/${entry.id}`} />
+                    <button className="text-sm text-lacquer hover:underline">
+                      Can&apos;t? Ask for a recording
+                    </button>
+                  </form>
+                ) : (
+                  <div className="mt-3">
+                    <SignInButton
+                      next={`/entry/${entry.id}`}
+                      label="Can't? Sign in to ask for a recording"
+                      className="text-sm text-lacquer hover:underline [&>svg]:hidden"
+                    />
+                  </div>
+                )
               )}
             </>
           )}
         </div>
       </section>
 
+      {/* Notes, with their label above the box like "Related words". */}
+      {entry.notes && (
+        <section className="space-y-2">
+          <h2 className="meta text-inkFaint">Notes</h2>
+          <div className="bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
+            {linkifyNotes(entry.notes)}
+          </div>
+        </section>
+      )}
+
       {related.length > 0 && (
         <section className="space-y-2">
           <h2 className="meta text-inkFaint">Related words</h2>
-          {/* Hovering (or tabbing to) a word shows what it means. The panel
-              is anchored to the row, not the chip, and dropped below it, so
-              it stays inside the column however the chips wrap — the same
-              rule as the filter tips on Browse. */}
-          <ul className="relative flex flex-wrap gap-2">
+          {/* Hovering (or tabbing to) a word shows what it means, in a panel
+              under that word; TipRow flips it to the word's right edge when
+              there is no room to the right. */}
+          <TipRow className="flex flex-wrap gap-2">
             {related.map((r) => {
               const meanings = sortSenses(r.senses)
                 .map((m) => (m.definition_en ?? "").trim())
                 .filter(Boolean);
               return (
-                <li key={r.id} className="tip-host group">
+                <li key={r.id} className="tip-host group relative hover:z-40 focus-within:z-40">
                   <Link
                     href={`/entry/${r.id}`}
                     className="inline-flex items-baseline gap-1.5 border border-rule px-2.5 py-1 text-[13px] transition-colors hover:border-lacquer hover:text-lacquer"
@@ -404,7 +454,7 @@ export default async function EntryPage({
                   {meanings.length > 0 && (
                     <div
                       role="tooltip"
-                      className="tip pointer-events-none invisible absolute left-0 top-[calc(100%+8px)] z-30 w-max max-w-[min(20rem,calc(100vw-2rem))] border border-ruleStrong bg-paper px-3 py-2.5 text-[13px] leading-snug text-inkSoft opacity-0 shadow-[0_2px_10px_rgb(0_0_0/.09)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+                      className="tip pointer-events-none invisible absolute left-0 top-[calc(100%+8px)] group-data-[flip=right]:left-auto group-data-[flip=right]:right-0 z-30 w-max max-w-[min(20rem,calc(100vw-2rem))] border border-ruleStrong bg-paper px-3 py-2.5 text-[13px] leading-snug text-inkSoft opacity-0 shadow-[0_2px_10px_rgb(0_0_0/.09)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
                     >
                       <p className="mb-1 text-ink">
                         {r.hanzi && <span className="font-display font-semibold">{r.hanzi} </span>}
@@ -430,16 +480,10 @@ export default async function EntryPage({
                 </li>
               );
             })}
-          </ul>
+          </TipRow>
         </section>
       )}
 
-      {entry.notes && (
-        <div className="bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
-          <span className="meta text-inkFaint">Notes </span>
-          {linkifyNotes(entry.notes)}
-        </div>
-      )}
 
       {/* JSON.stringify does not escape "<", so a definition containing
           "</script>" would close this element and the rest would run as HTML.
@@ -463,41 +507,6 @@ export default async function EntryPage({
         }}
       />
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="meta text-inkFaint">
-          Added {formatDate(entry.created_at)}
-          {contributor && (
-            <>
-              {" · contributed by "}
-              <Link href={`/contributor/${contributor.id}`} className="hover:text-lacquer">
-                {credit || "a contributor"}
-              </Link>
-            </>
-          )}
-        </p>
-        <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          {/* Anyone can flag an entry; the terms say what happens next. The
-              subject carries the page so the report is usable as sent. */}
-          <a
-            href={`mailto:${LEGAL_CONTACT}?subject=${encodeURIComponent(`Report: ${entryTitle(entry)} (${SITE_URL}${here})`)}`}
-            className="meta text-inkFaint hover:text-lacquer"
-          >
-            Report
-          </a>
-        {canDelete && (
-          <span className="flex flex-wrap items-center gap-3">
-            <EditLink
-              entryId={entry.id}
-              here={here}
-              className="meta text-inkFaint hover:text-lacquer"
-            />
-            <DeleteEntry id={entry.id} back="/learn" />
-          </span>
-        )}
-        </span>
-      </div>
-
-      <SuggestEdit entryId={entry.id} signedIn={Boolean(user)} status={searchParams.edit} />
     </article>
   );
 }

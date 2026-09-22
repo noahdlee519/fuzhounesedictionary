@@ -11,6 +11,7 @@ import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
 import SpeakerFields from "./SpeakerFields";
 import type { Speaker } from "@/lib/audio-upload";
+import { useL } from "./LangProvider";
 
 /* ---------------------------------------------------------------------------
    Record a word that already exists and save it straight away: the entry
@@ -55,6 +56,7 @@ export default function Recorder({
   const router = useRouter();
   const supabase = createClient();
   const rec = useRecorder();
+  const L = useL();
 
   // A line to go with the take: the sentence being read, or how the speaker
   // would put it. Optional; shown beside the play button once approved.
@@ -117,7 +119,7 @@ export default function Recorder({
         // The take is still held, so "Try saving it again" can have another go
         // once whatever went wrong — a cap, the network — is past.
         if (!cancelled) {
-          setError(e?.message ?? "Could not save the recording you made before signing in.");
+          setError(e?.message ?? L("Could not save the recording you made before signing in.", "無法儲存你登入前錄的錄音。"));
           setHeldFailed(true);
         }
       } finally {
@@ -131,7 +133,7 @@ export default function Recorder({
   async function save() {
     if (!rec.take) return;
     if (speaker && !speaker.name.trim()) {
-      setError("Add the speaker's name, or choose “Me”.");
+      setError(L("Add the speaker's name, or choose “Me”.", "請填上講者的名字，或選「我」。"));
       return;
     }
     setSaving(true);
@@ -146,7 +148,7 @@ export default function Recorder({
         blob: rec.take.blob, seconds: rec.take.seconds, note, speaker, heldAt: Date.now(),
       });
       if (!held) {
-        setError("This browser cannot keep the recording while you sign in. Sign in first, then record it again.");
+        setError(L("This browser cannot keep the recording while you sign in. Sign in first, then record it again.", "這個瀏覽器無法在你登入時保留錄音。請先登入，再重錄一次。"));
         setSaving(false);
         return;
       }
@@ -180,7 +182,7 @@ export default function Recorder({
       onSaved?.();
       router.refresh();
     } catch (e: any) {
-      setError(e?.message ?? "Could not save that recording.");
+      setError(e?.message ?? L("Could not save that recording.", "無法儲存這段錄音。"));
     } finally {
       setSaving(false);
     }
@@ -192,11 +194,13 @@ export default function Recorder({
   async function saveNote() {
     if (!savedId) return;
     setNoteState("saving");
-    const { error: updErr } = await supabase
+    const { data: rows, error: updErr } = await supabase
       .from("recordings")
       .update({ note: savedNote.trim().slice(0, MAX_RECORDING_NOTE) || null })
-      .eq("id", savedId);
-    if (updErr) {
+      .eq("id", savedId)
+      .select("id");
+    // No row back: nothing changed, so it is not "saved".
+    if (updErr || !rows?.length) {
       setNoteState("error");
       return;
     }
@@ -207,8 +211,10 @@ export default function Recorder({
   if (rec.supported === false) {
     return (
       <p className="text-sm text-inkFaint">
-        This browser cannot record audio. Try Chrome, Safari or Firefox on a phone or laptop with
-        a microphone.
+        {L(
+          "This browser cannot record audio. Try Chrome, Safari or Firefox on a phone or laptop with a microphone.",
+          "這個瀏覽器無法錄音。請在有麥克風的手機或電腦上改用 Chrome、Safari 或 Firefox。"
+        )}
       </p>
     );
   }
@@ -217,13 +223,13 @@ export default function Recorder({
     return (
       <div className="space-y-2 text-sm text-inkSoft">
         <p className="flex flex-wrap items-center gap-3">
-          <span>{isEditor ? "Saved." : "Saved. It will appear once an editor has listened to it."}</span>
+          <span>{isEditor ? L("Saved.", "已儲存。") : L("Saved. It will appear once an editor has listened to it.", "已儲存。編輯聽過後就會刊出。")}</span>
           <button
             type="button"
             onClick={() => setDone(false)}
             className={`${recBtn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}
           >
-            Record another
+            {L("Record another", "再錄一段")}
           </button>
         </p>
         {savedId && (
@@ -236,7 +242,7 @@ export default function Recorder({
           >
             <label className="block grow">
               <span className="meta text-inkFaint">
-                {savedNote ? "Your note" : "Add a note"}
+                {savedNote ? L("Your note", "你的附註") : L("Add a note", "加上附註")}
               </span>
               <input
                 value={savedNote}
@@ -246,7 +252,7 @@ export default function Recorder({
                 }}
                 maxLength={MAX_RECORDING_NOTE}
                 disabled={noteState === "saving"}
-                placeholder="e.g. a sentence you said it in, or how it is used"
+                placeholder={L("e.g. a sentence you said it in, or how it is used", "例如：你用這個詞講的一句話，或它怎麼用")}
                 className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm text-ink outline-none focus:border-lacquer placeholder:text-inkFaint"
               />
             </label>
@@ -255,11 +261,11 @@ export default function Recorder({
               disabled={noteState === "saving"}
               className={`${recBtn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}
             >
-              {noteState === "saving" ? "Saving…" : "Save note"}
+              {noteState === "saving" ? L("Saving…", "儲存中…") : L("Save note", "儲存附註")}
             </button>
-            {noteState === "saved" && <span className="basis-full text-xs text-lacquer">Note saved.</span>}
+            {noteState === "saved" && <span className="basis-full text-xs text-lacquer">{L("Note saved.", "附註已儲存。")}</span>}
             {noteState === "error" && (
-              <span className="basis-full text-xs text-lacquer">The note could not be saved. Please try again.</span>
+              <span className="basis-full text-xs text-lacquer">{L("The note could not be saved. Please try again.", "附註無法儲存，請再試一次。")}</span>
             )}
           </form>
         )}
@@ -270,7 +276,7 @@ export default function Recorder({
   if (resuming === "held") {
     return (
       <p className="text-sm text-inkSoft" role="status">
-        Saving the recording you made before signing in…
+        {L("Saving the recording you made before signing in…", "正在儲存你登入前錄的錄音…")}
       </p>
     );
   }
@@ -280,20 +286,15 @@ export default function Recorder({
       {label && (
         <p className="meta text-inkFaint">{label}</p>
       )}
-      {!userId && !rec.take && !rec.recording && (
-        <p className="text-sm text-inkSoft">
-          You can record first and sign in after — the recording waits for you.
-        </p>
-      )}
       {heldFailed && !rec.take && (
         <p className="flex flex-wrap items-center gap-3 text-sm text-inkSoft">
-          <span>Your recording from before signing in is still here.</span>
+          <span>{L("Your recording from before signing in is still here.", "你登入前錄的錄音還在。")}</span>
           <button
             type="button"
             onClick={() => setAttempt((n) => n + 1)}
             className={`${recBtn} border-lacquer text-lacquer hover:bg-lacquer hover:text-paper`}
           >
-            Try saving it again
+            {L("Try saving it again", "再試著儲存一次")}
           </button>
         </p>
       )}
@@ -310,7 +311,7 @@ export default function Recorder({
           setError(null);
         }}
         disabled={saving}
-        playLabel="your recording"
+        playLabel={L("your recording", "你的錄音")}
         keep={
           <button
             type="button"
@@ -319,8 +320,8 @@ export default function Recorder({
             className={`${recBtn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}
           >
             {saving
-              ? resuming === "sending" ? "Opening Google…" : "Saving…"
-              : userId ? "Use this" : "Use this — sign in to save it"}
+              ? resuming === "sending" ? L("Opening Google…", "正在開啟 Google…") : L("Saving…", "儲存中…")
+              : userId ? L("Use this", "用這段") : L("Use this (sign in required)", "用這段（需要登入）")}
           </button>
         }
       />
@@ -340,7 +341,7 @@ export default function Recorder({
       {rec.take && !rec.recording && (
         <label className="block max-w-md">
           <span className="meta text-inkFaint">
-            Note (optional)
+            {L("Note (optional)", "附註（選填）")}
           </span>
           <input
             value={note}
@@ -349,8 +350,8 @@ export default function Recorder({
             disabled={saving}
             placeholder={
               kind === "example"
-                ? "e.g. how you would actually say it, if it differs"
-                : "e.g. a sentence you said it in, or how it is used"
+                ? L("e.g. how you would actually say it, if it differs", "例如：如果你平常的講法不一樣，實際怎麼講")
+                : L("e.g. a sentence you said it in, or how it is used", "例如：你用這個詞講的一句話，或它怎麼用")
             }
             className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
           />

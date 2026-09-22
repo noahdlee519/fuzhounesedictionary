@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useL } from "./LangProvider";
 
 /* Microphone capture, and nothing else: start, stop, keep the take, throw it
    away. Saving is the caller's business — the entry page saves at once, the
@@ -43,6 +44,7 @@ export interface Take {
 }
 
 export function useRecorder() {
+  const L = useL();
   const [supported, setSupported] = useState<boolean | null>(null);
   const [recording, setRecording] = useState(false);
   const [take, setTake] = useState<Take | null>(null);
@@ -82,7 +84,7 @@ export function useRecorder() {
     setError(null);
     const mime = pickMime();
     if (!mime) {
-      setError("This browser cannot record audio. Try Chrome, Safari or Firefox.");
+      setError(L("This browser cannot record audio. Try Chrome, Safari or Firefox.", "這個瀏覽器無法錄音。請改用 Chrome、Safari 或 Firefox。"));
       return;
     }
     try {
@@ -111,8 +113,8 @@ export function useRecorder() {
       release();
       setError(
         e?.name === "NotAllowedError"
-          ? "Microphone access was blocked. Allow it in your browser settings and try again."
-          : "Could not start recording."
+          ? L("Microphone access was blocked. Allow it in your browser settings and try again.", "麥克風權限被封鎖了。請在瀏覽器設定中允許後再試一次。")
+          : L("Could not start recording.", "無法開始錄音。")
       );
     }
   }, [release]);

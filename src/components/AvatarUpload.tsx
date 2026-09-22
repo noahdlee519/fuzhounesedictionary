@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Avatar from "./Avatar";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -12,16 +13,23 @@ import {
 
 const MAX_MB = Math.round(MAX_AVATAR_BYTES / (1024 * 1024));
 
-/* Pick an image, upload it to the avatars bucket, and point the profile at it.
-   Runs as the signed-in user, so RLS (own-folder upload, own-row update) applies.
-   "Remove" just clears avatar_url, which drops the profile back to the default. */
+/* "Edit" under the profile picture opens it large in a dialog, with a
+   button to pick a new picture and a trash can to remove it. Picking uploads
+   to the avatars bucket and points the profile at it; removing clears
+   avatar_url, which drops the profile back to the default. Runs as the
+   signed-in user, so RLS (own-folder upload, own-row update) applies. The
+   dialog stays open, showing the new picture once the page refreshes. */
 export default function AvatarUpload({
   userId,
-  hasAvatar,
+  avatarUrl,
+  name,
 }: {
   userId: string;
-  hasAvatar: boolean;
+  avatarUrl: string | null;
+  name: string | null;
 }) {
+  const hasAvatar = !!avatarUrl;
+  const dialog = useRef<HTMLDialogElement>(null);
   const router = useRouter();
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
@@ -86,23 +94,76 @@ export default function AvatarUpload({
     }
   }
 
+  const trash = (
+    <svg viewBox="0 0 24 24" aria-hidden className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" />
+    </svg>
+  );
+
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <label className="btn btn-ghost btn-sm cursor-pointer">
-        {busy ? "Uploading…" : hasAvatar ? "Change profile picture" : "Upload a profile picture"}
-        <input type="file" accept={AVATAR_MIME_TYPES.join(",")} onChange={onFile} disabled={busy} className="hidden" />
-      </label>
-      {hasAvatar && (
-        <button
-          type="button"
-          onClick={remove}
-          disabled={busy}
-          className="linkq text-sm disabled:opacity-50"
-        >
-          Remove
-        </button>
-      )}
-      {error && <span className="text-sm text-lacquer">{error}</span>}
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setError(null);
+          dialog.current?.showModal();
+        }}
+        className="text-xs font-medium text-inkFaint transition-colors hover:text-lacquer"
+      >
+        Edit
+      </button>
+      <dialog
+        ref={dialog}
+        aria-label="Profile picture"
+        // A click on the backdrop (the dialog element itself, outside its
+        // panel) closes it, as Escape does.
+        onClick={(e) => {
+          if (e.target === dialog.current) dialog.current?.close();
+        }}
+        className="m-auto w-[min(92vw,360px)] rounded-sm border border-ruleStrong bg-paper p-0 text-ink shadow-[0_16px_48px_rgb(0_0_0/.25)] backdrop:bg-black/50"
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <p className="meta text-inkFaint">Profile picture</p>
+            <button
+              type="button"
+              onClick={() => dialog.current?.close()}
+              aria-label="Close"
+              className="-mr-2 grid h-8 w-8 place-items-center rounded-sm text-inkFaint transition-colors hover:text-ink"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+              </svg>
+            </button>
+          </div>
+          <div className="mt-4 flex justify-center">
+            <Avatar src={avatarUrl} name={name} size={200} className="ring-1 ring-rule" />
+          </div>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <label className={`btn btn-ghost btn-sm cursor-pointer ${busy ? "pointer-events-none opacity-60" : ""}`}>
+              {busy ? "Saving…" : hasAvatar ? "Change picture" : "Upload a picture"}
+              <input type="file" accept={AVATAR_MIME_TYPES.join(",")} onChange={onFile} disabled={busy} className="hidden" />
+            </label>
+            {hasAvatar && (
+              <button
+                type="button"
+                onClick={remove}
+                disabled={busy}
+                aria-label="Remove picture"
+                title="Remove picture"
+                className="grid h-9 w-9 place-items-center rounded-sm border border-ruleStrong text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-50"
+              >
+                {trash}
+              </button>
+            )}
+          </div>
+          {error && (
+            <p role="alert" className="mt-3 text-center text-sm text-lacquer">
+              {error}
+            </p>
+          )}
+        </div>
+      </dialog>
+    </>
   );
 }

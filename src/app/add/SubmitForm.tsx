@@ -10,6 +10,7 @@ import { saveRecording } from "@/lib/audio-upload";
 import { useRecorder } from "@/components/useRecorder";
 import TakeControls from "@/components/TakeControls";
 import Recorder from "@/components/Recorder";
+import { useL } from "@/components/LangProvider";
 
 /* ---------------------------------------------------------------------------
    Add a word. One form, read top to bottom: the word, what it means, how it
@@ -46,21 +47,63 @@ const inputCls =
 const fieldLabel = "block text-sm";
 const eyebrow = "meta text-lacquer";
 
-/* A section of the form: a mono eyebrow, a one-line explanation, the fields. */
+/* Display names for the part-of-speech options in 中文 mode; the stored
+   value stays the English one. */
+const POS_ZH: Record<string, string> = {
+  noun: "名詞",
+  verb: "動詞",
+  adjective: "形容詞",
+  adverb: "副詞",
+  pronoun: "代詞",
+  numeral: "數詞",
+  "measure word": "量詞",
+  particle: "助詞",
+  phrase: "短語",
+  "proper noun": "專有名詞",
+};
+
+/* A section of the form: a small-caps title, the fields beside it. The
+   one-line explanation lives in a tooltip on the title (hover, or focus by
+   keyboard or tap), marked by a dotted underline and a small "i". */
 function Part({
+  id,
   title,
   lead,
   children,
 }: {
+  /** Stable, language-independent id for the tooltip. */
+  id: string;
   title: string;
   lead?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const tipId = `part-${id}`;
   return (
     <section className="grid gap-4 border-t border-rule pt-6 sm:grid-cols-[11rem_1fr] sm:gap-8">
-      <div className="space-y-1">
-        <h2 className={eyebrow}>{title}</h2>
-        {lead && <p className="text-sm leading-relaxed text-inkFaint">{lead}</p>}
+      <div>
+        {lead ? (
+          <h2 className="group relative inline-block">
+            <span
+              tabIndex={0}
+              aria-describedby={tipId}
+              className={`${eyebrow} cursor-help underline decoration-dotted decoration-1 underline-offset-4 outline-none focus-visible:outline-2`}
+            >
+              {title}
+              <span className="info-dot" aria-hidden="true">i</span>
+            </span>
+            <span
+              id={tipId}
+              role="tooltip"
+              className="invisible absolute left-0 top-full z-30 w-64 pt-2 opacity-0 transition-[opacity,visibility] duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+            >
+              <span className="block rounded-sm border border-ruleStrong bg-paper px-3 py-2.5 text-[13px] font-normal normal-case leading-relaxed tracking-normal text-inkSoft shadow-[0_8px_28px_rgb(0_0_0/.12)]">
+                {lead}
+              </span>
+            </span>
+          </h2>
+        ) : (
+          <h2 className={eyebrow}>{title}</h2>
+        )}
       </div>
       <div className="min-w-0 space-y-4">{children}</div>
     </section>
@@ -84,6 +127,7 @@ export default function SubmitForm({
   const router = useRouter();
   const supabase = createClient();
   const rec = useRecorder();
+  const L = useL();
 
   const [hanzi, setHanzi] = useState("");
   const [romanization, setRomanization] = useState(initialRomanization);
@@ -120,15 +164,15 @@ export default function SubmitForm({
     setError(null);
 
     if (!romanization.trim() && !hanzi.trim()) {
-      setError("Please give the word, as characters or in romanization.");
+      setError(L("Please give the word, as characters or in romanization.", "請填寫這個詞，漢字或羅馬字都可以。"));
       return;
     }
     if (!senses.some((s) => s.definition_en.trim())) {
-      setError("Please give at least one English meaning.");
+      setError(L("Please give at least one English meaning.", "請至少填寫一個英文意思。"));
       return;
     }
     if (rec.recording) {
-      setError("Stop the recording first, then submit.");
+      setError(L("Stop the recording first, then submit.", "請先停止錄音，再送出。"));
       return;
     }
 
@@ -162,7 +206,7 @@ export default function SubmitForm({
             note: recNote,
           });
         } catch (err: any) {
-          recFail = err?.message ?? "The recording could not be saved.";
+          recFail = err?.message ?? L("The recording could not be saved.", "錄音無法儲存。");
         }
       }
 
@@ -175,14 +219,14 @@ export default function SubmitForm({
 
       router.refresh();
       if (!withExamples.length && !recFail) {
-        router.push("/submit?success=1");
+        router.push("/add?success=1");
         return;
       }
       setSavedSenses(withExamples);
       setRecordingFailed(recFail);
       setSavedEntryId(entryId);
     } catch (err: any) {
-      setError(err.message ?? "Something went wrong. Please try again.");
+      setError(err.message ?? L("Something went wrong. Please try again.", "出了點問題，請再試一次。"));
       setSubmitting(false);
     }
   }
@@ -193,20 +237,22 @@ export default function SubmitForm({
       <div className="space-y-6">
         <div className="border-l-2 border-lacquer bg-surface p-4">
           <p className="font-display text-lg font-semibold">
-            <span className="romanization">{wordShown}</span> is saved and waiting for an editor.
+            {L("", "「")}
+            <span className="romanization">{wordShown}</span>
+            {L(" is saved and waiting for an editor.", "」已儲存，正在等編輯審閱。")}
           </p>
           <p className="mt-1 text-sm text-inkSoft">
             {recordingFailed
-              ? "The word went through, but its recording did not."
-              : "One more thing you can do, if you like: read the example sentences aloud."}{" "}
-            You can finish without it.
+              ? L("The word went through, but its recording did not.", "詞已送出，但錄音沒有成功。")
+              : L("One more thing you can do, if you like: read the example sentences aloud.", "如果願意，還可以再做一件事：把例句念出來。")}
+            {L(" You can finish without it.", "不做也可以直接完成。")}
           </p>
         </div>
 
         {recordingFailed && (
           <div className="space-y-3 border border-rule p-4">
             <p className="text-sm text-lacquer">{recordingFailed}</p>
-            <p className="meta text-inkFaint">Try the word again</p>
+            <p className="meta text-inkFaint">{L("Try the word again", "重錄這個詞")}</p>
             <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="headword" />
           </div>
         )}
@@ -224,13 +270,13 @@ export default function SubmitForm({
 
         <div className="flex flex-wrap items-center gap-4 border-t border-rule pt-4">
           <Link
-            href="/submit?success=1"
+            href="/add?success=1"
             className="border border-lacquer bg-lacquer px-6 py-2.5 font-semibold text-paper transition-opacity hover:opacity-90"
           >
-            Done
+            {L("Done", "完成")}
           </Link>
           <Link href="/account" className="meta text-inkSoft hover:text-lacquer">
-            View my submissions
+            {L("View my submissions", "查看我的投稿")}
           </Link>
         </div>
       </div>
@@ -246,12 +292,13 @@ export default function SubmitForm({
       )}
 
       <Part
-        title="The word"
-        lead="Characters or romanization, whichever you know. Both if you can."
+        id="word"
+        title={L("The word", "詞")}
+        lead={L("Characters or romanization, whichever you know. Both if you can.", "漢字或羅馬字，知道哪個填哪個。能兩個都填更好。")}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={fieldLabel}>
-            Characters 漢字
+            {L("Characters 漢字", "漢字")}
             <input
               value={hanzi}
               onChange={(e) => setHanzi(e.target.value)}
@@ -260,7 +307,7 @@ export default function SubmitForm({
             />
           </label>
           <label className={fieldLabel}>
-            Romanization
+            {L("Romanization", "羅馬字")}
             <input
               value={romanization}
               onChange={(e) => setRomanization(e.target.value)}
@@ -268,25 +315,26 @@ export default function SubmitForm({
               className={`${inputCls} romanization`}
             />
             <span className="mt-1 block text-xs text-inkFaint">
-              Any system—Bàng-uâ-cê, or the way you would spell it out.
+              {L("Any system—Bàng-uâ-cê, or the way you would spell it out.", "任何拼法都可以——平話字（Bàng-uâ-cê），或你自己的拼法。")}
             </span>
           </label>
         </div>
         <label className={`${fieldLabel} sm:max-w-[50%] sm:pr-2`}>
-          IPA <span className="text-inkFaint">(optional)</span>
+          IPA <span className="text-inkFaint">{L("(optional)", "（選填）")}</span>
           <input value={ipa} onChange={(e) => setIpa(e.target.value)} placeholder="tsʰuo˨˦˨" className={inputCls} />
         </label>
       </Part>
 
       <Part
-        title="What it means"
-        lead="One English meaning is enough. Add another if the word has more than one."
+        id="meaning"
+        title={L("What it means", "意思")}
+        lead={L("One English meaning is enough. Add another if the word has more than one.", "一個英文意思就夠了。如果這個詞有好幾個意思，可以再加。")}
       >
         {senses.map((s, i) => (
           <div key={i} className="space-y-3 border border-rule p-4">
             <div className="flex items-center justify-between">
               <span className="meta text-inkFaint">
-                Meaning {i + 1}
+                {L("Meaning {n}", "意思 {n}", { n: i + 1 })}
               </span>
               {senses.length > 1 && (
                 <button
@@ -294,13 +342,13 @@ export default function SubmitForm({
                   onClick={() => removeSense(i)}
                   className="meta text-inkFaint hover:text-lacquer"
                 >
-                  Remove
+                  {L("Remove", "移除")}
                 </button>
               )}
             </div>
             <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
               <label className={fieldLabel}>
-                In English <span className="text-lacquer">*</span>
+                {L("In English", "英文")} <span className="text-lacquer">*</span>
                 <input
                   value={s.definition_en}
                   onChange={(e) => updateSense(i, { definition_en: e.target.value })}
@@ -309,7 +357,7 @@ export default function SubmitForm({
                 />
               </label>
               <label className={fieldLabel}>
-                Part of speech
+                {L("Part of speech", "詞性")}
                 <select
                   value={s.part_of_speech}
                   onChange={(e) => updateSense(i, { part_of_speech: e.target.value })}
@@ -318,14 +366,14 @@ export default function SubmitForm({
                   <option value="">—</option>
                   {PARTS_OF_SPEECH.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {L(p, POS_ZH[p] ?? p)}
                     </option>
                   ))}
                 </select>
               </label>
             </div>
             <label className={fieldLabel}>
-              In Mandarin <span className="text-inkFaint">(optional)</span>
+              {L("In Mandarin", "普通話")} <span className="text-inkFaint">{L("(optional)", "（選填）")}</span>
               <input
                 value={s.gloss_zh}
                 onChange={(e) => updateSense(i, { gloss_zh: e.target.value })}
@@ -335,7 +383,7 @@ export default function SubmitForm({
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className={fieldLabel}>
-                A sentence using it <span className="text-inkFaint">(optional)</span>
+                {L("A sentence using it", "例句")} <span className="text-inkFaint">{L("(optional)", "（選填）")}</span>
                 <input
                   value={s.example}
                   onChange={(e) => updateSense(i, { example: e.target.value })}
@@ -344,7 +392,7 @@ export default function SubmitForm({
                 />
               </label>
               <label className={fieldLabel}>
-                What it means
+                {L("What it means", "例句的英文意思")}
                 <input
                   value={s.example_gloss}
                   onChange={(e) => updateSense(i, { example_gloss: e.target.value })}
@@ -360,28 +408,31 @@ export default function SubmitForm({
           onClick={addSense}
           className="meta text-lacquer hover:underline"
         >
-          + Another meaning
+          {L("+ Another meaning", "＋ 再加一個意思")}
         </button>
       </Part>
 
       <Part
-        title="How it sounds"
-        lead="Say the word once, clearly. Optional, but a recording is the one thing only a speaker can give."
+        id="sound"
+        title={L("How it sounds", "發音")}
+        lead={L("Say the word once, clearly. Optional, but a recording is the one thing only a speaker can give.", "清楚地把這個詞講一次。錄音是選填的，但只有會講的人才能提供。")}
       >
         {rec.supported === false ? (
           <p className="text-sm text-inkFaint">
-            This browser cannot record audio. Submit the word anyway—you or anyone else can record
-            it from its page later.
+            {L(
+              "This browser cannot record audio. Submit the word anyway—you or anyone else can record it from its page later.",
+              "這個瀏覽器無法錄音。還是可以先送出這個詞——之後你或其他人都能在詞條頁補上錄音。"
+            )}
           </p>
         ) : (
           <div className="space-y-3 border border-rule p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="romanization font-display text-lg font-semibold text-lacquer">
-                {wordShown || <span className="text-inkFaint">the word above</span>}
+                {wordShown || <span className="text-inkFaint">{L("the word above", "上面填的詞")}</span>}
               </span>
               {rec.take && !rec.recording && (
                 <span className="meta text-inkFaint">
-                  kept—sent with the word
+                  {L("kept—sent with the word", "已保留——會隨詞一起送出")}
                 </span>
               )}
             </div>
@@ -394,18 +445,22 @@ export default function SubmitForm({
               onStop={rec.stop}
               onDiscard={rec.discard}
               disabled={submitting}
-              playLabel={`your recording of ${wordShown || "the word"}`}
+              playLabel={
+                wordShown
+                  ? L("your recording of {w}", "你錄的「{w}」", { w: wordShown })
+                  : L("your recording of the word", "你錄的這個詞")
+              }
             />
             {rec.take && !rec.recording && (
               <label className="block">
                 <span className="meta text-inkFaint">
-                  A note with it <span className="normal-case tracking-normal">(optional)</span>
+                  {L("A note with it", "附註")} <span className="normal-case tracking-normal">{L("(optional)", "（選填）")}</span>
                 </span>
                 <input
                   value={recNote}
                   onChange={(e) => setRecNote(e.target.value)}
                   maxLength={MAX_RECORDING_NOTE}
-                  placeholder="e.g. a sentence you said it in, or how it is used"
+                  placeholder={L("e.g. a sentence you said it in, or how it is used", "例如：你用這個詞講的一句話，或它怎麼用")}
                   className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                 />
               </label>
@@ -415,14 +470,15 @@ export default function SubmitForm({
       </Part>
 
       <Part
-        title="Where it's from"
-        lead="Filled in from your profile. Change it if you learned this word somewhere else."
+        id="origin"
+        title={L("Where it's from", "來自哪裡")}
+        lead={L("Filled in from your profile. Change it if you learned this word somewhere else.", "已依你的個人資料填好。如果這個詞是在別的地方學的，可以修改。")}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={fieldLabel}>
-            County or district
+            {L("County or district", "縣或區")}
             <select value={originArea} onChange={(e) => setOriginArea(e.target.value)} className={inputCls}>
-              <option value="">Not specified</option>
+              <option value="">{L("Not specified", "未指定")}</option>
               {ORIGIN_GROUPS.map((g) => (
                 <optgroup key={g} label={g}>
                   {ORIGIN_AREAS.filter((a) => a.group === g).map((a) => (
@@ -435,23 +491,27 @@ export default function SubmitForm({
             </select>
           </label>
           <label className={fieldLabel}>
-            Town or village <span className="text-inkFaint">(optional)</span>
+            {L("Town or village", "鄉鎮或村")} <span className="text-inkFaint">{L("(optional)", "（選填）")}</span>
             <input
               value={originLocality}
               onChange={(e) => setOriginLocality(e.target.value)}
-              placeholder="e.g. Jinfeng"
+              placeholder={L("e.g. Jinfeng", "例如：金峰")}
               className={inputCls}
             />
           </label>
         </div>
       </Part>
 
-      <Part title="Anything else" lead="Where the word comes from, who says it, when you would not use it.">
+      <Part
+        id="else"
+        title={L("Anything else", "其他")}
+        lead={L("Where the word comes from, who says it, when you would not use it.", "這個詞的來源、誰會這樣講、什麼時候不用。")}
+      >
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
-          placeholder="Optional"
+          placeholder={L("Optional", "選填")}
           className={inputCls.replace("mt-1 ", "")}
         />
       </Part>
@@ -462,14 +522,16 @@ export default function SubmitForm({
           disabled={submitting}
           className="border border-lacquer bg-lacquer px-8 py-3 font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {submitting ? "Sending…" : "Submit for review"}
+          {submitting ? L("Sending…", "送出中…") : L("Submit for review", "送出審核")}
         </button>
-        <p className="max-w-[36ch] text-xs leading-relaxed text-inkFaint">
-          An editor reads it before it appears. Contributions are published under{" "}
-          <Link href="/terms" className="underline hover:text-lacquer">
+        {/* Wide enough for two lines, and the licence's name kept whole, so
+            "4.0" never hangs on a line of its own. */}
+        <p className="max-w-[48ch] text-xs leading-relaxed text-inkFaint">
+          {L("An editor reads it before it appears. Contributions are published under", "編輯看過後才會刊出。所有貢獻以")}{" "}
+          <Link href="/terms" className="whitespace-nowrap underline hover:text-lacquer">
             CC BY-SA 4.0
           </Link>
-          .
+          {L(".", " 授權發布。")}
         </p>
       </div>
     </form>

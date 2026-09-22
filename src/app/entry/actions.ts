@@ -28,13 +28,14 @@ export async function voteRecording(formData: FormData) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (mine && mine.value === value) {
-    await supabase.from("recording_votes").delete().eq("recording_id", id).eq("user_id", user.id);
-  } else {
-    await supabase
-      .from("recording_votes")
-      .upsert({ recording_id: id, user_id: user.id, value }, { onConflict: "recording_id,user_id" });
-  }
+  const { error } =
+    mine && mine.value === value
+      ? await supabase.from("recording_votes").delete().eq("recording_id", id).eq("user_id", user.id)
+      : await supabase
+          .from("recording_votes")
+          .upsert({ recording_id: id, user_id: user.id, value }, { onConflict: "recording_id,user_id" });
+  // A failed vote used to look exactly like a counted one.
+  if (error) console.error(`vote on ${id} failed: ${error.message}`);
 
   revalidatePath(back.split("#")[0]);
   redirect(back);
@@ -53,12 +54,18 @@ export async function suggestEdit(formData: FormData) {
   const here = entryId ? `/entry/${entryId}` : "/";
   if (!user || !entryId) redirect(here);
 
-  const value = String(formData.get("value") ?? "").trim().slice(0, 500);
-  if (!value) redirect(`${here}?edit=empty#suggest`);
+  // 'edit' (Suggest an edit) or 'report' (Report); both land in Review.
+  const kind = String(formData.get("kind") ?? "edit") === "report" ? "report" : "edit";
+  const param = kind === "report" ? "report" : "edit";
+  const anchor = kind === "report" ? "report" : "suggest";
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 60);
+  const details = String(formData.get("value") ?? "").trim();
+  const value = (kind === "report" ? [reason && `Reason: ${reason}`, details].filter(Boolean).join("\n\n") : details).slice(0, 500);
+  if (!value || (kind === "report" && !reason)) redirect(`${here}?${param}=empty#${anchor}`);
 
   const { error } = await supabase.from("suggestions").insert({
     entry_id: entryId,
-    kind: "edit",
+    kind,
     sense_id: null,
     value,
     contributor_id: user.id,
@@ -68,10 +75,10 @@ export async function suggestEdit(formData: FormData) {
       error.code === "23505"
         ? "You have already sent that suggestion for this word."
         : error.code === "23514" && /kind/.test(error.message)
-          ? "Suggestions are not switched on yet. Please try again later."
+          ? "This is not switched on yet. Please try again later."
           : error.message;
-    redirect(`${here}?edit=${encodeURIComponent(msg)}#suggest`);
+    redirect(`${here}?${param}=${encodeURIComponent(msg)}#${anchor}`);
   }
-  revalidatePath("/admin");
-  redirect(`${here}?edit=sent#suggest`);
+  revalidatePath("/editor");
+  redirect(`${here}?${param}=sent#${anchor}`);
 }

@@ -208,7 +208,7 @@ const orthography = (
         words keep a character that sounds literary elsewhere: <Han>囝</Han> <Rom>giāng</Rom> is
         just the word for a child, <Han>儂</Han> <Rom>nè̤ng</Rom> a person, <Han>厝</Han>{" "}
         <Rom>chuó</Rom> a house. And a familiar-looking phrase can mean something else:{" "}
-        <Han>莫細膩</Han> is <i>make yourself at home</i>, not &ldquo;don&apos;t be fussy&rdquo;.
+        <Han>莫細膩</Han> <Rom>mŏ̤h-sá̤-nê</Rom> is <i>make yourself at home</i>, not &ldquo;don&apos;t be fussy&rdquo;.
       </P>
     </Block>
 

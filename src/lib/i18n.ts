@@ -24,8 +24,9 @@ const en = {
   "hero.lede.1": "A free, collaborative dictionary of the Fuzhou dialect",
   "hero.lede.2": " with English and Mandarin support.",
   "hero.tip": "Fuzhounese is classified a language in its own right, but it is typically considered a dialect.",
-  "hint.count": "{n} entries",
+  "hint.count": "{n} entries so far",
   "hint.try": "Try “hello”, “siăh”, “rice crust”, or 食.",
+  "hint.ask": "Or ask the assistant ↓",
   "door.learn.h1": "Don't speak it yet?",
   "door.learn.h2": "Start here.",
   "door.learn.p": "Learn the basics of Fuzhounese grammar, orthography, pronunciation, romanization, and more of the language's unique aspects. Discover other educational resources here too.",
@@ -42,6 +43,8 @@ const en = {
   "mod.requested": "Most requested",
   "mod.top": "Top contributors",
   "mod.play": "Play",
+  "mod.moreMeanings1": "+ 1 more meaning",
+  "mod.moreMeanings": "+ {n} more meanings",
   "mod.recordings": "{n} recordings",
   "mod.recording": "1 recording",
   "mod.open": "open entry",
@@ -49,15 +52,17 @@ const en = {
   "mod.noRecordings": "No recordings yet.",
   "mod.beFirst": "Be the first",
   "mod.nothingWaiting": "No words have been requested yet.",
-  "mod.askFor": "Ask for a word",
+  "mod.askFor": "Request a word",
   "mod.votes": "{n} votes—open the requested list",
   "ask.eyebrow": "Ask the assistant",
   "ask.lede": "Ask how to say something, what a word means, or how the language works.",
   "ask.own": "Ask your own",
-  "ask.placeholder.in": "Ask anything—e.g. how do I say “I love eating dingbianhu”?",
+  "ask.placeholder.in": "Ask anything—e.g. what is 鼎邊糊?",
   "ask.placeholder.out": "Sign in to ask your own question",
-  "ask.note": "Answers come from the dictionary itself.",
+  "ask.placeholder.short": "Ask any question",
+  "ask.note": "Try an example query",
   "ask.btn": "Ask",
+  "ask.tag": "AI · answers cite dictionary entries",
   "ask.example": "An example answer.",
   "ask.signin": "Sign in",
   "ask.looking": "Looking…",
@@ -78,12 +83,18 @@ const en = {
   "footer.privacy": "Privacy",
   "footer.terms": "Terms",
   "footer.editors": "Editors",
-  "sample.1.q": "How do you say house?",
-  "sample.1.a": "厝 chuó is the everyday word for a house or home. The entry has recordings you can play, and a note from a speaker on how they use it.",
+  "sample.1.q": "What does “chia” mean in English?",
+  "sample.1.a": "“Chia” is most likely [車 chiă](/entry/658d0f95-42d5-40cc-8da8-f1e00a271550), a car or vehicle, and its entry has recordings you can play. Written without tone marks, one spelling can match more than one word: [請 chiāng](/entry/aac76722-8f62-4ceb-8ddd-f62edc55da10) means please or to invite. Search the dictionary for chia to see them all.",
   "sample.2.q": "How do I say “have you eaten?”",
-  "sample.2.a": "食飯未 siăh buáng mà̤—literally “eaten yet?”—and it is also how people say hello. The entry has the sentence, and a recording wherever a speaker has made one.",
-  "sample.3.q": "What do you call your mother?",
-  "sample.3.a": "依媽 ĭ-mā is mother, and 依爸 ĭ-bă is daddy, the word you use to their face. Both are in the Basic lessons on the Learn page, with recordings where speakers have made them.",
+  "sample.2.a": "[食飯未 siăh buáng mà̤](/entry/3d63db05-50c2-4c30-9266-084492a77fbd)—literally “eaten yet?”—and it is also how people say hello. The entry has the sentence, and a recording wherever a speaker has made one.",
+  "sample.3.q": "What is tone sandhi?",
+  "sample.3.a": "Tone sandhi is how a syllable’s tone changes inside a word. The last syllable keeps its own tone; the one before it changes, depending on both. On their own, 福 is a short rising 23 and 州 a high level 44. Together, 州 stays at 44 but 福 drops to a low 21, so the city is huk21 ciu44. The Features tab on the [Learn page](/learn) explains it with a chart.",
+  "sample.4.q": "鼎邊糊是什麼？",
+  "sample.4.a": "[鼎邊糊 diāng-biĕng-gù](/entry/64418be3-7d78-434f-9116-384748cc5822) is a rice noodle soup popular in Fuzhou and the towns around it, and its entry has a recording you can play. You can ask in Chinese as well as English.",
+  "sample.1.k": "What's this?",
+  "sample.2.k": "Say it",
+  "sample.3.k": "How it works",
+  "sample.4.k": "In Chinese",
 
   /* Learn */
   "learn.h1": "How does Fuzhounese work?",
@@ -155,6 +166,13 @@ const en = {
 
   /* About */
   "about.h": "As Mandarin becomes the standard, many regional dialects of Chinese are fading away.",
+  "about.tree.caption": "The Chinese languages. Groups after the Language Atlas of China; Min after Pan Maoding et al. (1963), as set out by Jerry Norman.",
+  "about.tree.src1": "Language Atlas of China (2nd ed., 2012)",
+  "about.tree.src2": "Norman, Chinese (1988), p. 233",
+  "about.tree.north": "North",
+  "about.tree.central": "Central",
+  "about.tree.south": "South",
+  "about.tree.min": "Min",
   "about.p1": "This project started because Fuzhounese is the dialect my grandmother natively speaks. My goal is to help preserve the language by digitizing it with an emphasis on authentic voice recordings and geographic diversity.",
   "about.p2": "The dictionary is the only one of its kind with English and Mandarin translations. Its key features also include Fuzhounese romanization (Bàng-uâ-cê) and community contribution. The site is completely free to use.",
   "about.p3": "There is an old Chinese saying that if you walk ten kilometers in Fujian, the language changes. Fuzhounese, too, varies from place to place. That's why this site encourages multiple recordings and meanings for words, each tagged by location.",
@@ -172,7 +190,7 @@ const en = {
   "about.where.p": "About ten million people speak Fuzhounese, primarily in eastern Fujian, around the city of Fuzhou. Over the last century, Fuzhounese speakers have built communities overseas, most visibly on the East Coast of the United States, in Malaysia, Singapore, Indonesia, and Japan.",
   "about.map.fujian": "Fujian province, southeast China",
   "about.map.world": "Fuzhounese communities around the world. Click the map to zoom in.",
-  "about.built.h": "How the dictionary is built",
+  "about.built.h": "How the dictionary works",
   "about.built.1": "Words come from speakers, and from publicly available and verified dictionaries and phrasebooks to give this project a base to build on. An imported entry links to its source in its notes.",
   "about.built.2": "Every word, recording and edit is read by an editor before it appears.",
   "about.built.3": "Each contribution carries where the contributor's Fuzhounese is from, so a difference between districts is revealed and mapped.",
@@ -180,7 +198,7 @@ const en = {
   "about.help.h": "Ways to help that aren't recording",
   "about.help.2": "[Vote for the words](/request) you want filled first on the Request page.",
   "about.help.3": "[Suggest an edit](/browse) on any entry in the dictionary.",
-  "about.help.4": "[Join the editors](mailto:noahlee519@gmail.com) by writing to me at the address below.",
+  "about.help.4": "[Join the editors](mailto:noahlee519@gmail.com) by emailing me your pitch.",
   "about.help.5": "[Get involved](#community) with the Fuzhounese community.",
   "about.help.5.discord": "Discord",
   "about.help.5.fza": "FuzhouAmerica.org",
@@ -208,8 +226,9 @@ const zh: Record<Key, string> = {
   "hero.lede.1": "一部免費、共同編寫的福州話辭典",
   "hero.lede.2": "，附英文與普通話對照。",
   "hero.tip": "福州話其實是一門獨立的語言，只是通常被稱作方言。",
-  "hint.count": "共 {n} 個詞條",
+  "hint.count": "目前共 {n} 個詞條",
   "hint.try": "試試「hello」、「siăh」、「rice crust」或「食」。",
+  "hint.ask": "或問問助手 ↓",
   "door.learn.h1": "還不會講？",
   "door.learn.h2": "從這裡開始。",
   "door.learn.p": "學習福州話的語法、正字法、發音、羅馬字，以及這門語言更多獨特之處。這裡也能找到其他學習資源。",
@@ -226,6 +245,8 @@ const zh: Record<Key, string> = {
   "mod.requested": "最多人想要",
   "mod.top": "貢獻最多",
   "mod.play": "播放",
+  "mod.moreMeanings1": "另有 1 個意思",
+  "mod.moreMeanings": "另有 {n} 個意思",
   "mod.recordings": "{n} 段錄音",
   "mod.recording": "1 段錄音",
   "mod.open": "查看詞條",
@@ -238,10 +259,12 @@ const zh: Record<Key, string> = {
   "ask.eyebrow": "問問助手",
   "ask.lede": "問問一句話怎麼講、一個詞是什麼意思，或者這門語言怎麼運作。",
   "ask.own": "自己提問",
-  "ask.placeholder.in": "隨便問——例如「我愛食鼎邊糊」怎麼講？",
+  "ask.placeholder.in": "隨便問——例如：鼎邊糊是什麼？",
   "ask.placeholder.out": "登入後即可提問",
-  "ask.note": "答案來自辭典本身。",
+  "ask.placeholder.short": "隨便問個問題",
+  "ask.note": "試試範例問題",
   "ask.btn": "提問",
+  "ask.tag": "AI · 答案引用辭典詞條",
   "ask.example": "示範答案。",
   "ask.signin": "登入",
   "ask.looking": "查詢中…",
@@ -262,12 +285,18 @@ const zh: Record<Key, string> = {
   "footer.privacy": "隱私",
   "footer.terms": "條款",
   "footer.editors": "編輯",
-  "sample.1.q": "「房子」福州話怎麼講？",
-  "sample.1.a": "厝 chuó 是「房子、家」的日常說法。詞條裡有可播放的錄音，還有講者留下的用法說明。",
+  "sample.1.q": "「chia」在英文是什麼意思？",
+  "sample.1.a": "「chia」最可能是 [車 chiă](/entry/658d0f95-42d5-40cc-8da8-f1e00a271550)，意思是車輛，詞條裡有可播放的錄音。沒有聲調符號時，一個拼法可能對應好幾個詞：[請 chiāng](/entry/aac76722-8f62-4ceb-8ddd-f62edc55da10) 是「請、邀請」。在辭典搜尋 chia 就能看到全部。",
   "sample.2.q": "「食飯未」怎麼講？",
-  "sample.2.a": "食飯未 siăh buáng mà̤——字面是「吃飯了嗎」，也是大家打招呼的話。詞條裡有這句話，有講者錄過的地方就有錄音。",
-  "sample.3.q": "媽媽怎麼叫？",
-  "sample.3.a": "依媽 ĭ-mā 是媽媽，依爸 ĭ-bă 是當面叫的爸爸。兩個都在「學」頁的基礎課裡，有講者錄過的就有錄音。",
+  "sample.2.a": "[食飯未 siăh buáng mà̤](/entry/3d63db05-50c2-4c30-9266-084492a77fbd)——字面是「吃飯了嗎」，也是大家打招呼的話。詞條裡有這句話，有講者錄過的地方就有錄音。",
+  "sample.3.q": "什麼是連讀變調？",
+  "sample.3.a": "連讀變調是指一個音節在詞裡聲調會改變。最後一個音節保留本調，前面的音節依兩者的聲調而變。單念時，福 是短促上升的 23，州 是高平的 44。連在一起，州 仍是 44，福 卻降成低的 21，所以城市名念 huk21 ciu44。[「學」頁](/learn)的 Features 分頁有圖表說明。",
+  "sample.4.q": "What is 鼎邊糊?",
+  "sample.4.a": "[鼎邊糊 diāng-biĕng-gù](/entry/64418be3-7d78-434f-9116-384748cc5822)，辭典的解釋是福州及周邊地區很受歡迎的一種米製湯點（rice noodle soup），詞條裡有錄音可以聽。用英文或中文提問都可以。",
+  "sample.1.k": "這是什麼",
+  "sample.2.k": "怎麼講",
+  "sample.3.k": "語言怎麼運作",
+  "sample.4.k": "用英文問",
 
   /* Learn */
   "learn.h1": "福州話是怎麼運作的？",
@@ -339,6 +368,13 @@ const zh: Record<Key, string> = {
 
   /* About */
   "about.h": "隨著普通話成為通用語，許多地方話正逐漸消失。",
+  "about.tree.caption": "漢語的分支。分區依《中國語言地圖集》；閩語分區依潘茂鼎等（1963），見羅杰瑞（Jerry Norman）的論述。",
+  "about.tree.src1": "《中國語言地圖集》（第二版，2012）",
+  "about.tree.src2": "Norman, Chinese（1988），頁233",
+  "about.tree.north": "北方",
+  "about.tree.central": "中部",
+  "about.tree.south": "南方",
+  "about.tree.min": "閩語",
   "about.p1": "這個計畫的起點，是因為福州話是我外婆的母語。我希望把它數位化來幫忙保存這門語言，特別著重真實的錄音和各地講法的差異。",
   "about.p2": "這部辭典是同類中唯一附英文和普通話對照的。主要特色還包括福州話羅馬字（平話字）和社群共同編寫。網站完全免費。",
   "about.p3": "中國有句老話：福建十里不同音。福州話也是如此，各地講法不一。所以這個網站鼓勵一個詞有多段錄音、多種釋義，每一筆都標明地點。",
@@ -356,7 +392,7 @@ const zh: Record<Key, string> = {
   "about.where.p": "講福州話的人約有一千萬，主要在閩東，福州市一帶。過去一個世紀，講福州話的人在海外建立了社群，最明顯的是美國東岸，以及馬來西亞、新加坡、印尼和日本。",
   "about.map.fujian": "福建省，中國東南",
   "about.map.world": "世界各地的福州話社群。點一下地圖可放大。",
-  "about.built.h": "辭典怎麼編",
+  "about.built.h": "辭典如何運作",
   "about.built.1": "詞條來自講者，也來自公開且經核實的辭典與短語集，作為這個計畫擴充的基礎。匯入的詞條在附註裡連到出處。",
   "about.built.2": "每個詞、每段錄音、每次修改，都先經編輯審閱才會刊出。",
   "about.built.3": "每項貢獻都標明貢獻者的福州話來自哪裡，所以各地的差異得以呈現並記錄下來。",
@@ -364,7 +400,7 @@ const zh: Record<Key, string> = {
   "about.help.h": "不錄音也能幫忙",
   "about.help.2": "到請求頁[替你最想先補上的詞投票](/request)。",
   "about.help.3": "在字典裡的任何詞條[建議修改](/browse)。",
-  "about.help.4": "寫信到下面的地址即可[加入編輯](mailto:noahlee519@gmail.com)。",
+  "about.help.4": "把你的想法用電郵寄給我，即可[加入編輯](mailto:noahlee519@gmail.com)。",
   "about.help.5": "[一起參與](#community)福州話社群。",
   "about.help.5.discord": "Discord",
   "about.help.5.fza": "FuzhouAmerica.org",
@@ -390,8 +426,21 @@ export function translator(lang: Lang) {
 }
 export type T = ReturnType<typeof translator>;
 
-/** The three sample questions and answers, for the assistant section. */
+/** For pages whose strings live beside the markup rather than in the tables
+   above (the contribution pages): `const L = pick(lang); L("Save", "儲存")`.
+   `{name}` placeholders are filled from `vars`, as with translator(). */
+export function pick(lang: Lang) {
+  return (en: string, zh: string, vars?: Record<string, string | number>) => {
+    let s = lang === "zh" ? zh : en;
+    if (vars) for (const [k, v] of Object.entries(vars)) s = s.split(`{${k}}`).join(String(v));
+    return s;
+  };
+}
+export type Pick = ReturnType<typeof pick>;
+
+/** The sample questions (with a short kicker naming the kind of question)
+   and their written answers, for the assistant section. */
 export function samples(lang: Lang) {
   const t = translator(lang);
-  return [1, 2, 3].map((i) => ({ q: t(`sample.${i}.q` as Key), a: t(`sample.${i}.a` as Key) }));
+  return [1, 2, 3, 4].map((i) => ({ q: t(`sample.${i}.q` as Key), a: t(`sample.${i}.a` as Key), k: t(`sample.${i}.k` as Key) }));
 }

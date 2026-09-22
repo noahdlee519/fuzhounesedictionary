@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import localFont from "next/font/local";
 import Header from "@/components/Header";
+import ReviewBadge from "@/components/ReviewBadge";
+import LangProvider from "@/components/LangProvider";
 import NavMemory from "@/components/NavMemory";
 import PageFade from "@/components/PageFade";
 import NavProgress from "@/components/NavProgress";
@@ -152,6 +154,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
+        <LangProvider lang={lang}>
         <NavMemory />
         {/* useSearchParams needs a Suspense boundary to keep pages static. */}
         <Suspense fallback={null}>
@@ -169,7 +172,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div aria-hidden className="site-margin site-margin-right" />
         <Header />
         <PageFade>
-        <main id="main" className="wrap relative z-10 w-full flex-1 py-10">
+        {/* z-20, one above the footer and its rule (z-10): a hover panel near
+            the bottom of the page — a related word, an audio credit — hangs
+            out of <main> and must sit over the rule, not under it. */}
+        <main id="main" className="wrap relative z-20 w-full flex-1 py-10">
           {children}
         </main>
         <hr className="rule-bleed relative z-10" />
@@ -188,8 +194,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <nav aria-label="Footer" className="mt-4 flex flex-wrap gap-x-7 gap-y-2">
             <Link href="/browse" className="linkq">{t("nav.browse")}</Link>
             <Link href="/learn" className="linkq">{t("nav.learn")}</Link>
-            <Link href="/contribute" className="linkq">{t("nav.contribute")}</Link>
             <Link href="/about" className="linkq">{t("nav.about")}</Link>
+            <Link href="/contribute" className="linkq inline-flex items-start">
+              {t("nav.contribute")}
+              {/* Editors: the same count as on the header's Contribute. */}
+              <Suspense fallback={null}>
+                <ReviewBadge className="ml-1 -translate-y-1.5" />
+              </Suspense>
+            </Link>
           </nav>
           <p className="footnote mt-6 max-w-[60ch]">{t("footer.blurb")}</p>
           <p className="footnote mt-1.5">
@@ -203,12 +215,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <span className="mx-2">·</span>
             <Link href="/terms" className="hover:text-ink">{t("footer.terms")}{lang === "zh" ? " (en)" : ""}</Link>
             <span className="mx-2">·</span>
-            <Link href="/admin" className="hover:text-ink">{t("footer.editors")}</Link>
+            <Link href="/editor" className="hover:text-ink">{t("footer.editors")}</Link>
           </p>
         </footer>
         </PageFade>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: siteJsonLd }} />
         <Analytics />
+        </LangProvider>
       </body>
     </html>
   );

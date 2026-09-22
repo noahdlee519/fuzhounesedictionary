@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SignInButton from "./SignInButton";
 import SubmitButton from "./SubmitButton";
 import { suggestEdit } from "@/app/entry/actions";
@@ -10,54 +10,107 @@ import { suggestEdit } from "@/app/entry/actions";
    should change, send, and it waits in the review queue for an editor.
    Signed out, the box asks for a sign-in first — a suggestion is credited
    and an editor may need to ask about it. */
+const REASONS = ["Wrong or misleading", "Offensive or inappropriate", "Duplicate of another word", "Something else"];
+
+/* Report works the same way: pick a reason, add a line if you like, and it
+   goes to the same review queue as a 'report' (supabase/suggest_edit.sql). */
 export default function SuggestEdit({
   entryId,
   signedIn,
   status,
+  kind = "edit",
 }: {
   entryId: string;
   signedIn: boolean;
+  kind?: "edit" | "report";
   /** From the address after sending: "sent", "empty", or an error message. */
   status?: string;
 }) {
   const [open, setOpen] = useState(Boolean(status && status !== "sent"));
   const sent = status === "sent";
-  const problem = status && status !== "sent" ? (status === "empty" ? "Please say what should change." : status) : null;
+  const report = kind === "report";
+  const anchor = report ? "report" : "suggest";
+  const problem =
+    status && status !== "sent"
+      ? status === "empty"
+        ? report ? "Please choose a reason." : "Please say what should change."
+        : status
+      : null;
+
+  const wrap = useRef<HTMLDivElement>(null);
+  // A popover: Escape or a click elsewhere closes it.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: MouseEvent) => {
+      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
 
   if (sent) {
     return (
-      <p id="suggest" role="status" className="meta text-lacquer">
-        ✓ Suggestion sent—thank you. An editor will read it.
+      <p id={anchor} role="status" className="meta text-lacquer">
+        {report ? "✓ Reported—thank you" : "✓ Suggestion sent—thank you"}
       </p>
     );
   }
 
   return (
-    <div id="suggest" className="scroll-mt-24">
+    <div id={anchor} ref={wrap} className="relative scroll-mt-24">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="meta text-inkFaint transition-colors hover:text-lacquer"
+        aria-controls={`${anchor}-panel`}
+        className={"meta transition-colors hover:text-lacquer " + (open ? "text-lacquer" : "text-inkFaint")}
       >
-        Suggest an edit {open ? "▾" : "▸"}
+        {report ? "Report" : "Suggest an edit"} {open ? "▾" : "▸"}
       </button>
+      {/* Drops down over the page from the link, lined up with its right
+          edge on a wide screen (it sits at the right of the page) and its
+          left edge on a phone. */}
       {open && (
-        <div className="mt-3 w-full max-w-xl rounded-sm border border-rule bg-surface p-5">
+        <div
+          id={`${anchor}-panel`}
+          className="absolute left-0 top-full z-30 mt-2 w-[min(26rem,calc(100vw-2.5rem))] rounded-sm border border-ruleStrong bg-paper p-5 text-left shadow-[0_8px_28px_rgb(0_0_0/.12)] sm:left-auto sm:right-0"
+        >
           {signedIn ? (
             <form action={suggestEdit} className="space-y-3">
               <input type="hidden" name="entry_id" value={entryId} />
-              <label htmlFor="suggest-value" className="field-label">
-                What should change, and why?
+              <input type="hidden" name="kind" value={kind} />
+              {report && (
+                <fieldset className="space-y-1.5">
+                  <legend className="field-label">What is wrong with this word?</legend>
+                  {REASONS.map((r, i) => (
+                    <label key={r} className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <input type="radio" name="reason" value={r} required defaultChecked={i === 0} className="accent-[var(--lacquer)]" />
+                      {r}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+              <label htmlFor={`${anchor}-value`} className={report ? "field-label !mt-4" : "field-label"}>
+                {report ? "Anything the editor should know (optional)" : "What should change, and why?"}
               </label>
               <textarea
-                id="suggest-value"
+                id={`${anchor}-value`}
                 name="value"
-                required
-                maxLength={500}
-                rows={3}
-                placeholder="e.g. The romanization should be uòng, and it also means “a surname”."
-                className="field-input min-h-[88px] resize-y"
+                required={!report}
+                autoFocus={!report}
+                maxLength={440}
+                rows={report ? 2 : 3}
+                placeholder={
+                  report
+                    ? "e.g. This is the same word as 黃色."
+                    : "e.g. The romanization should be uòng, and it also means “a surname”."
+                }
+                className="field-input min-h-[64px] resize-y"
               />
               {problem && (
                 <p role="alert" className="text-sm text-lacquer">
@@ -66,15 +119,19 @@ export default function SuggestEdit({
               )}
               <div className="flex flex-wrap items-center gap-4">
                 <SubmitButton pending="Sending…" className="btn btn-primary btn-sm">
-                  Send suggestion
+                  {report ? "Send report" : "Send suggestion"}
                 </SubmitButton>
-                <span className="footnote">An editor reads it before anything changes.</span>
+                <span className="footnote">{report ? "An editor will look at it." : "An editor reads it before anything changes."}</span>
               </div>
             </form>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-inkSoft">Sign in to suggest an edit to this word. An editor reads every suggestion.</p>
-              <SignInButton next={`/entry/${entryId}#suggest`} label="Sign in" className="btn btn-primary btn-sm [&>svg]:hidden" />
+              <p className="text-sm text-inkSoft">
+                {report
+                  ? "Sign in to report this word. An editor reads every report."
+                  : "Sign in to suggest an edit to this word. An editor reads every suggestion."}
+              </p>
+              <SignInButton next={`/entry/${entryId}#${anchor}`} label="Sign in" className="btn btn-primary btn-sm [&>svg]:hidden" />
             </div>
           )}
         </div>

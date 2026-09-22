@@ -29,15 +29,15 @@ export default async function EditEntryPage({
   searchParams: { back?: string };
 }) {
   const { profile } = await getSessionUser();
-  if (!profile?.is_editor) redirect("/admin");
+  if (!profile?.is_editor) redirect("/editor");
 
   // Where Save returns to: the queue by default, or the entry page when the
   // edit was opened from there. Only a path on this site is honoured.
   const raw = (searchParams.back ?? "").trim();
-  const back = localPath(raw, "/admin");
+  const back = localPath(raw, "/editor");
   const backLabel = back.startsWith("/entry/")
     ? "← Back to the word"
-    : back.startsWith("/admin")
+    : back.startsWith("/editor")
       ? "← Back to queue"
       : "← Back to the list";
 
@@ -48,7 +48,7 @@ export default async function EditEntryPage({
     .eq("id", params.id)
     .maybeSingle();
 
-  if (!entry) redirect("/admin");
+  if (!entry) redirect("/editor");
   const senses: Sense[] = sortSenses((entry as any).senses);
 
   return (
@@ -125,7 +125,7 @@ export default async function EditEntryPage({
 
       {/* Outside the edit form: a form cannot nest inside another form. */}
       <div className="flex justify-end border-t border-rule pt-4">
-        <DeleteEntry id={entry.id} back="/admin" />
+        <DeleteEntry id={entry.id} back="/editor" />
       </div>
     </div>
   );

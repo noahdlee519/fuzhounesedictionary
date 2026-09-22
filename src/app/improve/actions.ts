@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 /* One action for both kinds of suggestion.
 
@@ -16,6 +18,7 @@ const MAX = 500;
 
 export async function suggest(formData: FormData) {
   const supabase = createClient();
+  const L = pick(getLang());
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -44,11 +47,11 @@ export async function suggest(formData: FormData) {
     redirect(`/improve?${qs}#w-${entryId}`);
   };
 
-  if (kind !== "ipa" && kind !== "example") back({ problem: "That is not something you can suggest." });
-  if (!entryId) back({ problem: "That word could not be found." });
-  if (!value) back({ problem: "Nothing was filled in." });
+  if (kind !== "ipa" && kind !== "example") back({ problem: L("That is not something you can suggest.", "這一項無法提出建議。") });
+  if (!entryId) back({ problem: L("That word could not be found.", "找不到這個詞。") });
+  if (!value) back({ problem: L("Nothing was filled in.", "沒有填寫任何內容。") });
   if (kind === "example" && !senseId) {
-    back({ problem: "Please say which meaning the sentence is for." });
+    back({ problem: L("Please say which meaning the sentence is for.", "請選擇這個例句對應的意思。") });
   }
 
   const { error } = await supabase.from("suggestions").insert({
@@ -66,7 +69,7 @@ export async function suggest(formData: FormData) {
     const dupe = error.code === "23505";
     // The database also rejects a sense that belongs to a different word; its
     // message is written for a person, so it passes straight through.
-    back({ problem: dupe ? "You have already suggested that for this word." : error.message });
+    back({ problem: dupe ? L("You have already suggested that for this word.", "你已經替這個詞提過同樣的建議。") : error.message });
   }
 
   revalidatePath("/improve");

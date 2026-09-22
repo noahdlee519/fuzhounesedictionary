@@ -1,7 +1,7 @@
 import Link from "next/link";
 import SignInButton from "./SignInButton";
 import ContributeIcon, { type ContributeKind } from "./ContributeIcon";
-import { translator } from "@/lib/i18n";
+import { translator, pick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
 /* The box a signed-out visitor sees on each of the four Contribute pages —
@@ -22,6 +22,7 @@ export default function SignInGate({
   next: string;
 }) {
   const t = translator(getLang());
+  const L = pick(getLang());
   return (
     <div className="flex max-w-2xl flex-col gap-6 rounded-sm border border-rule bg-surface p-7 sm:flex-row sm:items-start sm:p-9">
       <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-paper text-lacquer ring-1 ring-rule">
@@ -34,11 +35,11 @@ export default function SignInGate({
           <SignInButton next={next} label={t("signin.google")} className="btn btn-primary [&>svg]:hidden" />
         </div>
         <p className="pt-1 text-xs text-inkFaint">
-          By contributing you agree to the{" "}
+          {L("By contributing you agree to the ", "貢獻內容即表示你同意")}
           <Link href="/terms" className="underline hover:text-lacquer">
-            terms
-          </Link>{" "}
-          and license your work CC BY-SA 4.0.
+            {L("terms", "使用條款")}
+          </Link>
+          {L(" and license your work CC BY-SA 4.0.", "，並以 CC BY-SA 4.0 授權你的作品。")}
         </p>
       </div>
     </div>

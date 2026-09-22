@@ -43,7 +43,7 @@ export default function NavLink({
    *  "current page" twice. It still fades on click; it just does not announce. */
   announce?: boolean;
   /** Other routes that count as this link's page — Contribute is "here" on
-   *  /submit, /improve, /request and /admin as well as on /contribute. */
+   *  /add, /improve, /request and /editor as well as on /contribute. */
   also?: string[];
 } & Omit<React.ComponentProps<typeof Link>, "href" | "className">) {
   const pathname = usePathname();

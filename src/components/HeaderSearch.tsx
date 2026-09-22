@@ -3,11 +3,16 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-/* The search pill in the header, on every page but the home page and
-   Browse, which both have the big search box right under the header. A plain
-   GET form to "/", so it works before any JavaScript loads and lands on the
-   same results page as the big box on the home page. A second box up here
-   only repeated the one on those two pages. */
+/* The search pill in the header. A plain GET form to "/", so it works
+   before any JavaScript loads and lands on the same results page as the big
+   box on the home page.
+
+   The home page and Browse have that big box near the top, and a second one
+   up here would only repeat it. So there the pill is hidden until the big
+   box has scrolled up under the header, fades in, and fades out again when
+   it comes back into view. Hidden means invisible and unreachable (no
+   pointer, not in the tab order), but still holding its place, so nothing
+   in the header moves when it appears. */
 export default function HeaderSearch({
   className = "",
   placeholder = "Search for a word",
@@ -26,15 +31,53 @@ export default function HeaderSearch({
   // the server's value for an attribute that differs at hydration.
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 559px)");
+    const mq = window.matchMedia("(max-width: 899px)");
     const update = () => setNarrow(mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
-  if (path === "/" || path === "/browse") return null;
+  // Only on the two pages with the big box; everywhere else it just shows.
+  const hasBigBox = path === "/" || path === "/browse";
+  const [shown, setShown] = useState(!hasBigBox);
+  useEffect(() => {
+    if (!hasBigBox) {
+      setShown(true);
+      return;
+    }
+    const big = document.getElementById(path === "/browse" ? "browse-search" : "site-search");
+    const header = document.querySelector("header");
+    if (!big) {
+      setShown(true);
+      return;
+    }
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const line = header ? header.getBoundingClientRect().bottom : 0;
+      setShown(big.getBoundingClientRect().bottom < line);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [hasBigBox, path]);
+
   return (
-    <form action="/" method="get" role="search" className={`relative ${className}`}>
+    <form
+      action="/"
+      method="get"
+      role="search"
+      aria-hidden={!shown || undefined}
+      className={`relative transition-[opacity,visibility] duration-200 ease-out ${shown ? "visible opacity-100" : "invisible opacity-0"} ${className}`}
+    >
       <label htmlFor="header-q" className="sr-only">
         {label}
       </label>
@@ -53,7 +96,7 @@ export default function HeaderSearch({
         autoComplete="off"
         placeholder={narrow ? placeholderShort : placeholder}
         aria-label={label}
-        className="ui h-[34px] w-full rounded-sm border border-ruleStrong bg-paper pl-8 pr-3.5 text-sm tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-ruleStrong focus:bg-paper focus-visible:outline-none"
+        className="ui h-[34px] w-full text-ellipsis rounded-sm border border-ruleStrong bg-paper pl-8 pr-2 text-sm sm:pr-3.5 tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-ruleStrong focus:bg-paper focus-visible:outline-none"
       />
     </form>
   );

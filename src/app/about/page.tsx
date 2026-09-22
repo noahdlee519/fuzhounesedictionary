@@ -1,9 +1,9 @@
 import Link from "next/link";
 import HeroMark from "@/components/HeroMark";
+import SiniticTree from "@/components/SiniticTree";
 import type { Metadata } from "next";
 import ZoomMap from "@/components/ZoomMap";
 import { FUJIAN_MAP } from "./fujian-map";
-import { missionTally, contributorCount } from "@/lib/public-stats";
 import { translator, type Key } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
@@ -24,24 +24,6 @@ export const metadata: Metadata = {
 export default async function AboutPage() {
   const lang = getLang();
   const t = translator(lang);
-
-  let stats: { n: number; label: Key }[] = [];
-  try {
-    const [tally, people] = await Promise.all([missionTally(), contributorCount().catch(() => null)]);
-    if (tally) {
-      // Words and recordings always; districts and people once there are any.
-      // Each label has a singular form for a count of one.
-      const one = (n: number, plural: Key, single: Key): { n: number; label: Key } => ({ n, label: n === 1 ? single : plural });
-      stats = [
-        one(tally.words, "about.stat.words", "about.stat.word"),
-        one(tally.recordings, "about.stat.recs", "about.stat.rec"),
-        one(tally.districts, "about.stat.districts", "about.stat.district"),
-        one(people ?? 0, "about.stat.people", "about.stat.person"),
-      ].filter((s, i) => i < 2 || s.n > 0);
-    }
-  } catch {
-    /* the numbers row is simply left out */
-  }
 
   /* A string with "[text](href)" links in it, rendered with the links in
      red. Internal paths go through next/link; mailto and http through <a>. */
@@ -125,43 +107,35 @@ export default async function AboutPage() {
   return (
     <article className="-my-10">
       {/* Hero: the story */}
-      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
-        <HeroMark />
-        <p className="eyebrow">{t("nav.about")}</p>
-        <h1 className="h1 mt-2 max-w-[30ch] [text-wrap:balance]">{t("about.h")}</h1>
-        <p className="lede read mt-6 text-ink">{t("about.p1")}</p>
-        <p className="read mt-5 text-[17px] leading-relaxed text-inkSoft">{t("about.p2")}</p>
-        <p className="read mt-4 text-[17px] leading-relaxed text-inkSoft">{t("about.p3")}</p>
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          {/* The page that earns the most trust ends on the ask that matters:
-              a recording, not a new word. */}
-          <Link href="/improve?need=recording" className="btn btn-primary">
-            {t("about.btn")}
-          </Link>
-          <Link href="/browse" className="btn btn-ghost">
-            {t("about.link")}
-          </Link>
+      {/* On a screen wider than it is tall and at least 1024px, the story
+          shares the hero with the family tree of Chinese (SiniticTree), and
+          the 福州話 watermark steps aside for it. Elsewhere, the story alone. */}
+      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11 landscape:lg:grid landscape:lg:grid-cols-[minmax(0,1fr)_300px] landscape:lg:gap-x-14">
+        <HeroMark className="landscape:lg:hidden" />
+        <div className="min-w-0">
+          <p className="eyebrow">{t("nav.about")}</p>
+          <h1 className="h1 mt-2 max-w-[30ch] [text-wrap:balance]">{t("about.h")}</h1>
+          <p className="lede read mt-6 text-ink">{t("about.p1")}</p>
+          <p className="read mt-5 text-[17px] leading-relaxed text-inkSoft">{t("about.p2")}</p>
+          <p className="read mt-4 text-[17px] leading-relaxed text-inkSoft">{t("about.p3")}</p>
         </div>
+        <aside className="hidden landscape:lg:block landscape:lg:pt-2">
+          <SiniticTree
+            caption={t("about.tree.caption")}
+            legend={{
+              north: t("about.tree.north"),
+              central: t("about.tree.central"),
+              south: t("about.tree.south"),
+              min: t("about.tree.min"),
+            }}
+            sources={[
+              { label: t("about.tree.src1"), href: "https://en.wikipedia.org/wiki/Language_Atlas_of_China" },
+              { label: t("about.tree.src2"), href: "https://www.cambridge.org/9780521296533" },
+            ]}
+          />
+        </aside>
       </section>
 
-      {/* The numbers */}
-      {stats.length > 0 && (
-        <>
-          <hr className="rule-bleed" />
-          <section className="sec-sm">
-            <div className="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
-              {stats.map((s) => (
-                <p key={s.label}>
-                  <span className="block text-[32px] font-medium leading-none tracking-tight tabular-nums text-ink sm:text-[40px]">
-                    {s.n.toLocaleString()}
-                  </span>
-                  <span className="mt-2 block text-sm text-inkSoft">{t(s.label)}</span>
-                </p>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
       <hr className="rule-bleed" />
 
       {/* Where it is spoken */}

@@ -1,5 +1,7 @@
 import { suggest } from "@/app/improve/actions";
 import SubmitButton from "./SubmitButton";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 /* A gap chip that opens a form in place.
 
@@ -41,11 +43,12 @@ export default function SuggestBox({
   need?: string;
 }) {
   const isIpa = kind === "ipa";
+  const L = pick(getLang());
 
   if (pending) {
     return (
       <span className="inline-block border border-rule px-2 py-0.5 meta text-inkFaint">
-        your {isIpa ? "IPA" : "example"} · awaiting review
+        {isIpa ? L("your IPA · awaiting review", "你的 IPA · 審核中") : L("your example · awaiting review", "你的例句 · 審核中")}
       </span>
     );
   }
@@ -55,7 +58,7 @@ export default function SuggestBox({
       <summary
         className={`${chipCls} border-rule text-inkFaint hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer`}
       >
-        + add {isIpa ? "IPA" : "example"}
+        {isIpa ? L("+ add IPA", "+ 補上 IPA") : L("+ add example", "+ 補上例句")}
       </summary>
 
       <form
@@ -70,7 +73,7 @@ export default function SuggestBox({
 
         {isIpa ? (
           <label className="block">
-            <span className={labelCls}>Pronunciation in IPA</span>
+            <span className={labelCls}>{L("Pronunciation in IPA", "IPA 發音")}</span>
             <input
               name="value"
               required
@@ -79,18 +82,18 @@ export default function SuggestBox({
               className={`${fieldCls}`}
             />
             <span className="mt-1 block text-xs text-inkFaint">
-              Write what you hear, in your own variety. An editor checks it before it appears.
+              {L("Write what you hear, in your own variety. An editor checks it before it appears.", "照你聽到的、用你自己的口音寫下來。經編輯審核後才會刊出。")}
             </span>
           </label>
         ) : (
           <>
             {senses.length > 1 ? (
               <label className="block">
-                <span className={labelCls}>Which meaning</span>
+                <span className={labelCls}>{L("Which meaning", "哪一個意思")}</span>
                 <select name="sense_id" required className={fieldCls} defaultValue={senses[0]?.id}>
                   {senses.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.definition_en ?? "this meaning"}
+                      {s.definition_en ?? L("this meaning", "這個意思")}
                     </option>
                   ))}
                 </select>
@@ -100,7 +103,7 @@ export default function SuggestBox({
             )}
 
             <label className="block">
-              <span className={labelCls}>A sentence using the word</span>
+              <span className={labelCls}>{L("A sentence using the word", "用這個詞造一個句子")}</span>
               <input
                 name="value"
                 required
@@ -111,7 +114,7 @@ export default function SuggestBox({
             </label>
 
             <label className="block">
-              <span className={labelCls}>What it means in English</span>
+              <span className={labelCls}>{L("What it means in English", "英文意思")}</span>
               <input
                 name="value_gloss"
                 maxLength={500}
@@ -121,16 +124,16 @@ export default function SuggestBox({
             </label>
 
             <p className="text-xs text-inkFaint">
-              Write a sentence you would actually say. An editor checks it before it appears.
+              {L("Write a sentence you would actually say. An editor checks it before it appears.", "寫一句你平常真的會講的話。經編輯審核後才會刊出。")}
             </p>
           </>
         )}
 
         <SubmitButton
-          pending="Sending…"
+          pending={L("Sending…", "送出中…")}
           className="border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
-          Send for review
+          {L("Send for review", "送交審核")}
         </SubmitButton>
       </form>
     </details>

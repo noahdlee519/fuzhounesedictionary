@@ -73,7 +73,9 @@ export async function saveRecordingNote(formData: FormData) {
     .eq("contributor_id", user.id)
     .select("entry_id")
     .maybeSingle();
-  if (error) redirect(withFlag("problem=1"));
+  // No row back means nothing was changed (not theirs, or the note column is
+  // not there yet) — say so rather than "saved".
+  if (error || !row) redirect(withFlag("problem=1"));
 
   revalidatePath("/account");
   revalidatePath(`/contributor/${user.id}`);
@@ -129,6 +131,23 @@ export async function deleteAccount(formData: FormData) {
   const { error: pendErr } = await admin.from("entries").delete().eq("contributor_id", uid).neq("status", "approved");
   if (pendErr) throw new Error(pendErr.message);
 
+  // The same for everything else not yet published, as the privacy page
+  // promises: suggestions and reports in review or sent back, and recordings
+  // (the person's voice) that were never published, with their files.
+  await admin.from("suggestions").delete().eq("contributor_id", uid).neq("status", "approved");
+  if (!alsoRecordings) {
+    const { data: unpub } = await admin
+      .from("recordings")
+      .select("id, audio_url")
+      .eq("contributor_id", uid)
+      .neq("status", "approved");
+    const unpubPaths = (unpub ?? []).map((r) => audioPath(r.audio_url)).filter((p): p is string => Boolean(p));
+    if (unpubPaths.length) await admin.storage.from(AUDIO_BUCKET).remove(unpubPaths);
+    if (unpub?.length) await admin.from("recordings").delete().in("id", unpub.map((r) => r.id));
+  }
+  // Questions asked of the assistant are kept only until the account goes.
+  await admin.from("assistant_usage").delete().or(`user_id.eq.${uid},actor.eq.u:${uid}`);
+
   const { error } = await admin.auth.admin.deleteUser(uid);
   if (error) throw new Error(error.message);
 
@@ -149,4 +168,29 @@ function audioPath(url: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+/* The × on "N of your edits were accepted": mark them seen, which clears the
+   banner and the red dot on the avatar (supabase/approval_notices.sql). */
+export async function dismissApprovals() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/account");
+  await supabase.from("profiles").update({ approvals_seen_at: new Date().toISOString() }).eq("id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/account");
+}
+
+/* The × on "Congratulations, you are now an editor": shown once. */
+export async function dismissEditorWelcome() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/account");
+  await supabase.from("profiles").update({ editor_welcomed_at: new Date().toISOString() }).eq("id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/account");
 }

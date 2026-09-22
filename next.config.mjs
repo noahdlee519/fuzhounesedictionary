@@ -26,6 +26,17 @@ const nextConfig = {
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
+  // The review pages were /admin until 21 Sep 2026; old links and bookmarks
+  // land on their new address.
+  async redirects() {
+    return [
+      { source: "/admin", destination: "/editor", permanent: true },
+      // Add a word was /submit until 22 Sep 2026; the query (?romanization=)
+      // rides along.
+      { source: "/submit", destination: "/add", permanent: true },
+      { source: "/admin/:path*", destination: "/editor/:path*", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

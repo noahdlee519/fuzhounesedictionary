@@ -1,4 +1,4 @@
-import { deleteEntry } from "@/app/admin/actions";
+import { deleteEntry } from "@/app/editor/actions";
 import SubmitButton from "./SubmitButton";
 
 /* An editor's control for removing a whole word.

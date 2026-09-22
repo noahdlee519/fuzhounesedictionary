@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PlayButton from "./PlayButton";
+import type { AudioCredit } from "@/lib/entries";
 
 export interface CardProps {
   id: string;
@@ -24,61 +25,90 @@ export interface CardProps {
   /** The recording the card's play button plays — the best-liked reading of
    *  the word, or the legacy file on the entry. */
   audio?: string | null;
+  /** Who recorded that take, for the tooltip on the audio button. */
+  audioCredit?: AudioCredit | null;
 }
 
 /* A word as a card, in the mock-up's grid style: characters large in the
    serif, romanization in bold, the gloss in grey clipped to two lines, and a
-   footer of small facts — part of speech, how many recordings (or that it
-   needs one), origin. At the right, the word's best recording behind a big
-   play button, with "more" under it when there are others to hear on the
-   entry page. Cards sit in a grid whose gaps are hairlines, so they carry no
+   footer of small facts — part of speech, origin. At the right, the word's
+   best recording behind a big play button, or, with none, an empty dotted
+   circle. The footer's right end says "needs a recording", "1 recording so
+   far", or "Listen to N more recordings" when there are others to hear. Cards sit in a grid whose gaps are hairlines, so they carry no
    border of their own. The play button is a sibling of the link, not inside
    it: a button inside an anchor is invalid and unreachable by keyboard. */
 export default function EntryCard({ entry }: { entry: CardProps }) {
   const n = entry.recordings ?? 0;
   const href = `/entry/${entry.id}`;
 
+  /* Two rows: the word and its audio button, then a footer that spans the
+     whole card — part of speech and origin at the left, "Listen to N more
+     recordings" at the right on one line. The footer sits outside the card's
+     link (the link's ::after still makes the whole card clickable), so the
+     "Listen" link is not a link inside a link. The audio button sits at z-20,
+     above that link (z-10), so its credit panel is never covered by it. */
   return (
-    <div className="relative flex gap-3 bg-paper p-4 transition-colors hover:bg-surface2 sm:min-h-[150px] sm:p-5">
-      <Link href={href} className="min-w-0 flex-1 after:absolute after:inset-0 after:content-['']">
-        {entry.hanzi ? (
-          <div className="han text-[32px] font-medium leading-[1.15]">{entry.hanzi}</div>
-        ) : (
-          <div className="text-[26px] font-semibold leading-[1.15] tracking-tight">{entry.romanization || entry.headword}</div>
-        )}
-        {entry.hanzi && (
-          <div className="romanization mt-1.5 text-sm font-semibold">{entry.romanization || entry.headword}</div>
-        )}
-        {entry.gloss && (
-          <p className="mt-1.5 line-clamp-2 text-[13px] text-inkSoft">
-            {(entry.senses ?? 0) > 1 && <span className="tabular-nums text-inkMute">{entry.senseNo ?? 1}. </span>}
-            {entry.gloss}
-            {(entry.senses ?? 0) > 1 && <span className="text-inkMute"> · {entry.senses} meanings</span>}
-          </p>
-        )}
-        <div className="mt-3 flex flex-wrap gap-x-2.5 gap-y-1 text-[11px] font-semibold tracking-[.02em] text-inkMute">
-          {entry.pos && <span>{entry.pos}</span>}
-          {n > 0 ? (
-            <span className="text-green">
-              {n} recording{n === 1 ? "" : "s"}
-            </span>
+    <div className="relative flex flex-col bg-paper p-4 transition-colors hover:z-20 hover:bg-surface2 focus-within:z-20 sm:min-h-[150px] sm:p-5">
+      <div className="flex flex-1 gap-3">
+        <Link href={href} className="min-w-0 flex-1 after:absolute after:inset-0 after:content-['']">
+          {entry.hanzi ? (
+            <div className="han text-[32px] font-medium leading-[1.15]">{entry.hanzi}</div>
           ) : (
-            <span className="text-amber">needs a recording</span>
+            <div className="text-[26px] font-semibold leading-[1.15] tracking-tight">{entry.romanization || entry.headword}</div>
           )}
+          {entry.hanzi && (
+            <div className="romanization mt-1.5 text-sm font-semibold">{entry.romanization || entry.headword}</div>
+          )}
+          {/* The meaning in ink; with more than one, the count always on a
+              line of its own under it. */}
+          {entry.gloss && (
+            <p className="mt-1.5 line-clamp-2 text-[13px] text-ink">
+              {(entry.senses ?? 0) > 1 && <span className="tabular-nums text-inkMute">{entry.senseNo ?? 1}. </span>}
+              {entry.gloss}
+            </p>
+          )}
+          {entry.gloss && (entry.senses ?? 0) > 1 && (
+            <p className="mt-0.5 text-[12px] text-inkMute">{entry.senses} meanings</p>
+          )}
+          {entry.caption && <p className="mt-2 text-xs text-inkSoft">{entry.caption}</p>}
+        </Link>
+        {entry.audio ? (
+          <div className="relative z-20 shrink-0 self-start">
+            <PlayButton
+              src={entry.audio}
+              size="md"
+              label={`Play ${entry.hanzi || entry.romanization || entry.headword}`}
+              credit={entry.audioCredit}
+              tipAlign="right"
+            />
+          </div>
+        ) : (
+          /* No recording yet: an empty dotted circle where the play button
+             would be, the size of that button. "needs a recording" is in the
+             footer, where the recording counts go. */
+          <span aria-hidden className="block h-14 w-14 shrink-0 self-start rounded-full border-2 border-dashed border-ruleStrong" />
+        )}
+      </div>
+      <div className="mt-3 flex items-baseline justify-between gap-x-3 text-[11px] font-semibold tracking-[.02em] text-inkMute">
+        <span className="flex min-w-0 flex-wrap gap-x-2.5 gap-y-1">
+          {entry.pos && <span>{entry.pos}</span>}
           {entry.origin && <span>{entry.origin}</span>}
-        </div>
-        {entry.caption && <p className="mt-2 text-xs text-inkSoft">{entry.caption}</p>}
-      </Link>
-      {entry.audio && (
-        <div className="relative z-10 flex shrink-0 flex-col items-center gap-1 self-start">
-          <PlayButton src={entry.audio} size="md" label={`Play ${entry.hanzi || entry.romanization || entry.headword}`} />
-          {n > 1 && (
-            <Link href={`${href}#recordings`} className="text-[11px] font-medium text-inkSoft hover:text-lacquer">
-              more
-            </Link>
-          )}
-        </div>
-      )}
+        </span>
+        {!entry.audio && (
+          <span className="shrink-0 whitespace-nowrap text-amber">needs a recording</span>
+        )}
+        {entry.audio && n === 1 && (
+          <span className="shrink-0 whitespace-nowrap font-medium text-inkFaint">1 recording so far</span>
+        )}
+        {entry.audio && n > 1 && (
+          <Link
+            href={`${href}#recordings`}
+            className="relative z-10 shrink-0 whitespace-nowrap font-medium text-inkSoft hover:text-lacquer"
+          >
+            Listen to {n - 1} more recording{n - 1 === 1 ? "" : "s"}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

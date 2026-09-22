@@ -19,7 +19,7 @@ interface Turn {
   content: string;
 }
 
-const STARTERS = ["How do you say house?", "What is a measure word?", "Which words are from Changle?"];
+const STARTERS = ["What does “chia” mean in English?", "What is a measure word?", "Which words are from Changle?"];
 
 /* One conversation per browser tab. Kept small (the last 40 turns) and read
    inside try/catch: private windows and some embedded views throw on access. */
@@ -65,6 +65,15 @@ export default function Assistant({
   const loaded = useRef(false);
   // A question typed while signed out, waiting on the sign-in.
   const [gated, setGated] = useState<string | null>(null);
+  // Phone width: a placeholder short enough not to be cut off.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
   // A question held from before a sign-in, to send once history is restored.
   const [held, setHeld] = useState<string | null>(null);
 
@@ -170,7 +179,7 @@ export default function Assistant({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           maxLength={500}
-          placeholder="Ask anything—e.g. how do I say “I love eating dingbianhu”?"
+          placeholder={narrow ? "Ask any question" : "Ask anything—e.g. how do I say “I love eating dingbianhu”?"}
           autoComplete="off"
           disabled={busy}
           className="ui h-14 w-full min-w-0 rounded-sm border border-ink bg-paper px-5 text-[17px] tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus-visible:outline-none disabled:cursor-not-allowed"
@@ -179,7 +188,9 @@ export default function Assistant({
       </form>
 
       {turns.length === 0 && !gated && (
-        <div className="mt-4 flex flex-wrap gap-2.5">
+        <>
+        <p className="footnote mt-5">Try an example query</p>
+        <div className="mt-2 flex flex-wrap gap-2.5">
           {STARTERS.map((q) => (
             <button
               key={q}
@@ -191,6 +202,7 @@ export default function Assistant({
             </button>
           ))}
         </div>
+        </>
       )}
 
       {talking && (
@@ -240,8 +252,7 @@ export default function Assistant({
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <p className="footnote">Answers come from the dictionary itself.</p>
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
         {turns.length > 0 && !busy && (
           <button
             type="button"

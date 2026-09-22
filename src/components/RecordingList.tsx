@@ -126,7 +126,7 @@ export default function RecordingList({
                   signedIn={Boolean(viewerId)}
                 />
               )}
-              {canDelete && <DeleteRecording id={r.id} back={back ?? "/admin"} />}
+              {canDelete && <DeleteRecording id={r.id} back={back ?? "/editor"} />}
             </div>
           </li>
         );

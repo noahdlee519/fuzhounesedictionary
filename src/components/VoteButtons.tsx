@@ -1,5 +1,6 @@
 import { voteRecording } from "@/app/entry/actions";
 import SubmitButton from "./SubmitButton";
+import VoteSignIn from "./VoteSignIn";
 
 export interface VoteState {
   up: number;
@@ -39,15 +40,17 @@ export default function VoteButtons({
   const btn = (value: 1 | -1, glyph: string, label: string, n: number) => {
     const active = state.mine === value;
     const cls =
-      "inline-flex items-center gap-1.5 border px-2 py-0.5 text-[13px] tabular-nums transition-[color,background-color,border-color,transform] active:scale-[.95] disabled:cursor-not-allowed disabled:active:scale-100 " +
+      "inline-flex cursor-pointer items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[13px] tabular-nums transition-[color,background-color,border-color,transform] duration-150 active:scale-[.93] disabled:cursor-not-allowed disabled:active:scale-100 " +
       (active
-        ? "border-lacquer bg-lacquer text-paper"
-        : "border-rule text-inkFaint hover:border-lacquer hover:text-lacquer disabled:opacity-60 disabled:hover:border-rule disabled:hover:text-inkFaint");
+        ? "border-lacquer bg-lacquer text-paper hover:opacity-90"
+        : "border-rule text-inkFaint hover:border-lacquer hover:bg-accentSoft hover:text-lacquer disabled:opacity-60");
     if (!signedIn) {
+      // Looks and presses like the real thing; VoteSignIn (around both)
+      // explains that a sign-in is needed.
       return (
-        <span className={cls.replace("hover:border-lacquer hover:text-lacquer", "")} title="Sign in to vote" aria-label={`${n} ${label}`}>
+        <button type="button" className={cls} aria-label={`${n}: ${label}. Sign in to vote`}>
           <span aria-hidden="true" className={glyph === "down" ? "scale-y-[-1]" : ""}>{thumb}</span> {n}
-        </span>
+        </button>
       );
     }
     return (
@@ -62,10 +65,11 @@ export default function VoteButtons({
       </form>
     );
   };
-  return (
+  const pair = (
     <span className="inline-flex items-center gap-1">
       {btn(1, "up", "Sounds right to me", state.up)}
       {btn(-1, "down", "Sounds different where I'm from", state.down)}
     </span>
   );
+  return signedIn ? pair : <VoteSignIn next={back}>{pair}</VoteSignIn>;
 }

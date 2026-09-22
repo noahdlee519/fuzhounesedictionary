@@ -220,12 +220,27 @@ function contributorLine(c: ContributorHit): string {
   return `${c.display_name ?? "(no name)"} | /contributor/${c.id}${c.origin ? ` | from ${c.origin}` : ""} | ${c.words} words, ${c.recordings} recordings`;
 }
 
+/* Lower case, tone marks and other diacritics off, hyphens as spaces:
+   "chia" finds chiă, "siah buang" finds siăh buáng. */
+function fold(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/-/g, " ");
+}
+
+/* "eating" → "eat", "houses" → "house": enough English stemming for the
+   question's words to meet the meanings' words. */
+function stem(w: string): string {
+  if (w.length > 5 && w.endsWith("ing")) return w.slice(0, -3);
+  if (w.length > 4 && w.endsWith("ed")) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
+  return w;
+}
+
 /* Which entries does a question touch? Plain substring scoring over every
    field, CJK runs matched whole and Latin words individually. Good enough at
    this size; the model also has the full index, so a miss here only costs it
    the details, not the word. */
 function relevant(entries: Entry[], question: string): Entry[] {
-  const q = question.toLowerCase();
+  const q = fold(question);
   const cjk = q.match(/[\p{Script=Han}]+/gu) ?? [];
   const words = (q.match(/[\p{L}\p{M}]+/gu) ?? []).filter(
     (w) => !/\p{Script=Han}/u.test(w) && w.length >= 3 && !STOP.has(w)
@@ -238,18 +253,21 @@ function relevant(entries: Entry[], question: string): Entry[] {
       e.contributor?.display_name ?? "",
       ...e.senses.flatMap((s) => [s.definition_en ?? "", s.gloss_zh ?? "", s.example ?? "", s.example_gloss ?? ""]),
     ]
-      .join("  ")
-      .toLowerCase();
+      .join("  ");
+    const folded = fold(hay);
     let score = 0;
     for (const c of cjk) {
       if (e.hanzi && (e.hanzi === c || c.includes(e.hanzi))) score += 6;
       else if (hay.includes(c)) score += 3;
       else for (const ch of c) if (e.hanzi?.includes(ch)) score += 1;
     }
+    const rom = fold(e.romanization ?? "");
+    const head = fold(e.headword);
     for (const w of words) {
-      if ((e.romanization ?? "").toLowerCase() === w || e.headword.toLowerCase() === w) score += 6;
-      else if (new RegExp(`\\b${w}\\b`).test(hay)) score += 3;
-      else if (hay.includes(w)) score += 1;
+      const st = stem(w);
+      if (rom === w || head === w || rom.split(" ").includes(w)) score += 6;
+      else if (new RegExp(`\\b${st}`).test(folded)) score += 3;
+      else if (folded.includes(st)) score += 1;
     }
     return { e, score };
   });

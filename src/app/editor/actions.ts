@@ -24,7 +24,7 @@ export async function approve(formData: FormData) {
     .update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: null })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   revalidatePath("/");
   revalidatePath("/learn");
   revalidatePath("/sitemap.xml");
@@ -39,7 +39,7 @@ export async function reject(formData: FormData) {
     .update({ status: "rejected", reviewed_at: new Date().toISOString(), review_notes: note })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/admin");
+  revalidatePath("/editor");
 }
 
 export async function saveEdit(formData: FormData) {
@@ -49,7 +49,7 @@ export async function saveEdit(formData: FormData) {
   // (and from there the browser's own Back returns to the word list). Only a
   // path on this site is honoured.
   const rawBack = String(formData.get("back") ?? "");
-  const back = localPath(rawBack, "/admin");
+  const back = localPath(rawBack, "/editor");
   const supabase = adminClient();
 
   // Update entry core fields.
@@ -98,7 +98,7 @@ export async function saveEdit(formData: FormData) {
   const senseErr = results.find((r) => r.error)?.error;
   if (senseErr) throw new Error(senseErr.message);
 
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   revalidatePath("/learn");
   revalidatePath("/");
   revalidatePath(`/entry/${id}`);
@@ -117,7 +117,7 @@ export async function approveSuggestion(formData: FormData) {
     .update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: null })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   revalidatePath("/improve");
   revalidatePath("/learn");
   if (entryId) revalidatePath(`/entry/${entryId}`);
@@ -133,7 +133,7 @@ export async function rejectSuggestion(formData: FormData) {
     .update({ status: "rejected", reviewed_at: new Date().toISOString(), review_notes: note })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   revalidatePath("/improve");
   if (entryId) revalidatePath(`/entry/${entryId}`);
 }
@@ -147,7 +147,7 @@ export async function approveRecording(formData: FormData) {
     .update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: null })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   revalidatePath("/improve");
   if (entryId) revalidatePath(`/entry/${entryId}`);
 }
@@ -162,7 +162,7 @@ export async function rejectRecording(formData: FormData) {
     .update({ status: "rejected", reviewed_at: new Date().toISOString(), review_notes: note })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   if (entryId) revalidatePath(`/entry/${entryId}`);
 }
 
@@ -177,8 +177,8 @@ export async function rejectRecording(formData: FormData) {
 export async function deleteRecording(formData: FormData) {
   await requireEditor();
   const id = String(formData.get("id") ?? "");
-  const raw = String(formData.get("back") ?? "/admin");
-  const back = localPath(raw, "/admin");
+  const raw = String(formData.get("back") ?? "/editor");
+  const back = localPath(raw, "/editor");
   if (!id) redirect(back);
 
   const supabase = adminClient();
@@ -200,7 +200,7 @@ export async function deleteRecording(formData: FormData) {
     if (fileErr) console.error(`recording ${id} deleted but file not removed: ${fileErr.message}`);
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   revalidatePath("/improve");
   revalidatePath("/learn");
   revalidatePath("/");
@@ -234,8 +234,8 @@ function storagePath(url: string | null): string | null {
 export async function deleteEntry(formData: FormData) {
   await requireEditor();
   const id = String(formData.get("id") ?? "");
-  const raw = String(formData.get("back") ?? "/admin");
-  const back = localPath(raw, "/admin");
+  const raw = String(formData.get("back") ?? "/editor");
+  const back = localPath(raw, "/editor");
   if (!id) redirect(back);
 
   const supabase = adminClient();
@@ -258,7 +258,7 @@ export async function deleteEntry(formData: FormData) {
     if (fileErr) console.error(`entry ${id} deleted but ${paths.length} file(s) not removed: ${fileErr.message}`);
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/editor");
   revalidatePath("/improve");
   revalidatePath("/learn");
   revalidatePath("/request");

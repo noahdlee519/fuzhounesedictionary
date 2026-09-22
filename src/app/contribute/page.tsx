@@ -3,6 +3,11 @@ import HeroMark from "@/components/HeroMark";
 import type { Metadata } from "next";
 import Avatar from "@/components/Avatar";
 import ContributeIcon from "@/components/ContributeIcon";
+import DeleteRequest from "@/components/DeleteRequest";
+import RequestVote from "@/components/RequestVote";
+import { getSessionUser } from "@/lib/auth";
+import { reviewCount } from "@/lib/review";
+import { adminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { one } from "@/lib/entries";
 import { topContributors, type TopContributor } from "@/lib/public-stats";
@@ -23,7 +28,7 @@ export const metadata: Metadata = {
 /* The Contribute hub, from the mock-up: the four ways in as tiles with the
    time each takes, what people are waiting for beside what just arrived,
    and the people who have given the most. The four ways keep their own
-   pages (/improve, /submit, /request); this is the door. */
+   pages (/improve, /add, /request); this is the door. */
 
 /* A clock for the minutes-and-seconds label on each tile. Drawn to the same
    16px box and 1.6 stroke as the magnifier in the search bar, so it sits in
@@ -38,9 +43,19 @@ function Clock({ className = "" }: { className?: string }) {
   );
 }
 
+/* "Record a word" → ["Record", " a word"]; 錄一個詞 → ["錄", "一個詞"],
+   新增詞條 → ["新增", "詞條"]: the verb is everything before the first space,
+   or in Chinese the characters before 一 or 詞. */
+function splitVerb(h: string): [string, string] {
+  const sp = h.indexOf(" ");
+  if (sp > 0) return [h.slice(0, sp), h.slice(sp)];
+  const m = h.match(/^(.+?)(一.*|詞.*)$/);
+  return m ? [m[1], m[2]] : [h, ""];
+}
+
 const WAYS: { key: "record" | "add" | "improve" | "wanted"; href: string }[] = [
   { key: "record", href: "/improve?need=recording" },
-  { key: "add", href: "/submit" },
+  { key: "add", href: "/add" },
   { key: "improve", href: "/improve" },
   { key: "wanted", href: "/request" },
 ];
@@ -58,16 +73,24 @@ export default async function ContributePage() {
   const lang = getLang();
   const t = translator(lang);
   const supabase = createClient();
+  const { user: meUser, profile: me } = await getSessionUser();
+  const editor = Boolean(me?.is_editor);
+  const waiting = editor ? await reviewCount().catch(() => 0) : 0;
 
   let wanted: { id: string; term: string; votes: number; entry_id: string | null }[] = [];
   let recent: Recent[] = [];
   let inReview: number | null = null;
   let reviewDays: number | null = null;
   let people: TopContributor[] = [];
+  const myVotes = new Set<string>();
 
   try {
+    // Counted with the service role: RLS shows a visitor none of the pending
+    // rows and a contributor only their own, so the "In review" number was 0
+    // for everyone but editors. It is a count only; no rows leave the server.
+    const admin = adminClient();
     const pending = (table: string) =>
-      supabase.from(table).select("id", { count: "exact", head: true }).eq("status", "pending");
+      admin.from(table).select("id", { count: "exact", head: true }).eq("status", "pending");
     const [{ data: wants }, { data: recs }, { data: added }, { data: reviewed }, top, ...queues] = await Promise.all([
       supabase
         .from("word_requests_ranked")
@@ -110,6 +133,14 @@ export default async function ContributePage() {
     ]);
     wanted = (wants ?? []) as typeof wanted;
     people = top;
+    if (meUser && wanted.length) {
+      const { data: mv } = await supabase
+        .from("word_request_votes")
+        .select("request_id")
+        .eq("user_id", meUser.id)
+        .in("request_id", wanted.map((w) => w.id));
+      for (const v of (mv ?? []) as any[]) myVotes.add(v.request_id);
+    }
 
     const seen = new Set<string>();
     const pick: any[] = [];
@@ -173,6 +204,26 @@ export default async function ContributePage() {
         <p className="eyebrow">{t("nav.contribute")}</p>
         <h1 className="display mt-2 max-w-[18ch] [text-wrap:balance]">{t("hub.h")}</h1>
         <p className="lede read mt-6 [text-wrap:pretty]">{t("hub.lede")}</p>
+        {/* Editors only: the way into the review queue, with how much is
+            waiting. A quiet outlined button with one red count, under the
+            lede where an editor looks first. */}
+        {editor && (
+          <div className="mt-8">
+          <p className="eyebrow mb-2">Editors:</p>
+          <Link href="/editor" className="btn btn-ghost gap-3">
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 11l2.5 2.5L16 9" />
+              <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
+            </svg>
+            Review contributions
+            {waiting > 0 && (
+              <span className="min-w-[22px] rounded-full bg-lacquer px-1.5 text-center text-xs font-bold leading-[22px] tabular-nums text-white">
+                {waiting > 99 ? "99+" : waiting}
+              </span>
+            )}
+          </Link>
+          </div>
+        )}
       </section>
       <hr className="rule-bleed" />
 
@@ -190,7 +241,16 @@ export default async function ContributePage() {
                   <Clock className="h-3 w-3 shrink-0 opacity-70" />
                   {t(`hub.${w.key}.time` as Key)}
                 </span>
-                <h2 className="h3 mt-1 text-lacquer">{t(`hub.${w.key}.h` as Key)}</h2>
+                {/* The verb in red, the rest ("a word", 詞條) in ink. */}
+                {(() => {
+                  const [verb, rest] = splitVerb(t(`hub.${w.key}.h` as Key));
+                  return (
+                    <h2 className="h3 mt-1 text-ink">
+                      <span className="text-lacquer">{verb}</span>
+                      {rest}
+                    </h2>
+                  );
+                })()}
                 <p className="mt-2 max-w-[44ch] text-sm leading-relaxed text-inkSoft">{t(`hub.${w.key}.p` as Key)}</p>
               </span>
             </Link>
@@ -208,22 +268,28 @@ export default async function ContributePage() {
               {wanted.length ? (
                 wanted.map((x) => (
                   <div key={x.id} className="flex items-center gap-3 border-b border-rule py-2.5 last:border-b-0">
-                    <Link
-                      href="/request"
-                      className="inline-flex h-9 min-w-[52px] items-center justify-center gap-1 rounded-sm border border-ruleStrong px-2 text-xs text-inkSoft hover:border-lacquer hover:text-lacquer"
-                      aria-label={t("mod.votes", { n: x.votes })}
-                    >
-                      ▲ {x.votes}
-                    </Link>
+                    <RequestVote
+                      id={x.id}
+                      votes={x.votes}
+                      voted={myVotes.has(x.id)}
+                      signedIn={!!meUser}
+                      back="/contribute"
+                      label={t("mod.votes", { n: x.votes })}
+                    />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[15px]">{x.term}</div>
-                      {x.entry_id ? (
-                        <Link href={`/entry/${x.entry_id}`} className="link text-xs">
-                          {t("mod.open")}
-                        </Link>
-                      ) : (
-                        <div className="text-xs text-inkMute">{t("mod.needsEntry")}</div>
-                      )}
+                      <Link href="/request" className="text-[15px] hover:text-lacquer">{x.term}</Link>
+                      {/* The second line, with the editors' Delete at its right on the
+                          same baseline as "needs an entry". */}
+                      <div className="flex items-baseline justify-between gap-3">
+                        {x.entry_id ? (
+                          <Link href={`/entry/${x.entry_id}`} className="link text-xs">
+                            {t("mod.open")}
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-inkMute">{t("mod.needsEntry")}</span>
+                        )}
+                        {editor && <DeleteRequest id={x.id} back="/contribute" />}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -267,7 +333,14 @@ export default async function ContributePage() {
             </div>
             {inReview !== null && (
               <p className="footnote mt-5">
-                {t("hub.review.n", { n: inReview })}
+                {/* Editors go straight to the queue from here. */}
+                {editor ? (
+                  <Link href="/editor" className="underline decoration-rule underline-offset-2 hover:text-lacquer hover:decoration-lacquer">
+                    {t("hub.review.n", { n: inReview })}
+                  </Link>
+                ) : (
+                  t("hub.review.n", { n: inReview })
+                )}
                 {reviewDays !== null && (
                   <>
                     {" · "}

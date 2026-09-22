@@ -1,16 +1,18 @@
+import { newApprovals, editorWelcome } from "@/lib/approvals";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
 import Avatar from "@/components/Avatar";
 import AvatarUpload from "@/components/AvatarUpload";
+import OriginPlaceFields from "@/components/OriginPlaceFields";
 import SavedNotice from "@/components/SavedNotice";
 import SubmitButton from "@/components/SubmitButton";
 import SafeToggle from "@/components/SafeToggle";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import Pager from "@/components/Pager";
-import { saveProfile, deleteAccount } from "./actions";
-import { ORIGIN_AREAS, ORIGIN_GROUPS, formatOrigin } from "@/lib/origins";
+import { saveProfile, deleteAccount, dismissApprovals, dismissEditorWelcome } from "./actions";
+import { formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
 import { STATUS_STYLE } from "@/lib/status";
 import { firstSense, one, sortSenses } from "@/lib/entries";
@@ -97,34 +99,90 @@ export default async function AccountPage({
   const precision = profile?.origin_precision ?? "hidden";
   const publicLine = formatOrigin(profile?.origin_area, profile?.origin_locality);
 
+  // Anything of theirs an editor has approved since they last looked.
+  const [news, welcome] = await Promise.all([newApprovals(user.id), editorWelcome(user.id)]);
+  // Where the banner's link goes: the list with the most news in it.
+  const newsShow = news.words ? "words" : news.recordings ? "recordings" : "words";
+
   return (
     <div className="space-y-10">
-      <div className="space-y-4 border-b border-rule pb-5">
-        <div className="flex flex-wrap items-center gap-4">
-          <Avatar
-            src={profile?.avatar_url}
-            name={profile?.display_name}
-            size={64}
-            className="ring-1 ring-rule"
-          />
-          <div className="min-w-0">
+      {/* Made an editor: this one comes first. */}
+      {welcome && (
+        <div role="status" className="flex items-start gap-4 rounded-sm bg-lacquer px-5 py-4 text-paper">
+          <p className="min-w-0 flex-1 text-[15px] leading-snug">
+            <span className="font-semibold">Congratulations, you are now an editor.</span>{" "}
+            Entries you write are published automatically, and you can review contributions{" "}
+            <Link href="/contribute" className="underline underline-offset-2 hover:opacity-80">
+              here
+            </Link>
+            .
+          </p>
+          <form action={dismissEditorWelcome}>
+            <button
+              type="submit"
+              aria-label="Dismiss"
+              className="-m-1 inline-flex h-8 w-8 items-center justify-center rounded-sm text-lg leading-none transition-colors hover:bg-white/15"
+            >
+              ×
+            </button>
+          </form>
+        </div>
+      )}
+
+      {news.total > 0 && (
+        <div role="status" className="flex items-start gap-4 rounded-sm bg-lacquer px-5 py-4 text-paper">
+          <p className="min-w-0 flex-1 text-[15px] leading-snug">
+            <span className="font-semibold">
+              {news.total === 1 ? "1 of your edits was accepted" : `${news.total} of your edits were accepted`}
+            </span>
+            {" — thank you. "}
+            <Link href={`/account?show=${newsShow}#contributions`} className="whitespace-nowrap underline underline-offset-2 hover:opacity-80">
+              See your contributions
+            </Link>
+          </p>
+          <form action={dismissApprovals}>
+            <button
+              type="submit"
+              aria-label="Dismiss"
+              className="-m-1 inline-flex h-8 w-8 items-center justify-center rounded-sm text-lg leading-none transition-colors hover:bg-white/15"
+            >
+              ×
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="border-b border-rule pb-5">
+        <div className="flex flex-wrap items-start gap-4">
+          {/* The picture with "Edit" under it, which opens it large with
+              Change and a trash can (AvatarUpload). */}
+          <div className="flex shrink-0 flex-col items-center gap-1.5">
+            <Avatar
+              src={profile?.avatar_url}
+              name={profile?.display_name}
+              size={64}
+              className="ring-1 ring-rule"
+            />
+            <AvatarUpload userId={user.id} avatarUrl={profile?.avatar_url ?? null} name={profile?.display_name ?? null} />
+          </div>
+          <div className="min-w-0 flex-1 pt-1">
             <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
               {profile?.display_name || "My account"}
             </h1>
             <p className="truncate text-sm text-inkFaint">{user.email}</p>
-            <p className="text-sm text-inkFaint">
-              {since && <span>Member since {since}</span>}
-              {since && <span aria-hidden> · </span>}
-              <Link href={`/contributor/${user.id}`} className="transition-colors hover:text-lacquer">
+            {since && <p className="text-sm text-inkFaint">Member since {since}</p>}
+            <p className="text-sm">
+              <Link href={`/contributor/${user.id}`} className="text-lacquer underline-offset-2 hover:underline">
                 View profile
               </Link>
             </p>
           </div>
-          {/* self-start + a small top offset: the sign-out link sits on the
-              line of the name, not the vertical middle of the block. */}
-          <div className="ml-auto flex flex-col items-end gap-2.5 self-start pt-[6px]">
+          {/* Sign out and the content filter, in the same small caps. On a
+              phone they drop below the name together, on one line; from sm up
+              they stack at the right, level with the name. */}
+          <div className="flex w-full items-center gap-5 sm:ml-auto sm:w-auto sm:flex-col sm:items-end sm:gap-2.5 sm:pt-[10px]">
             <form action="/auth/signout" method="post">
-              <button className="linkq text-sm">Sign out</button>
+              <button className="meta text-inkFaint transition-colors hover:text-lacquer">Sign out</button>
             </form>
             {/* Kept beside sign-out rather than down in the profile form: it
                 is a setting for reading the dictionary, not something saved
@@ -132,11 +190,10 @@ export default async function AccountPage({
             <SafeToggle on={safe} />
           </div>
         </div>
-        <AvatarUpload userId={user.id} hasAvatar={!!profile?.avatar_url} />
       </div>
 
       {/* ---- contributions: three tiles that double as tabs ---------------- */}
-      <section className="space-y-4">
+      <section id="contributions" className="scroll-mt-20 space-y-4">
         <nav aria-label="Your contributions" className="grid grid-cols-3 gap-3">
           {[
             { key: "words", n: entries.length, label: entries.length === 1 ? "word added" : "words added" },
@@ -174,7 +231,7 @@ export default async function AccountPage({
           ) : entries.length === 0 ? (
             <div className="border border-rule bg-surface p-8">
               <p className="text-inkSoft">You haven&apos;t added any words yet.</p>
-              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word</Link>
+              <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word</Link>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -207,7 +264,7 @@ export default async function AccountPage({
           meanings.length === 0 ? (
             <div className="border border-rule bg-surface p-8">
               <p className="text-inkSoft">No meanings yet.</p>
-              <Link href="/submit" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word</Link>
+              <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word</Link>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -296,33 +353,12 @@ export default async function AccountPage({
             />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className={labelCls}>County or district</span>
-              <select name="origin_area" defaultValue={profile?.origin_area ?? ""} className={inputCls}>
-                <option value="">Not specified</option>
-                {ORIGIN_GROUPS.map((g) => (
-                  <optgroup key={g} label={g}>
-                    {ORIGIN_AREAS.filter((a) => a.group === g).map((a) => (
-                      <option key={a.code} value={a.code}>
-                        {a.label} {a.hanzi}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className={labelCls}>Town, village or neighbourhood</span>
-              <input
-                name="origin_locality"
-                defaultValue={profile?.origin_locality ?? ""}
-                placeholder="e.g. Jinfeng, or 金峰镇"
-                className={inputCls}
-              />
-            </label>
-          </div>
+          <OriginPlaceFields
+            area={profile?.origin_area ?? ""}
+            locality={profile?.origin_locality ?? ""}
+            labelCls={labelCls}
+            inputCls={inputCls}
+          />
 
           <fieldset className="space-y-2">
             <legend className={labelCls}>What may we show publicly?</legend>

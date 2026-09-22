@@ -34,7 +34,7 @@ export default function BackLink({
       const sameSite = Boolean(ref) && ref.startsWith(window.location.origin);
       // Arriving from an editor page (after Save, say) is not a place worth
       // returning to; offer the fixed destination instead.
-      const fromEditor = sameSite && new URL(ref).pathname.startsWith("/admin");
+      const fromEditor = sameSite && new URL(ref).pathname.startsWith("/editor");
       const movedInTab = navDepth() > 0;
       setCanGoBack((sameSite || movedInTab) && !fromEditor && window.history.length > 1);
     } catch {

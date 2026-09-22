@@ -372,9 +372,13 @@ export default async function BrowsePage({
       </div>
       </FilterPanel>
 
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="meta text-inkFaint">Sort</p>
+      {/* !mt-4: the same 16px that separates the two filter labels, so with
+          both folded the three labels are evenly spaced. */}
+      <div className="!mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div>
+          {/* The label on its own line, the options on the next. */}
+          <p className="meta mb-2 text-inkFaint">Sort</p>
+          <div className="flex flex-wrap items-center gap-2">
           {/* Choosing a key resets the direction to that key's natural one. */}
           {sortKeys.map((k) => chip(SORTS[k].label, hrefWith({ sort: k, dir: "" }), sort === k))}
           {/* One chip for the order. It names the current order and flips it
@@ -390,6 +394,7 @@ export default async function BrowsePage({
             <span aria-hidden className="text-[13px] leading-none text-lacquer">&#8645;</span>
             {dirLabel(kind, dir)}
           </Link>
+          </div>
         </div>
         <p className="meta text-inkFaint">{countLine}</p>
       </div>
