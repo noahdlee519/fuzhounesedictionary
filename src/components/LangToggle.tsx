@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LANG_COOKIE, type Lang } from "@/lib/i18n";
 
-/* EN / 中文. Two faces: both languages side by side on a phone, where the
-   toggles have a row of their own, and from 922px up (lowered from 1024,
+/* EN / 中文. Two faces: both languages side by side from 922px up (lowered from 1024,
    Noah, 21 Sep 2026); between 768 and 922,
-   where everything shares one row, one small pill naming the other language —
+   and on a phone (Noah, 22 Sep 2026: the pair pushed Contribute off the
+   nav row), one small pill naming the other language —
    the pair costs about forty pixels more, which there is the difference
    between a usable search box and a stub.
 
@@ -116,7 +116,7 @@ export default function LangToggle({ lang, className = "" }: { lang: Lang; class
           document.body
         )}
       {/* Wide: both languages, the current one filled. */}
-      <div role="group" aria-label="Language" className={`flex h-8 overflow-hidden rounded-sm border border-ruleStrong md:hidden min-[922px]:flex ${className}`}>
+      <div role="group" aria-label="Language" className={`hidden h-8 overflow-hidden rounded-sm border border-ruleStrong min-[922px]:flex ${className}`}>
         {btn("en", "EN")}
         {btn("zh", "中文")}
       </div>
@@ -126,7 +126,7 @@ export default function LangToggle({ lang, className = "" }: { lang: Lang; class
         onClick={() => choose(other)}
         lang={other === "zh" ? "zh-Hant" : "en"}
         aria-label={other === "zh" ? "切換到中文" : "Switch to English"}
-        className={`tap-sq ui hidden h-8 items-center rounded-sm border border-ruleStrong px-2.5 text-xs font-semibold text-inkSoft transition-colors hover:text-ink md:inline-flex min-[922px]:hidden ${className}`}
+        className={`ui relative inline-flex h-8 items-center rounded-sm border border-ruleStrong px-2.5 text-xs font-semibold text-inkSoft transition-colors after:absolute after:-inset-1.5 after:content-[''] hover:text-ink min-[922px]:hidden ${className}`}
       >
         {other === "zh" ? "中文" : "EN"}
       </button>

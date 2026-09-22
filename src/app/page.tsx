@@ -313,14 +313,14 @@ export default async function Home({
           placeholderFull={t("search.full")}
           placeholderShort={t("search.short")}
           label={t("search.label")}
-          hint={
-            <>
-              {t("hint.try")}{" "}
-              {/* The other way to find something: the assistant, just below. */}
-              <a href="#ask" className="whitespace-nowrap text-lacquer underline-offset-2 hover:underline">
-                {t("hint.ask")}
-              </a>
-            </>
+          hint={t("hint.try")}
+          after={
+            /* The other way to find something: the assistant, just below.
+               At the right end of the line, under the box's right edge
+               (Noah, 22 Sep 2026); ml-auto keeps it there when it wraps. */
+            <a href="#ask" className="footnote ml-auto whitespace-nowrap px-1 text-lacquer underline-offset-2 hover:underline">
+              {t("hint.ask")}
+            </a>
           }
         />
       </section>
@@ -332,11 +332,9 @@ export default async function Home({
           strongest thing on the page. */}
       <section id="ask" className="scroll-mt-20 pb-14 pt-10">
         <div>
-          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-            <h2 className="h2">{t("ask.eyebrow")}</h2>
-            {/* What it is and where its answers come from, said plainly. */}
-            <p className="meta text-inkFaint">{t("ask.tag")}</p>
-          </div>
+          {/* The "AI · answers cite dictionary entries" tag was removed
+              (Noah, 22 Sep 2026). */}
+          <h2 className="h2">{t("ask.eyebrow")}</h2>
           <p className="mt-2 max-w-[56ch] text-inkSoft [text-wrap:balance]">{t("ask.lede")}</p>
           <AskSection
             signedIn={!!user}
