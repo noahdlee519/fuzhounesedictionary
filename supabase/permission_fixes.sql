@@ -87,3 +87,19 @@ drop trigger if exists entries_publish_editor on public.entries;
 create trigger entries_publish_editor
   before insert on public.entries
   for each row execute function public.publish_editor_entry();
+
+-- ---------------------------------------------------------------------------
+--  4. Let 3 through. Row-level security checks a new row AFTER the before-
+--     insert triggers have run, so the "authed submit entry" policy (from
+--     schema.sql) saw an editor's word already lifted to approved, and its
+--     status = 'pending' rule refused it: with 3 in place, an editor could not
+--     add a word at all. An editor's row may now be approved on the way in;
+--     everyone else's must still be pending, and still their own.
+-- ---------------------------------------------------------------------------
+drop policy if exists "authed submit entry" on public.entries;
+create policy "authed submit entry" on public.entries for insert
+  with check (
+    auth.uid() is not null
+    and contributor_id = auth.uid()
+    and (status = 'pending' or public.is_editor())
+  );

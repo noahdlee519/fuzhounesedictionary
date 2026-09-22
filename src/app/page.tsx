@@ -274,7 +274,7 @@ export default async function Home({
       {(searchParams.deleted || searchParams.auth_error) && <div className="pt-6">{notices}</div>}
 
       {/* Hero, with the name of the language as a watermark (HeroMark). */}
-      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
+      <section className="relative isolate z-10 pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11">
         <HeroMark />
         <div className="relative">
           <h1 className="display max-w-[24ch] [text-wrap:balance]">{t("hero.1")}</h1>
@@ -286,11 +286,15 @@ export default async function Home({
         </div>
       </section>
 
-      {/* Search. The size of the dictionary sits over the box at the left,
-          where it reads as a label for it; the line under the box is only
-          what to try. */}
+      {/* Search, headed "Basic search" to pair with "Ask the assistant"
+          below: same heading, and the size of the dictionary at the right
+          where the assistant's section says what it is. The line under the
+          box is only what to try. */}
       <section className="relative pb-10">
-        {words > 0 && <p className="footnote mb-2 px-1">{t("hint.count", { n: words.toLocaleString() })}</p>}
+        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h2 className="h2">{t("search.h")}</h2>
+          {words > 0 && <p className="meta text-inkFaint">{t("hint.count", { n: words.toLocaleString() })}</p>}
+        </div>
         <SearchBar
           signedIn={!!user}
           placeholderFull={t("search.full")}
@@ -308,19 +312,17 @@ export default async function Home({
         />
       </section>
 
-      {/* The assistant, straight after search and in a panel of its own, so
-          it reads as the second way to find something rather than a feature
-          at the bottom of the page. Its field is as large as the search box;
-          the panel and the heading are what tell the two apart. */}
-      <section id="ask" className="scroll-mt-20 pb-14">
-        <div className="rounded-sm bg-accentSoft p-6 sm:p-9">
+      {/* The assistant, straight after search, as the second way to find
+          something. An ordinary section, not a tinted panel (21 Sep 2026: the
+          panel, the chat composer and the pill chips read as generated). Its
+          field is lighter than the search box, whose border stays the
+          strongest thing on the page. */}
+      <section id="ask" className="scroll-mt-20 pb-14 pt-10">
+        <div>
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
             <h2 className="h2">{t("ask.eyebrow")}</h2>
             {/* What it is and where its answers come from, said plainly. */}
-            <p className="meta text-inkFaint">
-              <span aria-hidden className="mr-2 inline-block h-1.5 w-1.5 -translate-y-px rounded-full bg-lacquer align-middle" />
-              {t("ask.tag")}
-            </p>
+            <p className="meta text-inkFaint">{t("ask.tag")}</p>
           </div>
           <p className="mt-2 max-w-[56ch] text-inkSoft [text-wrap:balance]">{t("ask.lede")}</p>
           <AskSection
@@ -342,33 +344,33 @@ export default async function Home({
         </div>
       </section>
 
-      <hr className="rule-bleed" />
-
-      {/* The dictionary in four numbers (moved from About, Noah, 21 Sep 2026):
-          words and recordings always; districts and contributors once there
-          are any. Each label has a singular form for a count of one. */}
+      {/* The dictionary in four numbers (moved from About, Noah, 21 Sep 2026),
+          on a red ribbon: words and recordings always; locations and
+          contributors once there are any. Each label has a singular form for
+          a count of one. Without the numbers, a plain rule instead. */}
+      {!tally && <hr className="rule-bleed" />}
       {tally && (
         <>
-          <section className="sec-sm">
-            <div className="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
+          <section className="ribbon sec-sm">
+            <p className="eyebrow text-lacquerInk opacity-90">{t("home.stats")}</p>
+            <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
               {[
                 [tally.words, "about.stat.words", "about.stat.word"],
                 [tally.recordings, "about.stat.recs", "about.stat.rec"],
-                [tally.districts, "about.stat.districts", "about.stat.district"],
+                [tally.locations, "about.stat.locations", "about.stat.location"],
                 [people ?? 0, "about.stat.people", "about.stat.person"],
               ]
                 .filter(([n], i) => i < 2 || (n as number) > 0)
                 .map(([n, plural, single]) => (
                   <p key={plural as string}>
-                    <span className="block text-[32px] font-medium leading-none tracking-tight tabular-nums text-ink sm:text-[40px]">
+                    <span className="block text-[32px] font-medium leading-none tracking-tight tabular-nums sm:text-[40px]">
                       {(n as number).toLocaleString()}
                     </span>
-                    <span className="mt-2 block text-sm text-inkSoft">{t((n === 1 ? single : plural) as any)}</span>
+                    <span className="mt-2 block text-sm opacity-90">{t((n === 1 ? single : plural) as any)}</span>
                   </p>
                 ))}
             </div>
           </section>
-          <hr className="rule-bleed" />
         </>
       )}
 

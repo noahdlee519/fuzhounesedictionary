@@ -3,6 +3,7 @@ import { STATUS_STYLE } from "@/lib/status";
 import { sortSenses } from "@/lib/entries";
 import RecordingNoteEditor from "./RecordingNoteEditor";
 import PlayButton from "./PlayButton";
+import WithdrawRecording from "./WithdrawRecording";
 
 /* One recording in a person's list — on their public profile and on their own
    account page. Reads: word · its first English meaning · the player · (status,
@@ -81,6 +82,12 @@ export default function RecordingByRow({
           {editableNote && <RecordingNoteEditor id={r.id} note={note} back={back} compact />}
         </div>
       </div>
+      {/* On your own page, a take still waiting for review can be taken back. */}
+      {editableNote && r.status === "pending" && (
+        <div className="mt-3 border-t border-rule pt-2.5">
+          <WithdrawRecording id={r.id} back={back} />
+        </div>
+      )}
     </div>
   );
 }

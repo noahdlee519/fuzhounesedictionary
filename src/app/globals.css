@@ -134,6 +134,16 @@ body {
     width: min(100vw, 1088px);
     margin-left: calc(50% - min(50vw, 544px));
   }
+  /* A red band as wide as .rule-bleed, so it too stops short of the lattice,
+     with its contents padded back onto the column: the padding is half the
+     difference between the band's width and the column's (100% here). */
+  .ribbon {
+    width: min(100vw, 1088px);
+    margin-left: calc(50% - min(50vw, 544px));
+    padding-left: calc((min(100vw, 1088px) - 100%) / 2);
+    padding-right: calc((min(100vw, 1088px) - 100%) / 2);
+    background: var(--lacquer); color: var(--lacquer-ink);
+  }
 
   /* Small labels are small capitals, the way a printed dictionary marks its
      parts of speech and running heads — not mono uppercase letterspaced
@@ -200,14 +210,9 @@ body {
   .mini:last-child { border-bottom: 0; }
 }
 
-/* Information tooltip on a filter chip.
-
-   No JavaScript: the panel is a sibling of the dot, shown on hovering the dot
-   and on keyboard focus of the chip itself — the dot is a plain span rather
-   than a button because it lives inside a link, and a control inside a link is
-   invalid and unreachable by keyboard anyway. The chip carries
-   aria-describedby, so a screen reader reads the explanation without needing
-   the hover at all. */
+/* The little "i" that marks something with a tooltip (the tooltip itself is
+   .info-tip, below). On a Browse chip it is a plain span, not a button: it
+   lives inside a link, and a control inside a link is invalid. */
 .info-dot {
   display: inline-flex;
   align-items: center;
@@ -240,53 +245,71 @@ body {
 }
 .info-dot:hover { opacity: 1; }
 
+/* One tooltip for the whole site (22 Sep 2026): the particle and measure
+   word chips on Browse, the "i" in the home page's lede, and the sources
+   behind the family tree on About.
+
+   The trigger is `.has-info` and the panel, `.info-tip`, is INSIDE it, so
+   the panel opens right under the thing it explains, and hovering anywhere
+   on the trigger (not only the little "i") or focusing it opens it. A
+   transparent strip over the gap keeps it open while the pointer moves down
+   onto the panel, so links inside it can be clicked. It opens at the
+   trigger's left edge; TipFlip (a small script in the root layout) nudges
+   it sideways (--tip-x) just enough to stay 12px inside the screen when it
+   would otherwise run off an edge. Opaque paper, ink text, a hairline and a
+   soft shadow, in both themes. */
+.has-info { position: relative; }
 .info-tip {
   position: absolute;
-  /* Bounded by the chip ROW, which is the nearest positioned ancestor, and
-     dropped just below it.
-
-     Anchoring to the individual chip does not survive measurement: growing
-     rightward runs off the right edge at 900px, 760px and 420px, growing
-     leftward or centring runs off the left edge once the row wraps and a chip
-     lands against the margin. The row is exactly as wide as the content column,
-     so a panel pinned inside it cannot leave the screen at any width. Below
-     rather than above so it does not cover the page heading. */
-  top: calc(100% + 8px);
-  /* Right edge of the row, which is where both tooltipped chips sit — near
-     enough to read as belonging to them, while still bounded by the row. */
-  right: 0;
-  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: auto;
+  z-index: 40;
+  display: block;
   width: max-content;
-  max-width: min(16rem, calc(100vw - 2rem));
+  max-width: min(18rem, calc(100vw - 2rem));
   border: 1px solid var(--rule-strong, var(--rule));
+  border-radius: 2px;
   background: var(--paper);
-  padding: .6rem .7rem;
-  color: var(--ink-soft);
-  font-size: 12.5px;
+  padding: 10px 12px 9px;
+  color: var(--ink);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 13.5px;
+  font-style: normal;
   line-height: 1.5;
   text-align: left;
   text-transform: none;
   letter-spacing: normal;
-  white-space: normal; /* the chip it sits in is nowrap; the tip must wrap */
+  white-space: normal; /* a chip is nowrap; the panel must wrap */
   font-weight: 400;
-  box-shadow: 0 2px 10px rgb(0 0 0 / .09);
+  font-variant: normal;
+  box-shadow: 0 6px 24px rgb(0 0 0 / .12);
+  transform: translateX(var(--tip-x, 0px));
   opacity: 0;
   visibility: hidden;
-  transition: opacity 120ms ease-out;
+  transition: opacity 120ms ease-out, visibility 0s linear 120ms;
 }
-.info-dot:hover ~ .info-tip,
+.info-tip::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -8px;
+  height: 8px;
+}
+.has-info:hover .info-tip,
 .has-info:focus-visible .info-tip,
-.has-info:hover ~ .info-tip,
-.has-info:focus-visible ~ .info-tip {
+.has-info:focus-within .info-tip {
   opacity: 1;
   visibility: visible;
+  transition: opacity 120ms ease-out, visibility 0s;
 }
-/* In running text (InfoTip): a smaller, raised dot with an upright "i", and
-   the panel in the paragraph's own size rather than the chip's small caps.
-   Narrow screens: the panel hangs below the paragraph at its left. Wide
-   screens: it sits to the right of the paragraph, level with its top, in
-   the empty column beside the lede. */
-.has-info .info-dot {
+.has-info:hover .info-dot,
+.has-info:focus-within .info-dot { opacity: 1; }
+
+/* In running text (InfoTip): a smaller, raised dot with an upright "i". */
+.info-inline { display: inline-block; }
+.info-inline .info-dot {
   width: 12px;
   height: 12px;
   margin-left: 3px;
@@ -298,29 +321,15 @@ body {
   /* .45em raised it to superscript height; Noah wanted it ~5px higher still. */
   vertical-align: calc(.45em + 5px);
 }
-.info-tip-left {
-  left: 0;
-  right: auto;
-  font-size: 14px;
-  letter-spacing: -.005em;
-  /* Whole pixels rather than .6rem, which is 9.6 and left the panel a fifth
-     of a pixel taller than the gap above the search box — enough for its
-     bottom border to sit a hair below the box's on a phone. */
-  padding-block: 10px 9px;
-}
-@media (min-width: 900px) {
-  .info-tip-left { top: 0; left: calc(100% + 16px); }
-}
+
 /* The same panel on the little origin map beside a recording, naming the place
-   the map is showing. Anchored to the map itself rather than to the row: the
-   map is only 36px wide and sits at the right-hand end, so right: 0 on the map
-   grows the panel leftward into the row it came from and it cannot leave the
-   screen. Hover only, and deliberately not a tab stop — an entry with five
-   recordings would be five stops leading nowhere, and the line beside the map
-   already names the place in text, with the map's own aria-label repeating it
-   for a screen reader. */
+   the map is showing. The map sits at the right-hand end of its row, so its
+   panel opens leftward from the map's right edge. Hover only, and
+   deliberately not a tab stop: the line beside the map already names the
+   place in text, and the map's aria-label repeats it for a screen reader. */
 .has-map { position: relative; }
-.has-map:hover .info-tip { opacity: 1; visibility: visible; }
+.has-map .info-tip { left: auto; right: 0; transform: none; font-size: 12.5px; }
+.has-map:hover .info-tip { opacity: 1; visibility: visible; transition: opacity 120ms ease-out, visibility 0s; }
 
 @media (prefers-reduced-motion: reduce) {
   .info-tip { transition: none; }

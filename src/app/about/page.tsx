@@ -110,7 +110,7 @@ export default async function AboutPage() {
       {/* On a screen wider than it is tall and at least 1024px, the story
           shares the hero with the family tree of Chinese (SiniticTree), and
           the 福州話 watermark steps aside for it. Elsewhere, the story alone. */}
-      <section className="relative isolate pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11 landscape:lg:grid landscape:lg:grid-cols-[minmax(0,1fr)_300px] landscape:lg:gap-x-14">
+      <section className="relative isolate z-10 pb-14 pt-20 max-[760px]:pb-9 max-[760px]:pt-11 landscape:lg:grid landscape:lg:grid-cols-[minmax(0,1fr)_300px] landscape:lg:gap-x-14">
         <HeroMark className="landscape:lg:hidden" />
         <div className="min-w-0">
           <p className="eyebrow">{t("nav.about")}</p>

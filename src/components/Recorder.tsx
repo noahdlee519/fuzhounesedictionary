@@ -10,6 +10,7 @@ import { startGoogleSignIn } from "@/lib/supabase/sign-in";
 import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
 import SpeakerFields from "./SpeakerFields";
+import { withdrawRecording } from "@/app/account/actions";
 import type { Speaker } from "@/lib/audio-upload";
 import { useL } from "./LangProvider";
 
@@ -231,7 +232,32 @@ export default function Recorder({
           >
             {L("Record another", "再錄一段")}
           </button>
+          {/* Changed your mind? A take still waiting for review can be taken
+              back from here (and later from your account page). An editor's
+              is published at once, so this is not offered to them. */}
+          {savedId && !isEditor && (
+            <button
+              type="button"
+              onClick={async () => {
+                const fd = new FormData();
+                fd.set("id", savedId);
+                const { ok } = await withdrawRecording(fd);
+                if (ok) {
+                  setSavedId(null);
+                  setDone(false);
+                  setError(null);
+                  router.refresh();
+                } else {
+                  setError(L("That recording could not be removed. You can remove it from your account page.", "無法移除這段錄音，可以到你的帳號頁移除。"));
+                }
+              }}
+              className="text-sm text-inkFaint underline decoration-rule underline-offset-4 transition-colors hover:text-lacquer"
+            >
+              {L("Remove it", "移除這段")}
+            </button>
+          )}
         </p>
+        {error && <p className="text-sm text-lacquer">{error}</p>}
         {savedId && (
           <form
             onSubmit={(e) => {

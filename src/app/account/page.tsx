@@ -31,7 +31,7 @@ const inputCls = "field-input";
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: { saved?: string; problem?: string; show?: string; page?: string };
+  searchParams: { saved?: string; problem?: string; show?: string; page?: string; withdrawn?: string };
 }) {
   const { user } = await getSessionUser();
   const safe = getSafe();
@@ -293,10 +293,14 @@ export default async function AccountPage({
           )
         )}
 
-        {show === "recordings" && (searchParams.saved || searchParams.problem) && (
+        {show === "recordings" && (searchParams.saved || searchParams.problem || searchParams.withdrawn) && (
           <p className="flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
-            {searchParams.saved ? (
+            {searchParams.withdrawn ? (
+              <SavedNotice message="Recording removed" />
+            ) : searchParams.saved ? (
               <SavedNotice message="Note saved" />
+            ) : searchParams.problem === "withdraw" ? (
+              <span role="alert">That recording could not be removed. It may already have been reviewed.</span>
             ) : (
               <span role="alert">The note could not be saved. Please try again.</span>
             )}

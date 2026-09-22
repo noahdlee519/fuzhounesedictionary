@@ -194,3 +194,50 @@ export async function dismissEditorWelcome() {
   revalidatePath("/", "layout");
   redirect("/account");
 }
+
+/* Take back one of your own recordings while it is still waiting for an
+   editor: you recorded it, listened again, and would rather it did not go
+   out. The delete runs as you, so RLS ("recordings own delete",
+   supabase/recordings.sql) allows it only for your own rows that are still
+   pending; a published recording is an editor's to remove. The file goes
+   after the row, with the service role, and only once the row is confirmed
+   gone. Two doors: the form on the account page (withdrawRecordingForm,
+   which redirects back with a notice) and the recorder's "Remove it"
+   (withdrawRecording, which just says whether it worked). */
+async function withdraw(id: string): Promise<boolean> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !id) return false;
+
+  const { data: gone, error } = await supabase
+    .from("recordings")
+    .delete()
+    .eq("id", id)
+    .eq("contributor_id", user.id)
+    .eq("status", "pending")
+    .select("id, entry_id, audio_url");
+  const row = gone?.[0];
+  if (error || !row) return false;
+
+  const path = audioPath(row.audio_url);
+  if (path) {
+    const { error: fileErr } = await adminClient().storage.from(AUDIO_BUCKET).remove([path]);
+    if (fileErr) console.error(`recording ${id} withdrawn but file not removed: ${fileErr.message}`);
+  }
+  revalidatePath("/account");
+  revalidatePath("/editor");
+  revalidatePath(`/entry/${row.entry_id}`);
+  return true;
+}
+
+export async function withdrawRecording(formData: FormData): Promise<{ ok: boolean }> {
+  return { ok: await withdraw(String(formData.get("id") ?? "").trim()) };
+}
+
+export async function withdrawRecordingForm(formData: FormData) {
+  const back = localPath(String(formData.get("back") ?? "").trim(), "/account?show=recordings");
+  const ok = await withdraw(String(formData.get("id") ?? "").trim());
+  redirect(`${back}${back.includes("?") ? "&" : "?"}${ok ? "withdrawn=1" : "problem=withdraw"}`);
+}

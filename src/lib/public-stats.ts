@@ -112,6 +112,11 @@ export interface MissionTally {
   voiced: number;
   /** Distinct origin districts across approved recordings. */
   districts: number;
+  /** Distinct places across approved recordings and approved words: the town
+   *  or city where one is given, otherwise the area. An area with no town is
+   *  not counted again when a town in that area already is, so "Overseas" and
+   *  "Overseas, New York City" are one place. */
+  locations: number;
   /** Every origin area, with its recording counts (zero for the silent ones). */
   perDistrict: DistrictStat[];
   /** Ids of the voiced entries, sorted, for a deterministic word of the day. */
@@ -133,10 +138,18 @@ export const missionTally = unstable_cache(
     // earliest approved recording per entry, to credit "first voice" to a district
     const earliest = new Map<string, { at: string; area: string | null }>();
     const perDistrict = new Map<string, number>();
+    // area code -> the towns named in it ("" when a row gives the area alone)
+    const places = new Map<string, Set<string>>();
+    const addPlace = (area: string | null, locality: string | null) => {
+      if (!area) return;
+      const town = (locality ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+      if (!places.has(area)) places.set(area, new Set());
+      places.get(area)!.add(town);
+    };
     for (let from = 0; ; from += 1000) {
       const { data, error } = await db
         .from("recordings")
-        .select("entry_id, origin_area, created_at")
+        .select("entry_id, origin_area, origin_locality, created_at")
         .eq("status", "approved")
         .range(from, from + 999);
       if (error) return null;
@@ -144,6 +157,7 @@ export const missionTally = unstable_cache(
         recordings += 1;
         voiced.add(r.entry_id);
         if (r.origin_area) perDistrict.set(r.origin_area, (perDistrict.get(r.origin_area) ?? 0) + 1);
+        addPlace(r.origin_area, r.origin_locality);
         const e = earliest.get(r.entry_id);
         if (!e || r.created_at < e.at) earliest.set(r.entry_id, { at: r.created_at, area: r.origin_area });
       }
@@ -167,12 +181,31 @@ export const missionTally = unstable_cache(
       }
       if (!data || data.length < 1000) break;
     }
+    // Where the words come from, too.
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await db
+        .from("entries")
+        .select("origin_area, origin_locality")
+        .eq("status", "approved")
+        .not("origin_area", "is", null)
+        .range(from, from + 999);
+      if (error) break;
+      for (const e of (data ?? []) as any[]) addPlace(e.origin_area, e.origin_locality);
+      if (!data || data.length < 1000) break;
+    }
+    let locations = 0;
+    for (const towns of places.values()) {
+      const named = Array.from(towns).filter(Boolean).length;
+      locations += named > 0 ? named : 1;
+    }
+
     const { ORIGIN_AREAS } = await import("@/lib/origins");
     return {
       words: words.count ?? 0,
       recordings,
       voiced: voiced.size,
       districts: perDistrict.size,
+      locations,
       perDistrict: ORIGIN_AREAS.map((a) => ({
         code: a.code,
         recordings: perDistrict.get(a.code) ?? 0,
@@ -181,7 +214,7 @@ export const missionTally = unstable_cache(
       voicedIds: Array.from(voiced).sort(),
     };
   },
-  ["mission-tally-v3"],
+  ["mission-tally-v4"],
   { revalidate: TTL_SECONDS }
 );
 

@@ -210,9 +210,8 @@ export default function SiniticTree({
         })}
       </svg>
       {/* The legend is the caption. The sources sit behind the small "i" at
-          its end: a panel on hover, or on focus for a keyboard or a tap.
-          The panel hangs from the wrapper with no gap (pt-2 is inside it),
-          so the pointer can move onto its links without it closing. */}
+          its end, in the site's one tooltip (globals.css .has-info), which
+          stays open while the pointer moves onto its links. */}
       <figcaption className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-inkFaint">
         {(["north", "central", "south", "min"] as Zone[]).map((z) => (
           <span key={z} className="inline-flex items-center gap-1.5">
@@ -220,30 +219,24 @@ export default function SiniticTree({
             {legend[z]}
           </span>
         ))}
-        <span className="group relative inline-flex">
-          <button type="button" aria-label={sourcesLabel} aria-describedby="tree-sources" className="info-dot !ml-0 cursor-help">
+        <span className="has-info inline-flex">
+          <button type="button" aria-label={sourcesLabel} aria-describedby="tree-sources" className="info-dot !ml-0">
             i
           </button>
-          <span
-            id="tree-sources"
-            role="tooltip"
-            className="invisible absolute right-0 top-full z-30 w-72 pt-2 opacity-0 transition-[opacity,visibility] duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
-          >
-            <span className="block rounded-sm border border-ruleStrong bg-paper p-3 text-[13px] leading-relaxed text-inkSoft shadow-[0_8px_28px_rgb(0_0_0/.12)]">
-              {caption}
-              <span className="mt-2 block space-y-1">
-                {sources.map((src) => (
-                  <a
-                    key={src.href}
-                    href={src.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block text-lacquer underline-offset-2 hover:underline"
-                  >
-                    {src.label} ↗
-                  </a>
-                ))}
-              </span>
+          <span id="tree-sources" role="tooltip" className="info-tip">
+            {caption}
+            <span className="mt-2 block space-y-1">
+              {sources.map((src) => (
+                <a
+                  key={src.href}
+                  href={src.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-lacquer underline-offset-2 hover:underline"
+                >
+                  {src.label} ↗
+                </a>
+              ))}
             </span>
           </span>
         </span>

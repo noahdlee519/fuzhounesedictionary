@@ -6,6 +6,7 @@ import localFont from "next/font/local";
 import Header from "@/components/Header";
 import ReviewBadge from "@/components/ReviewBadge";
 import LangProvider from "@/components/LangProvider";
+import TipFlip from "@/components/TipFlip";
 import NavMemory from "@/components/NavMemory";
 import PageFade from "@/components/PageFade";
 import NavProgress from "@/components/NavProgress";
@@ -219,6 +220,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </p>
         </footer>
         </PageFade>
+        <TipFlip />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: siteJsonLd }} />
         <Analytics />
         </LangProvider>

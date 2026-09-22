@@ -48,11 +48,16 @@ const COUNT_FROM = 400;
 
 /* The assistant as a small conversation on the home page.
 
-   A composer (a text box that grows as you type, with its own red Ask
-   button, Enter to send and Shift+Enter for a new line), four example
-   questions under it, and, once something is asked, a thread: each question
-   echoed, its answer in a card, and a card for every dictionary word the
-   answer names, with its recording to play. Follow-ups carry the last few
+   A field like the search box (it grows as you type; Enter sends and
+   Shift+Enter makes a new line) with a plain Ask button beside it, the
+   example questions under it as a list of links, and, once something is
+   asked, a thread: each question in italic, its answer set in under a
+   hairline the way a dictionary sets a quotation, and a card for every
+   dictionary word the answer names, with its recording to play.
+
+   Styled on purpose away from the chat-app pattern (21 Sep 2026, Noah: "the
+   assistant section looks super AI"): no tinted panel, no send-arrow inside
+   the box, no keyboard hint, no pill chips with kickers, no pulsing skeleton. Follow-ups carry the last few
    turns as history, so "and how about in a sentence?" makes sense. Loading
    shows placeholder lines in place of the answer; a failure keeps the
    question and offers Retry; the daily limit says so and does not offer it.
@@ -193,7 +198,7 @@ export default function AskSection({
           e.preventDefault();
           send();
         }}
-        className="relative"
+        className="flex flex-col items-start gap-2 sm:flex-row"
       >
         <label className="sr-only" htmlFor="ask-own">
           {s.label}
@@ -201,7 +206,7 @@ export default function AskSection({
         <textarea
           id="ask-own"
           ref={box}
-          rows={2}
+          rows={1}
           enterKeyHint="send"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -214,28 +219,18 @@ export default function AskSection({
           maxLength={MAX}
           autoComplete="off"
           placeholder={placeholder}
-          className="ui block max-h-[176px] min-h-[92px] w-full resize-none rounded-md border border-ruleStrong bg-paper py-3.5 pl-4 pr-[64px] text-[17px] leading-[1.45] tracking-[-.01em] text-ink shadow-[0_1px_0_rgb(0_0_0/.03)] outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus-visible:outline-none sm:pl-5 sm:pr-[128px]"
+          className="ui block max-h-[176px] min-h-[52px] w-full min-w-0 flex-1 resize-none rounded-sm border border-ruleStrong bg-paper px-4 py-[13px] text-[17px] leading-[1.45] tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus-visible:outline-none"
         />
-        <button
-          type="submit"
-          disabled={!draft.trim() || busy}
-          aria-label={sendLabel}
-          className="absolute bottom-3 right-3 inline-flex h-10 items-center gap-1.5 rounded-md bg-lacquer px-3 text-sm font-semibold text-lacquerInk transition-[opacity,transform,filter] hover:brightness-110 active:scale-[.97] disabled:cursor-not-allowed disabled:opacity-35 sm:px-3.5"
-        >
-          <span className="hidden sm:inline">{sendLabel}</span>
-          <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 8h9.5M8.5 4l4 4-4 4" />
-          </svg>
+        {/* A word, not an icon: an arrow inside the box is the chat-app tell. */}
+        <button type="submit" disabled={!draft.trim() || busy} className="btn btn-primary h-[52px] shrink-0">
+          {sendLabel}
         </button>
       </form>
-      <div className="mt-2 flex min-h-[18px] items-center justify-between gap-4 px-1 text-xs text-inkFaint">
-        <span className={draft.length >= COUNT_FROM ? "tabular-nums" : "invisible"} aria-hidden={draft.length < COUNT_FROM}>
+      {draft.length >= COUNT_FROM && (
+        <p className="footnote mt-1.5 tabular-nums">
           {draft.length}/{MAX}
-        </span>
-        <span className="[@media(pointer:coarse)]:hidden">
-          {L("Enter to send · Shift+Enter for a new line", "Enter 送出 · Shift+Enter 換行")}
-        </span>
-      </div>
+        </p>
+      )}
     </div>
   );
 
@@ -252,16 +247,9 @@ export default function AskSection({
         <ol className="mb-6 space-y-6">
           {turns.map((t) => (
             <li key={t.id}>
-              <p className="meta text-inkFaint">{L("You asked", "你問")}</p>
-              <p className="mt-1 font-display text-[19px] italic leading-snug text-ink">{t.q}</p>
-              <div className="mt-3 rounded-md border border-rule bg-paper px-5 py-4 text-[17px] leading-[1.6] sm:px-6">
-                {t.status === "loading" && (
-                  <div aria-hidden className="space-y-2.5 py-1">
-                    {["92%", "84%", "58%"].map((w) => (
-                      <div key={w} className="h-3 animate-pulse rounded-full bg-rule motion-reduce:animate-none" style={{ width: w }} />
-                    ))}
-                  </div>
-                )}
+              <p className="font-display text-[19px] italic leading-snug text-ink">{t.q}</p>
+              <div className="mt-3 max-w-[68ch] border-l border-ruleStrong pl-5 text-[17px] leading-[1.6]">
+                {t.status === "loading" && <p className="text-inkFaint">{s.looking}</p>}
                 {(t.status === "done" || t.status === "sample") && (
                   <div className="space-y-3">
                     <Answer text={t.a ?? ""} />
@@ -284,12 +272,8 @@ export default function AskSection({
                   </div>
                 )}
                 {t.status === "limit" && (
-                  <p className="flex gap-2.5 text-[15px] text-inkSoft">
-                    <svg viewBox="0 0 16 16" aria-hidden className="mt-1 h-4 w-4 shrink-0 text-amber" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <circle cx="8" cy="8" r="6.5" />
-                      <path d="M8 4.5V8l2.5 1.5" strokeLinecap="round" />
-                    </svg>
-                    <span>{t.msg ?? L("You have reached today's limit. It resets at midnight UTC.", "今天的提問次數已用完，UTC 午夜重置。")}</span>
+                  <p className="text-[15px] text-inkSoft">
+                    {t.msg ?? L("You have reached today's limit. It resets at midnight UTC.", "今天的提問次數已用完，UTC 午夜重置。")}
                   </p>
                 )}
                 {t.status === "gated" && (
@@ -309,7 +293,7 @@ export default function AskSection({
       {composer}
 
       {started ? (
-        <p className="mt-3 px-1">
+        <p className="mt-3">
           <button
             type="button"
             onClick={() => {
@@ -324,21 +308,21 @@ export default function AskSection({
         </p>
       ) : (
         <>
-          <p className="footnote mt-5 px-1">{s.note}</p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
+          <p className="footnote mt-5">{s.note}</p>
+          {/* A plain list of questions, not chips: each one asks itself. */}
+          <ul className="mt-1">
             {samples.map((x) => (
-              <button
-                key={x.q}
-                type="button"
-                onClick={() => ask(x.q)}
-                className="group inline-flex min-h-[44px] items-center gap-2 rounded-full border border-ruleStrong bg-paper/80 py-2 pl-3.5 pr-4 text-left text-sm text-ink transition-[border-color,background-color,transform] hover:border-lacquer hover:bg-paper active:scale-[.98]"
-              >
-                <span className="meta shrink-0 text-lacquer">{x.k}</span>
-                <span aria-hidden className="h-3.5 w-px shrink-0 bg-rule" />
-                <span>{x.q}</span>
-              </button>
+              <li key={x.q}>
+                <button
+                  type="button"
+                  onClick={() => ask(x.q)}
+                  className="py-1.5 text-left text-[16px] text-lacquer underline-offset-4 hover:underline"
+                >
+                  {x.q}
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         </>
       )}
     </div>
@@ -352,7 +336,7 @@ function Cards({ cards, L }: { cards: EntryCard[]; L: ReturnType<typeof useL> })
   return (
     <ul className="grid gap-2 pt-1 sm:grid-cols-2" aria-label={L("Words in this answer", "答案裡的詞")}>
       {cards.map((c) => (
-        <li key={c.id} className="relative flex items-center gap-3 rounded-md border border-rule bg-surface px-3.5 py-2.5 transition-colors hover:border-lacquer">
+        <li key={c.id} className="relative flex items-center gap-3 rounded-sm border border-rule bg-surface px-3.5 py-2.5 transition-colors hover:border-lacquer">
           <Link href={`/entry/${c.id}`} className="flex min-w-0 flex-1 items-baseline gap-2.5 after:absolute after:inset-0 after:content-['']">
             {c.hanzi && <span className="han shrink-0 text-[22px] font-medium leading-none text-ink">{c.hanzi}</span>}
             <span className="min-w-0">

@@ -310,14 +310,10 @@ export default async function ContributePage() {
               {recent.length ? (
                 recent.map((r) => (
                   <div key={`${r.kind}-${r.id}`} className="mini">
-                    <span
-                      className={`mt-2 inline-block h-2 w-2 shrink-0 self-start rounded-full ${r.kind === "recorded" ? "bg-green" : "bg-lacquer"}`}
-                      aria-hidden="true"
-                    />
                     <Link href={`/entry/${r.id}`} className="group min-w-0 flex-1">
                       <span className="text-[15px]">
                         {r.hanzi && <span className="han font-medium group-hover:text-lacquer">{r.hanzi} </span>}
-                        <span className="romanization text-xs text-inkSoft">{r.romanization}</span>
+                        <span className="romanization text-xs text-ink">{r.romanization}</span>
                         <span className="text-inkSoft">
                           {"—"}
                           {t(r.kind === "recorded" ? "hub.recent.recorded" : "hub.recent.added", { who: r.who || t("hub.recent.someone") })}
