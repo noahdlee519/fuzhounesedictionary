@@ -75,12 +75,13 @@ export default async function AboutPage() {
     </ul>
   );
 
-  /* Places to find other people who speak it. All three are off this site, so
+  /* Places to find other people who speak it. All of them are off this site, so
      they open in a new tab the way the developer's own links do. */
   const COMMUNITY: { key: Key; href: string }[] = [
     { key: "about.help.5.discord", href: "https://discord.gg/r9NAFS6Uvm" },
     { key: "about.help.5.fza", href: "https://www.fuzhouamerica.org/" },
     { key: "about.help.5.reddit", href: "https://www.reddit.com/r/ChineseLanguage/" },
+    { key: "about.help.5.fuzhounese", href: "https://www.reddit.com/r/fuzhounese/" },
   ];
 
   /* The last item on the help list folds open rather than linking out, on the

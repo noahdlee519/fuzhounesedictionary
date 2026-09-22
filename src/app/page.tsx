@@ -193,7 +193,7 @@ export default async function Home({
   /* ------------------------------------------------------------------- home */
   let tally: MissionTally | null = null;
   let wanted: { id: string; term: string; votes: number; entry_id: string | null }[] = [];
-  let wotd: { id: string; hanzi: string | null; romanization: string | null; headword: string; audio: string | null; gloss: string | null; senses: number; credit?: AudioCredit | null } | null = null;
+  let wotd: { id: string; hanzi: string | null; romanization: string | null; headword: string; audio: string | null; gloss: string | null; pos: string | null; senses: number; credit?: AudioCredit | null } | null = null;
   let top: TopContributor[] = [];
   let people: number | null = null;
   const myVotes = new Set<string>();
@@ -231,7 +231,7 @@ export default async function Home({
     const wotdId = ids.length ? ids[day % ids.length] : null;
     const [{ data: w }, { data: wRec }] = await Promise.all([
       wotdId
-        ? supabase.from("entries").select("id, hanzi, romanization, headword, audio_url, senses(definition_en, sort)").eq("id", wotdId).maybeSingle()
+        ? supabase.from("entries").select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)").eq("id", wotdId).maybeSingle()
         : Promise.resolve({ data: null } as any),
       wotdId
         ? supabase.from("recordings").select("*").eq("entry_id", wotdId).eq("status", "approved").order("created_at").limit(1)
@@ -250,6 +250,7 @@ export default async function Home({
         audio: take?.audio_url ?? w.audio_url ?? null,
         credit: take ? audioCredit(by, take.speaker_name ?? null, take.origin_area ?? null) : null,
         gloss: firstSense<any>(w.senses)?.definition_en ?? null,
+        pos: firstSense<any>(w.senses)?.part_of_speech ?? null,
         senses: ((w.senses as any[]) ?? []).filter((x) => x?.definition_en).length,
       };
       // Rather than an explicit word standing at the top of the home page all
@@ -471,6 +472,7 @@ export default async function Home({
               {wotd.gloss && (
                 <p className="mt-2 text-[22px] leading-snug text-inkSoft">
                   {wotd.senses > 1 && <span className="tabular-nums text-inkMute">1. </span>}
+                  {wotd.pos && <span className="mr-2 text-[17px] italic text-lacquer">{wotd.pos}</span>}
                   {wotd.gloss}
                 </p>
               )}

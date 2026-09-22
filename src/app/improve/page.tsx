@@ -389,6 +389,7 @@ export default async function ImprovePage({
             romanization: r.romanization ?? null,
             headword: r.headword,
             gloss: r.short_gloss ?? null,
+            senseId: senses[r.id]?.[0]?.id ?? null,
           }))}
           start={n}
           nextPage={`${hasNext ? href(origin, page + 1) : href(origin, 1)}#quick`}
@@ -487,7 +488,7 @@ export default async function ImprovePage({
                     {L("you have recorded this twice", "你已錄過兩次")}
                   </span>
                 ) : (
-                  <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" label={L("Needs a recording", "需要錄音")} />
+                  <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" phraseSenseId={senses[r.id]?.[0]?.id} label={L("Needs a recording", "需要錄音")} />
                 )
               ) : (
                 <span className="meta text-inkFaint">

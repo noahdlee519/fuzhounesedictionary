@@ -211,6 +211,7 @@ const en = {
   "about.help.5.discord": "Discord",
   "about.help.5.fza": "FuzhouAmerica.org",
   "about.help.5.reddit": "r/ChineseLanguage on Reddit",
+  "about.help.5.fuzhounese": "r/fuzhounese on Reddit",
   "about.dev": "Developer",
   "about.dev.p": "Noah started this dictionary in 2021 to help preserve the dialect his family speaks. Interested in collaborating or becoming an editor? Don't hesitate to reach out.",
 } as const;
@@ -421,6 +422,7 @@ const zh: Record<Key, string> = {
   "about.help.5.discord": "Discord",
   "about.help.5.fza": "FuzhouAmerica.org",
   "about.help.5.reddit": "Reddit 的 r/ChineseLanguage",
+  "about.help.5.fuzhounese": "Reddit 的 r/fuzhounese",
   "about.dev": "開發者",
   "about.dev.p": "Noah 在 2021 年開始編這部辭典，希望保存家人講的方言。有興趣合作或想當編輯？歡迎聯絡。",
 };

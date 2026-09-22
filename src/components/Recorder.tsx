@@ -34,6 +34,18 @@ import { useL } from "./LangProvider";
 
 type Kind = "headword" | "example";
 
+/* Fired on window after every successful save, so something outside the
+   recorder can react: the Record-a-word page's thank-you banner (QuickRecord)
+   listens for it. detail: { kind, entryId }. */
+export const RECORDING_SAVED = "fz:recording-saved";
+function announceSaved(kind: Kind, entryId: string) {
+  try {
+    window.dispatchEvent(new CustomEvent(RECORDING_SAVED, { detail: { kind, entryId } }));
+  } catch {
+    /* nothing listening, or no CustomEvent: nothing lost */
+  }
+}
+
 export default function Recorder({
   userId,
   entryId,
@@ -42,6 +54,8 @@ export default function Recorder({
   label,
   onSaved,
   isEditor = false,
+  phraseSenseId,
+  phrase = false,
 }: {
   /** Absent when the visitor is signed out: they can still record, and are
       sent to sign in when they choose a take. */
@@ -53,6 +67,12 @@ export default function Recorder({
   onSaved?: () => void;
   /** An editor is the one who reviews the queue, so they are not told about it. */
   isEditor?: boolean;
+  /** For a recording of the word itself: once it is saved, ask for the word
+      again in a sentence or phrase of the speaker's own, saved as an example
+      on this meaning (usually the first). No follow-up when absent. */
+  phraseSenseId?: string;
+  /** This recorder is that follow-up: its note asks for the words said. */
+  phrase?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -133,6 +153,7 @@ export default function Recorder({
         setNoteState("idle");
         setDone(true);
         onSaved?.();
+        announceSaved(kind, entryId);
         router.refresh();
       } catch (e: any) {
         // The take is still held, so "Try saving it again" can have another go
@@ -200,6 +221,7 @@ export default function Recorder({
       rec.discard();
       setNote("");
       onSaved?.();
+      announceSaved(kind, entryId);
       router.refresh();
     } catch (e: any) {
       setError(e?.message ?? L("Could not save that recording.", "無法儲存這段錄音。"));
@@ -320,6 +342,32 @@ export default function Recorder({
             )}
           </form>
         )}
+        {/* The word is in; now the word in use. A sentence or phrase of the
+            speaker's own choosing, as an example on the word's first meaning,
+            with a box for what they said. Its own recorder, keyed to this
+            take, so it starts fresh after every word. */}
+        {kind === "headword" && phraseSenseId && (
+          <div className="mt-5 space-y-2 border-l-2 border-lacquer pl-4">
+            <p className="text-[15px] font-semibold text-ink">
+              {L("Now say it in a sentence or phrase of your own.", "再用這個詞講一句你自己的話。")}
+            </p>
+            <p className="text-sm text-inkSoft">
+              {L(
+                "Anything you would naturally say with it. It helps people hear how the word is really used.",
+                "講什麼都可以，平常怎麼用就怎麼講。這樣大家可以聽到這個詞實際怎麼用。"
+              )}
+            </p>
+            <Recorder
+              key={savedId ?? "phrase"}
+              userId={userId}
+              entryId={entryId}
+              kind="example"
+              senseId={phraseSenseId}
+              isEditor={isEditor}
+              phrase
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -392,7 +440,7 @@ export default function Recorder({
       {rec.take && !rec.recording && (
         <label className="block max-w-md">
           <span className="meta text-inkFaint">
-            {L("Note (optional)", "附註（選填）")}
+            {phrase ? L("What you said (optional)", "你講的話（選填）") : L("Note (optional)", "附註（選填）")}
           </span>
           <input
             value={note}
@@ -400,7 +448,9 @@ export default function Recorder({
             maxLength={MAX_RECORDING_NOTE}
             disabled={saving}
             placeholder={
-              kind === "example"
+              phrase
+                ? L("e.g. 食飯未？ Have you eaten?", "例如：食飯未？（吃飯了嗎？）")
+                : kind === "example"
                 ? L("e.g. how you would actually say it, if it differs", "例如：如果你平常的講法不一樣，實際怎麼講")
                 : L("e.g. a sentence you said it in, or how it is used", "例如：你用這個詞講的一句話，或它怎麼用")
             }

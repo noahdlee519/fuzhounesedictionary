@@ -393,6 +393,7 @@ export default async function EntryPage({
                 entryId={entry.id}
                 isEditor={canDelete}
                 kind="headword"
+                phraseSenseId={senses[0]?.id}
                 label={
                   publishedHead.length || entry.audio_url
                     ? "Record this word on its own and/or in a sentence"

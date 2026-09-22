@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -15,8 +15,13 @@ const MAX_MB = Math.round(MAX_AVATAR_BYTES / (1024 * 1024));
 
 /* "Edit" under the profile picture opens it large in a dialog, with a
    button to pick a new picture and a trash can to remove it. Picking uploads
-   to the avatars bucket and points the profile at it; removing clears
-   avatar_url, which drops the profile back to the default. Runs as the
+   to the avatars bucket and points the profile at it.
+
+   The default picture is the one on the person's Google account (Noah,
+   22 Sep 2026): a new account starts with it (supabase/avatars.sql), and
+   removing an uploaded picture goes back to it rather than to initials.
+   Removing the Google picture itself leaves initials, and "Use my Google
+   picture" brings it back. Runs as the
    signed-in user, so RLS (own-folder upload, own-row update) applies. The
    dialog stays open, showing the new picture once the page refreshes. */
 export default function AvatarUpload({
@@ -34,6 +39,18 @@ export default function AvatarUpload({
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The picture on their Google account, from the sign-in itself.
+  const [googleUrl, setGoogleUrl] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const m = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const url = typeof m.avatar_url === "string" ? m.avatar_url : typeof m.picture === "string" ? m.picture : null;
+      setGoogleUrl(url && /^https:\/\//.test(url) ? url : null);
+    }).catch(() => setGoogleUrl(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // An uploaded picture falls back to the Google one; the Google one to initials.
+  const fallback = googleUrl && avatarUrl !== googleUrl ? googleUrl : null;
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -77,13 +94,13 @@ export default function AvatarUpload({
     }
   }
 
-  async function remove() {
+  async function remove(to: string | null = fallback) {
     setBusy(true);
     setError(null);
     try {
       const { error: updErr } = await supabase
         .from("profiles")
-        .update({ avatar_url: null })
+        .update({ avatar_url: to })
         .eq("id", userId);
       if (updErr) throw new Error(updErr.message);
       router.refresh();
@@ -147,16 +164,28 @@ export default function AvatarUpload({
             {hasAvatar && (
               <button
                 type="button"
-                onClick={remove}
+                onClick={() => remove()}
                 disabled={busy}
-                aria-label="Remove picture"
-                title="Remove picture"
+                aria-label={fallback ? "Remove picture (back to your Google picture)" : "Remove picture"}
+                title={fallback ? "Remove picture (back to your Google picture)" : "Remove picture"}
                 className="grid h-9 w-9 place-items-center rounded-sm border border-ruleStrong text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-50"
               >
                 {trash}
               </button>
             )}
           </div>
+          {!hasAvatar && googleUrl && (
+            <p className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => remove(googleUrl)}
+                disabled={busy}
+                className="text-sm text-inkSoft underline decoration-rule underline-offset-4 transition-colors hover:text-lacquer disabled:opacity-50"
+              >
+                Use my Google picture
+              </button>
+            </p>
+          )}
           {error && (
             <p role="alert" className="mt-3 text-center text-sm text-lacquer">
               {error}
