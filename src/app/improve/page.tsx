@@ -324,6 +324,25 @@ export default async function ImprovePage({
         </div>
       )}
 
+      {/* Quick record comes before the filters and sort (Noah, 23 Sep
+          2026), so it is the first thing a speaker reaches. */}
+      {recordable.length > 0 && (
+        <QuickRecord
+          words={recordable.map((r: any) => ({
+            id: r.id,
+            hanzi: r.hanzi ?? null,
+            romanization: r.romanization ?? null,
+            headword: r.headword,
+            gloss: r.short_gloss ?? null,
+            senseId: senses[r.id]?.[0]?.id ?? null,
+          }))}
+          start={n}
+          nextPage={`${hasNext ? href(origin, page + 1) : href(origin, 1)}#quick`}
+          userId={user.id}
+          isEditor={Boolean(profile?.is_editor)}
+        />
+      )}
+
       {/* The Browse page's filters. Record a word: both open, as on Browse,
           and no "Missing" row (everything here is missing a recording).
           Improve a word: the "Missing" row, part of speech open, and "Words
@@ -380,23 +399,6 @@ export default async function ImprovePage({
           </div>
         </div>
       </section>
-
-      {recordable.length > 0 && (
-        <QuickRecord
-          words={recordable.map((r: any) => ({
-            id: r.id,
-            hanzi: r.hanzi ?? null,
-            romanization: r.romanization ?? null,
-            headword: r.headword,
-            gloss: r.short_gloss ?? null,
-            senseId: senses[r.id]?.[0]?.id ?? null,
-          }))}
-          start={n}
-          nextPage={`${hasNext ? href(origin, page + 1) : href(origin, 1)}#quick`}
-          userId={user.id}
-          isEditor={Boolean(profile?.is_editor)}
-        />
-      )}
 
       {error && (
         <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">

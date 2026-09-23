@@ -85,8 +85,8 @@ export default function RecordingByRow({
           {editableNote && <RecordingNoteEditor id={r.id} note={note} back={back} compact />}
         </div>
       </div>
-      {/* On your own page, a take still waiting for review can be taken back. */}
-      {editableNote && (r.status === "pending" || (r.status === "approved" && r.reviewed_at === null)) && (
+      {/* On your own page, any of your takes can be deleted. */}
+      {editableNote && (
         <div className="mt-3 border-t border-rule pt-2.5">
           <WithdrawRecording id={r.id} back={back} />
         </div>

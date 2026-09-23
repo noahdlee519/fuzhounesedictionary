@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Recorder, { RECORDING_SAVED } from "./Recorder";
@@ -36,6 +37,7 @@ export default function QuickRecord({
   isEditor: boolean;
 }) {
   const L = useL();
+  const router = useRouter();
   const [i, setI] = useState(() => (words.length ? start % words.length : 0));
   // Follow the word, not the position, when the list is refreshed under us
   // (saving a recording refreshes the page).
@@ -52,7 +54,9 @@ export default function QuickRecord({
      (Recorder announces every save on window). Styled like the language
      banner; leaves by itself after a few seconds, or with its ×. Only for
      recordings of words, not the follow-up sentence. */
-  const [thanks, setThanks] = useState<{ top: number } | null>(null);
+  // `saved`: the word just recorded, so "Next word" knows whether the card
+  // has already moved past it.
+  const [thanks, setThanks] = useState<{ top: number; saved: string | null } | null>(null);
   const [shown, setShown] = useState(false);
   const timer = useRef<number | null>(null);
   const hideThanks = () => {
@@ -62,10 +66,11 @@ export default function QuickRecord({
   };
   useEffect(() => {
     const onSaved = (e: Event) => {
-      if ((e as CustomEvent).detail?.kind !== "headword") return;
+      const detail = (e as CustomEvent).detail;
+      if (detail?.kind !== "headword") return;
       if (timer.current) window.clearTimeout(timer.current);
       const bottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
-      setThanks({ top: Math.max(0, bottom) });
+      setThanks({ top: Math.max(0, bottom), saved: detail?.entryId ?? null });
       setShown(false);
       requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
       timer.current = window.setTimeout(hideThanks, THANKS_MS);
@@ -111,23 +116,28 @@ export default function QuickRecord({
                 <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">
                   {L("Thank you! Record another?", "謝謝你！再錄一個？")}
                 </p>
-                {last ? (
-                  <Link href={nextPage} prefetch onClick={hideThanks} className="rounded-sm border border-paper/70 px-3 py-1 text-sm font-semibold transition-colors hover:bg-white/15">
-                    {L("Next word", "下一個詞")}
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      hideThanks();
-                      next();
-                      document.getElementById("quick")?.scrollIntoView({ block: "start", behavior: "smooth" });
-                    }}
-                    className="rounded-sm border border-paper/70 px-3 py-1 text-sm font-semibold transition-colors hover:bg-white/15"
-                  >
-                    {L("Next word", "下一個詞")}
-                  </button>
-                )}
+                {/* Saving a word refreshes the list, and the word, now
+                    recorded, drops out of it, so the card has usually
+                    moved on to the next word already. Advancing again
+                    here skipped one (Noah, 23 Sep 2026). So: move on only
+                    if the card is still showing the word just saved;
+                    otherwise just bring the card into view. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const stillOnSaved = thanks.saved !== null && words[i]?.id === thanks.saved;
+                    hideThanks();
+                    if (stillOnSaved && last) {
+                      router.push(nextPage);
+                      return;
+                    }
+                    if (stillOnSaved) next();
+                    document.getElementById("quick")?.scrollIntoView({ block: "start", behavior: "smooth" });
+                  }}
+                  className="rounded-sm border border-paper/70 px-3 py-1 text-sm font-semibold transition-colors hover:bg-white/15"
+                >
+                  {L("Next word", "下一個詞")}
+                </button>
                 <button
                   type="button"
                   onClick={hideThanks}
@@ -160,7 +170,7 @@ export default function QuickRecord({
             {L("Next word →", "下一個詞 →")}
           </button>
         )}
-        <span className="footnote">{L("Don't know this one? Skip it. Every word on the list below works the same way.", "不會講這個？跳過就好。下面清單裡的每個詞，錄法都一樣。")}</span>
+        <span className="footnote">{L("Don't know this one? Skip it.", "不會講這個？跳過就好。")}</span>
       </div>
     </section>
   );

@@ -296,11 +296,11 @@ export default async function AccountPage({
         {show === "recordings" && (searchParams.saved || searchParams.problem || searchParams.withdrawn) && (
           <p className="flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
             {searchParams.withdrawn ? (
-              <SavedNotice message="Recording removed" />
+              <SavedNotice message="Recording deleted" />
             ) : searchParams.saved ? (
               <SavedNotice message="Note saved" />
             ) : searchParams.problem === "withdraw" ? (
-              <span role="alert">That recording could not be removed. It may already have been reviewed.</span>
+              <span role="alert">That recording could not be deleted. Please try again.</span>
             ) : (
               <span role="alert">The note could not be saved. Please try again.</span>
             )}

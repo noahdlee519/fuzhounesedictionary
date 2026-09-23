@@ -4,6 +4,7 @@ import DeleteRecording from "./DeleteRecording";
 import OriginMap from "./OriginMap";
 import PlayButton from "./PlayButton";
 import RecordingNoteEditor from "./RecordingNoteEditor";
+import WithdrawRecording from "./WithdrawRecording";
 import VoteButtons, { type VoteState } from "./VoteButtons";
 
 /* One row per recording: a play button, the speaker's note, who recorded it and
@@ -126,7 +127,12 @@ export default function RecordingList({
                   signedIn={Boolean(viewerId)}
                 />
               )}
-              {canDelete && <DeleteRecording id={r.id} back={back ?? "/editor"} />}
+              {/* Editors can delete any take; everyone else, their own. */}
+              {canDelete ? (
+                <DeleteRecording id={r.id} back={back ?? "/editor"} />
+              ) : (
+                mine && <WithdrawRecording id={r.id} back={back ?? "/account?show=recordings"} />
+              )}
             </div>
           </li>
         );

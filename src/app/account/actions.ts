@@ -219,17 +219,16 @@ async function withdraw(id: string): Promise<boolean> {
     .eq("status", "pending")
     .select("id, entry_id, audio_url");
   let row = gone?.[0];
-  // A take published by the trust window (lib/trust) is no longer pending,
-  // so the policy above will not delete it. While no editor has checked it
-  // yet, its contributor may still take it back.
+  // Anything past pending (published by the trust window, kept by an
+  // editor, or turned down) is beyond the row policy above, so it goes
+  // through the service role, still only for the caller's own recording.
+  // Your own voice is yours to take down at any time (Noah, 23 Sep 2026).
   if (!error && !row) {
     const { data: live } = await adminClient()
       .from("recordings")
       .delete()
       .eq("id", id)
       .eq("contributor_id", user.id)
-      .eq("status", "approved")
-      .is("reviewed_at", null)
       .select("id, entry_id, audio_url");
     row = live?.[0];
   }
@@ -244,7 +243,10 @@ async function withdraw(id: string): Promise<boolean> {
   revalidatePath("/editor");
   revalidatePath("/");
   revalidatePath("/browse");
+  revalidatePath("/improve");
+  revalidatePath("/learn");
   revalidatePath(`/entry/${row.entry_id}`);
+  revalidatePath(`/contributor/${user.id}`);
   return true;
 }
 
