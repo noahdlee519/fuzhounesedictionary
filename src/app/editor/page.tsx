@@ -96,6 +96,32 @@ export default async function AdminPage() {
         .order("created_at", { ascending: true }),
     ]);
   const pending = (data ?? []).map((e: any) => ({ ...e, contributor: one(e.contributor) }));
+
+  /* Possible duplicates (Noah, 23 Sep 2026): for each word waiting, any live
+     entry with the same characters, or the same romanization ignoring case.
+     The same test as the warning on the Add a word form, so anything that
+     got past that is flagged here. A flag, not a verdict: the same
+     characters can be a different word. */
+  const literal = (v: string) => v.replace(/[\\%_]/g, (c) => `\\${c}`);
+  const dupes = new Map<string, { id: string; hanzi: string | null; romanization: string | null; headword: string }[]>();
+  await Promise.all(
+    pending.map(async (e: any) => {
+      const h = (e.hanzi ?? "").trim();
+      const r = (e.romanization ?? "").trim() || (e.headword ?? "").trim();
+      const base = () =>
+        supabase.from("entries").select("id, hanzi, romanization, headword").eq("status", "approved").neq("id", e.id).limit(3);
+      const results = await Promise.all(
+        [
+          h ? base().eq("hanzi", h) : null,
+          r ? base().ilike("romanization", literal(r)) : null,
+          r ? base().ilike("headword", literal(r)) : null,
+        ].filter(Boolean) as ReturnType<typeof base>[]
+      ).catch(() => []);
+      const seen = new Map<string, any>();
+      for (const { data: rows } of results) for (const m of (rows as any[]) ?? []) seen.set(m.id, m);
+      if (seen.size) dupes.set(e.id, [...seen.values()].slice(0, 3));
+    })
+  );
   const recSpeakerIds = [...new Set(((recData ?? []) as any[]).map((r) => r.contributor_id).filter(Boolean))];
   const recSpeakers = new Map<string, { id: string; display_name: string | null }>();
   if (recSpeakerIds.length) {
@@ -314,6 +340,9 @@ export default async function AdminPage() {
                   </span>
                   {e.ipa && <span className="text-sm text-inkFaint">/{e.ipa}/</span>}
                   {origin && <span className={chip}>{origin}</span>}
+                  {dupes.has(e.id) && (
+                    <span className="meta border border-lacquer px-1.5 py-0.5 text-lacquer">Possible duplicate</span>
+                  )}
                   <span className="ml-auto meta text-inkFaint">
                     {formatDateTime(e.created_at)}
                     {" · "}
@@ -326,6 +355,21 @@ export default async function AdminPage() {
                     )}
                   </span>
                 </div>
+
+                {dupes.has(e.id) && (
+                  <p className="mt-2 text-sm text-inkSoft">
+                    Already in the dictionary:{" "}
+                    {dupes.get(e.id)!.map((m, i) => (
+                      <span key={m.id}>
+                        {i > 0 && ", "}
+                        <Link href={`/entry/${m.id}`} target="_blank" className="text-lacquer hover:underline">
+                          {m.hanzi ? `${m.hanzi} ` : ""}
+                          <span className="romanization">{m.romanization || m.headword}</span>
+                        </Link>
+                      </span>
+                    ))}
+                  </p>
+                )}
 
                 {e.audio_url && <div className="mt-3"><PlayButton src={e.audio_url} label={`${e.romanization || e.headword}, submitted recording`} /></div>}
 

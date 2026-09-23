@@ -11,6 +11,7 @@ import { useRecorder } from "@/components/useRecorder";
 import TakeControls from "@/components/TakeControls";
 import Recorder from "@/components/Recorder";
 import { useL } from "@/components/LangProvider";
+import DuplicateWarning from "./DuplicateWarning";
 
 /* ---------------------------------------------------------------------------
    Add a word. One form, read top to bottom: the word, what it means, how it
@@ -319,6 +320,7 @@ export default function SubmitForm({
             </span>
           </label>
         </div>
+        <DuplicateWarning hanzi={hanzi} romanization={romanization} />
         <label className={`${fieldLabel} sm:max-w-[50%] sm:pr-2`}>
           IPA <span className="text-inkFaint">{L("(optional)", "（選填）")}</span>
           <input value={ipa} onChange={(e) => setIpa(e.target.value)} placeholder="tsʰuo˨˦˨" className={inputCls} />
@@ -427,8 +429,10 @@ export default function SubmitForm({
         ) : (
           <div className="space-y-3 border border-rule p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
+              {/* Blank until the word is typed; the "the word above"
+                  placeholder was removed (Noah, 23 Sep 2026). */}
               <span className="romanization font-display text-lg font-semibold text-lacquer">
-                {wordShown || <span className="text-inkFaint">{L("the word above", "上面填的詞")}</span>}
+                {wordShown}
               </span>
               {rec.take && !rec.recording && (
                 <span className="meta text-inkFaint">

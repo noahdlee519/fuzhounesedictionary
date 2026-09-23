@@ -72,9 +72,12 @@ export default async function SubmitPage({
     <div className="space-y-6">
       <ContributeTabs active="add" />
       <p className="max-w-[60ch] text-[17px] leading-relaxed text-inkSoft">
+        {/* Wording from Noah, 23 Sep 2026; "here" links to all the words. */}
+        {L("Fill out the dictionary by adding a Fuzhounese word that isn't ", "把")}
+        <Link href="/browse" className="text-lacquer hover:underline">{L("here", "辭典裡")}</Link>
         {L(
-          "A word you know that is not here yet. Fill in what you can—only the word and one English meaning are required—and say it into the microphone if you are able. An editor reads it before it appears.",
-          "一個你知道、這裡還沒有的詞。知道多少就填多少——只有詞本身和一個英文意思是必填的——可以的話，也對著麥克風講一次。編輯看過後才會刊出。"
+          " yet. Fill in all that you can (only the word and one English meaning are required) and record audio if possible. An editor will read it before it goes live.",
+          "還沒有的福州話詞加進來，一起充實辭典。能填多少就填多少（只有詞本身和一個英文意思是必填的），可以的話也錄個音。編輯看過後才會刊出。"
         )}
       </p>
       <SubmitForm
