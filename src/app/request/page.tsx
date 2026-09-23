@@ -36,9 +36,12 @@ interface RankedRow {
 export default async function WantedPage({
   searchParams,
 }: {
-  searchParams: { notice?: string };
+  searchParams: { notice?: string; found?: string };
 }) {
   const notice = (searchParams.notice ?? "").trim().slice(0, 300);
+  // A request for a word that turned out to be here already (actions.ts):
+  // the notice links to it.
+  const found = /^[0-9a-f-]{36}$/i.test(searchParams.found ?? "") ? searchParams.found! : null;
   const { user, profile } = await getSessionUser();
   const t = translator(getLang());
   const L = pick(getLang());
@@ -78,7 +81,17 @@ export default async function WantedPage({
       )}
 
       {notice && (
-        <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">{notice}</p>
+        <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+          {notice}
+          {found && (
+            <>
+              {" "}
+              <Link href={`/entry/${found}`} className="text-lacquer hover:underline">
+                {L("Open it", "打開詞條")}
+              </Link>
+            </>
+          )}
+        </p>
       )}
 
       {user ? (
@@ -134,7 +147,6 @@ export default async function WantedPage({
             const voted = votedIds.has(r.id);
             const display = r.entry_id ? (r.hanzi || r.romanization || r.entry_headword || r.term) : r.term;
             const needsVoice = Boolean(r.entry_id);
-            const audioLanded = needsVoice && Boolean(r.entry_audio_url);
             return (
               <li key={r.id} className="flex items-stretch gap-4 border border-rule bg-surface p-4">
                 <div className="flex flex-col items-center justify-center">
@@ -161,9 +173,6 @@ export default async function WantedPage({
                     <span className="meta text-inkFaint ring-1 ring-rule px-2 py-0.5">
                       {needsVoice ? L("needs a recording", "需要錄音") : L("needs an entry", "尚無詞條")}
                     </span>
-                    {audioLanded && (
-                      <span className="meta text-lacquer ring-1 ring-lacquer px-2 py-0.5">{L("audio added", "已加上錄音")}</span>
-                    )}
                   </div>
                   {r.note && <p className="mt-1 text-sm text-inkSoft">{r.note}</p>}
 

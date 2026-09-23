@@ -62,8 +62,14 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
           )}
           {/* The meaning in ink; with more than one, the count always on a
               line of its own under it. */}
+          {/* Under characters, the meaning starts below the audio button, so
+              it runs the card's full width, under the button's column
+              (-mr = the button's 56px plus the 12px gap), instead of
+              wrapping early (Noah, 23 Sep 2026). Without characters the
+              word is one short line and the meaning would meet the button,
+              so it keeps to its column. */}
           {entry.gloss && (
-            <p className="mt-1.5 line-clamp-2 text-[13px] text-ink">
+            <p className={`mt-1.5 line-clamp-2 text-[13px] text-ink${entry.hanzi ? " -mr-[68px]" : ""}`}>
               {(entry.senses ?? 0) > 1 && <span className="tabular-nums text-inkMute">{entry.senseNo ?? 1}. </span>}
               {entry.gloss}
             </p>

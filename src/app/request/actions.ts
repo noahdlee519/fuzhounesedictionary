@@ -25,6 +25,34 @@ export async function requestWord(formData: FormData) {
   if (!term && !entryId) redirect(back);
 
   const supabase = createClient();
+  const withNotice = (message: string, found?: string) =>
+    `${back}${back.includes("?") ? "&" : "?"}notice=${encodeURIComponent(message)}${found ? `&found=${found}` : ""}`;
+
+  /* Nothing to ask for (Noah, 23 Sep 2026). A recording asked for on a word
+     that has one by now, or a "new" word that is already in the dictionary,
+     would only open a request that closes itself (request_fulfilment.sql).
+     Say so instead, and point at the word. */
+  if (entryId) {
+    const [{ data: e }, { data: take }] = await Promise.all([
+      supabase.from("entries").select("audio_url").eq("id", entryId).maybeSingle(),
+      supabase.from("recordings").select("id").eq("entry_id", entryId).eq("kind", "headword").eq("status", "approved").limit(1),
+    ]);
+    if ((e as any)?.audio_url || (take ?? []).length) {
+      redirect(withNotice(L("This word already has a recording. Listen to it on its page.", "這個詞已經有錄音了，可以在詞條頁聽。")));
+    }
+  } else {
+    const literal = term.replace(/[\\%_]/g, (c) => `\\${c}`);
+    const base = () => supabase.from("entries").select("id").eq("status", "approved").limit(1);
+    const hits = await Promise.all([
+      base().eq("hanzi", term),
+      base().ilike("romanization", literal),
+      base().ilike("headword", literal),
+    ]);
+    const found = hits.map((h) => (h.data as any[] | null)?.[0]?.id).find(Boolean) as string | undefined;
+    if (found) {
+      redirect(withNotice(L("That word is already in the dictionary.", "這個詞已經在辭典裡了。"), found));
+    }
+  }
 
   // Is there already an OPEN request for this entry / term? If so, vote instead.
   let existingId: string | null = null;

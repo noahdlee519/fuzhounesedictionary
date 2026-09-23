@@ -61,6 +61,33 @@ const POS_ZH: Record<string, string> = {
   "proper noun": "專有名詞",
 };
 const posLabel = (L: Pick, p: string) => L(p, POS_ZH[p] ?? p);
+
+/* Quick record's batch (Noah, 23 Sep 2026: the next word should be random,
+   not the next one alphabetically). A run of QUICK_BATCH words from a random
+   point in the whole list of words needing a recording (same filters), put
+   in a shuffled order. The starting point travels in the address (?qo=), and
+   the shuffle is seeded by it, so a reload, or the refresh after a save,
+   keeps the same batch in the same order. After the last word, a new random
+   starting point. */
+const QUICK_BATCH = 25;
+function seededShuffle<T>(items: T[], seed: number): T[] {
+  // mulberry32
+  let a = (seed * 2654435761 + 1) >>> 0;
+  const rand = () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+const randomOffset = (total: number) => Math.floor(Math.random() * Math.max(1, total - QUICK_BATCH + 1));
 const PINNED_ORIGIN = "fuzhou_unsure";
 const ORIGIN_CHIPS = [
   ...ORIGIN_AREAS.filter((a) => a.code === PINNED_ORIGIN),
@@ -74,7 +101,7 @@ const ORIGIN_CHIPS = [
 export default async function ImprovePage({
   searchParams,
 }: {
-  searchParams: { page?: string; origin?: string; need?: string; pos?: string; sort?: string; dir?: string; sent?: string; problem?: string; n?: string };
+  searchParams: { page?: string; origin?: string; need?: string; pos?: string; sort?: string; dir?: string; sent?: string; problem?: string; n?: string; qo?: string };
 }) {
   const { user, profile } = await getSessionUser();
   const L = pick(getLang());
@@ -169,6 +196,25 @@ export default async function ImprovePage({
 
   const ids = rows.map((r: any) => r.id);
 
+  // Quick record's own batch, independent of the list's sort and page.
+  let quickRows: any[] = [];
+  let quickOffset = 0;
+  if (need === "recording" && !error && total > 0) {
+    const asked = parseInt(searchParams.qo ?? "", 10);
+    quickOffset = Number.isFinite(asked) && asked >= 0 && asked < total ? asked : randomOffset(total);
+    let q = supabase
+      .from("needs_work")
+      .select(`id, headword, hanzi, romanization, short_gloss, needs_recording${pos ? ", senses!inner(part_of_speech)" : ""}`)
+      .eq("needs_recording", true);
+    if (origin) q = q.eq("origin_area", origin);
+    if (pos) q = q.eq("senses.part_of_speech", pos);
+    const { data: qd } = await q
+      .order("headword", { ascending: true })
+      .range(quickOffset, quickOffset + QUICK_BATCH - 1);
+    quickRows = seededShuffle((qd ?? []) as any[], quickOffset);
+  }
+  const allIds = [...new Set([...ids, ...quickRows.map((r) => r.id)])];
+
   // The senses of the words on this page, so an example can say which meaning
   // it belongs to. Only fetched for the 25 rows on screen.
   const senses: Record<string, SenseOption[]> = {};
@@ -181,9 +227,9 @@ export default async function ImprovePage({
   // inviting a recording the database would refuse.
   const takes: Record<string, number> = {};
 
-  if (ids.length) {
+  if (allIds.length) {
     const [{ data: senseRows }, { data: pendingRows }, { data: takeRows }] = await Promise.all([
-      supabase.from("senses").select("id, entry_id, definition_en, sort").in("entry_id", ids),
+      supabase.from("senses").select("id, entry_id, definition_en, sort").in("entry_id", allIds),
       supabase
         .from("suggestions")
         .select("entry_id, kind")
@@ -195,7 +241,7 @@ export default async function ImprovePage({
         .select("entry_id")
         .eq("contributor_id", user.id)
         .neq("status", "rejected")
-        .in("entry_id", ids),
+        .in("entry_id", allIds),
     ]);
     for (const t of (takeRows ?? []) as any[]) takes[t.entry_id] = (takes[t.entry_id] ?? 0) + 1;
 
@@ -244,10 +290,11 @@ export default async function ImprovePage({
      without scanning the list. It walks the words on this page that still
      need a recording and that this person has not recorded to the cap, then
      turns to the next page. */
-  const recordable =
-    need === "recording" && !error
-      ? (rows as any[]).filter((r) => r.needs_recording && (takes[r.id] ?? 0) < MAX_RECORDINGS_PER_WORD)
-      : [];
+  const recordable = quickRows.filter((r) => r.needs_recording && (takes[r.id] ?? 0) < MAX_RECORDINGS_PER_WORD);
+  const quickHere = (o: number) => {
+    const h = href(origin, page);
+    return `${h}${h.endsWith("?") ? "" : "&"}qo=${o}`;
+  };
   const n = Math.max(0, parseInt(searchParams.n ?? "0", 10) || 0);
 
   const sentLabel =
@@ -337,7 +384,8 @@ export default async function ImprovePage({
             senseId: senses[r.id]?.[0]?.id ?? null,
           }))}
           start={n}
-          nextPage={`${hasNext ? href(origin, page + 1) : href(origin, 1)}#quick`}
+          batch={quickOffset}
+          nextPage={`${quickHere(randomOffset(total))}#quick`}
           userId={user.id}
           isEditor={Boolean(profile?.is_editor)}
         />
@@ -457,7 +505,9 @@ export default async function ImprovePage({
                   )}
                   {r.votes > 0 && (
                     <span className="meta text-lacquer ring-1 ring-lacquer px-2 py-0.5">
-                      {L("{n} asked", "{n} 人想要", { n: r.votes })}
+                      {/* Upvotes on an open request for a recording of this
+                          word (Noah, 23 Sep 2026: "1 asked" said too little). */}
+                      {L(r.votes === 1 ? "1 person wants a recording" : "{n} people want a recording", "{n} 人想聽錄音", { n: r.votes })}
                     </span>
                   )}
                 </div>

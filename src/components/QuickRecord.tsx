@@ -24,6 +24,7 @@ const THANKS_MS = 7000;
 export default function QuickRecord({
   words,
   start,
+  batch,
   nextPage,
   userId,
   isEditor,
@@ -31,6 +32,9 @@ export default function QuickRecord({
   words: Word[];
   /** Which word to open on (?n=). */
   start: number;
+  /** The random starting point this batch was drawn from (?qo=), written
+   *  into the address so a refresh keeps the same batch. */
+  batch: number;
   /** Where "Next word" goes after the last word on this page. */
   nextPage: string;
   userId: string;
@@ -42,6 +46,19 @@ export default function QuickRecord({
   // Follow the word, not the position, when the list is refreshed under us
   // (saving a recording refreshes the page).
   const current = useRef<string | null>(words[i]?.id ?? null);
+  // Pin the batch in the address on arrival, so the refresh that follows a
+  // save draws the same words rather than a new random set.
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("qo") !== String(batch)) {
+        url.searchParams.set("qo", String(batch));
+        window.history.replaceState(window.history.state, "", url);
+      }
+    } catch {
+      /* the address just stays as it was */
+    }
+  }, [batch]);
   useEffect(() => {
     const at = words.findIndex((w) => w.id === current.current);
     if (at >= 0 && at !== i) setI(at);
