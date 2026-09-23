@@ -82,7 +82,9 @@ export default async function AdminPage() {
       // it. See supabase/recordings_profiles_fk.sql.
       supabase
         .from("recordings")
-        .select("*, entry:entries(hanzi, romanization, headword, status)")
+        // The word's meanings come with it, so an editor can tell at a glance
+        // whether the take says the right thing (Noah, 23 Sep 2026).
+        .select("*, entry:entries(hanzi, romanization, headword, status, senses(id, definition_en, example, example_gloss, sort))")
         // Waiting for review, and (lib/trust) those that went live in the
         // trust window and no editor has checked yet.
         .or(`status.eq.pending,and(status.eq.approved,reviewed_at.is.null,created_at.gte.${TRUST_RECORDINGS_FROM})`)
@@ -281,6 +283,39 @@ export default async function AdminPage() {
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
                   </div>
+                  {(() => {
+                    /* What the take should say. The word itself: its English
+                       meanings, numbered when there are several. A sentence
+                       take: the sentence of the meaning it belongs to, and
+                       its translation. */
+                    const recSenses: any[] = sortSenses(e?.senses ?? []);
+                    if (r.kind === "example") {
+                      const s = recSenses.find((x) => x.id === r.sense_id) ?? recSenses.find((x) => x.example);
+                      if (!s?.example && !s?.definition_en) return null;
+                      return (
+                        <p className="mt-2 text-sm text-inkSoft">
+                          <span className="meta mr-2 text-inkFaint">sentence</span>
+                          {s.example && <span className="romanization text-ink">{s.example}</span>}
+                          {s.example_gloss && <span> — {s.example_gloss}</span>}
+                          {!s.example && s.definition_en && <span>for “{s.definition_en}”</span>}
+                        </p>
+                      );
+                    }
+                    const glosses = recSenses.map((x) => x.definition_en).filter(Boolean);
+                    if (!glosses.length) return null;
+                    return (
+                      <p className="mt-2 text-sm text-inkSoft">
+                        {glosses.length === 1
+                          ? glosses[0]
+                          : glosses.map((g, i) => (
+                              <span key={i}>
+                                {i > 0 && " · "}
+                                <span className="tabular-nums text-inkFaint">{i + 1}.</span> {g}
+                              </span>
+                            ))}
+                      </p>
+                    );
+                  })()}
                   <div className="mt-3"><PlayButton src={r.audio_url} label={`${e?.romanization || e?.headword || "recording"}${c?.display_name ? `, recorded by ${c.display_name}` : ""}`} /></div>
                   {r.speaker_name && (
                     <p className="mt-2 meta text-inkSoft">said by {r.speaker_name}, recorded by {c?.display_name || "the contributor"}</p>

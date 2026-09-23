@@ -195,6 +195,18 @@ export async function dismissEditorWelcome() {
   redirect("/account");
 }
 
+/* The × on the editor invitation: shown once (editor_invite.sql). */
+export async function dismissEditorInvite() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/account");
+  await supabase.from("profiles").update({ editor_invite_seen_at: new Date().toISOString() }).eq("id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/account");
+}
+
 /* Take back one of your own recordings while it is still waiting for an
    editor: you recorded it, listened again, and would rather it did not go
    out. The delete runs as you, so RLS ("recordings own delete",

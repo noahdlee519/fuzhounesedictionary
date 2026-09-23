@@ -9,7 +9,7 @@ import LangToggle from "./LangToggle";
 import ThemeToggle from "./ThemeToggle";
 import NavStrip from "./NavStrip";
 import { reviewCount } from "@/lib/review";
-import { newApprovals, editorWelcome } from "@/lib/approvals";
+import { newApprovals, editorWelcome, editorInvite } from "@/lib/approvals";
 
 /* The header, after the 9 Sep 2026 redesign: one 56px row, sticky, with a
    frosted background so the page shows through as it scrolls under it.
@@ -30,13 +30,15 @@ export default async function Header() {
   // Everyone signed in: how many of their contributions were approved since
   // they last looked, as a dot on their avatar.
   // Plus one for a new editor who has not seen the welcome yet.
-  const [approved, welcome] = session.user
+  // Plus one for someone invited to become an editor who has not closed it.
+  const [approved, welcome, invite] = session.user
     ? await Promise.all([
         newApprovals(session.user.id).then((a) => a.total).catch(() => 0),
         editorWelcome(session.user.id).catch(() => false),
+        editorInvite(session.user.id).catch(() => null),
       ])
-    : [0, false];
-  const news = approved + (welcome ? 1 : 0);
+    : [0, false, null];
+  const news = approved + (welcome ? 1 : 0) + (invite ? 1 : 0);
   return <HeaderView {...session} waiting={waiting} news={news} />;
 }
 

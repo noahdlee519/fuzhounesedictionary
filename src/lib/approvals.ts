@@ -57,3 +57,38 @@ export async function editorWelcome(userId: string): Promise<boolean> {
   if (error || !data) return false;
   return Boolean((data as any).is_editor) && !(data as any).editor_welcomed_at;
 }
+
+/* The editor invitation (Noah, 23 Sep 2026): someone who is not an editor
+   and has recorded INVITE_RECORDINGS words or added INVITE_WORDS words is
+   asked, once, whether they would like to become one. Counts everything they
+   have sent that was not turned down (live or still waiting). Null when there
+   is nothing to show: not enough yet, already an editor, already dismissed,
+   or the column (editor_invite.sql) not there yet. */
+export const INVITE_RECORDINGS = 25;
+export const INVITE_WORDS = 10;
+
+export interface EditorInvite {
+  recordings: number;
+  words: number;
+}
+
+export async function editorInvite(userId: string): Promise<EditorInvite | null> {
+  const supabase = createClient();
+  const { data: prof, error } = await supabase
+    .from("profiles")
+    .select("is_editor, editor_invite_seen_at")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error || !prof || (prof as any).is_editor || (prof as any).editor_invite_seen_at) return null;
+
+  const count = async (table: string) => {
+    const { count: n, error: e } = await supabase
+      .from(table)
+      .select("id", { count: "exact", head: true })
+      .eq("contributor_id", userId)
+      .neq("status", "rejected");
+    return e ? 0 : n ?? 0;
+  };
+  const [recordings, words] = await Promise.all([count("recordings"), count("entries")]);
+  return recordings >= INVITE_RECORDINGS || words >= INVITE_WORDS ? { recordings, words } : null;
+}

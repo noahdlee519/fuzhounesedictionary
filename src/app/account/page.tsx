@@ -1,4 +1,5 @@
-import { newApprovals, editorWelcome } from "@/lib/approvals";
+import { newApprovals, editorWelcome, editorInvite } from "@/lib/approvals";
+import EditorInviteBanner from "@/components/EditorInviteBanner";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -11,7 +12,7 @@ import SubmitButton from "@/components/SubmitButton";
 import SafeToggle from "@/components/SafeToggle";
 import RecordingByRow, { type RecordingByRowProps } from "@/components/RecordingByRow";
 import Pager from "@/components/Pager";
-import { saveProfile, deleteAccount, dismissApprovals, dismissEditorWelcome } from "./actions";
+import { saveProfile, deleteAccount, dismissApprovals, dismissEditorWelcome, dismissEditorInvite } from "./actions";
 import { formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
 import { STATUS_STYLE } from "@/lib/status";
@@ -100,7 +101,7 @@ export default async function AccountPage({
   const publicLine = formatOrigin(profile?.origin_area, profile?.origin_locality);
 
   // Anything of theirs an editor has approved since they last looked.
-  const [news, welcome] = await Promise.all([newApprovals(user.id), editorWelcome(user.id)]);
+  const [news, welcome, invite] = await Promise.all([newApprovals(user.id), editorWelcome(user.id), editorInvite(user.id)]);
   // Where the banner's link goes: the list with the most news in it.
   const newsShow = news.words ? "words" : news.recordings ? "recordings" : "words";
 
@@ -128,6 +129,9 @@ export default async function AccountPage({
           </form>
         </div>
       )}
+
+      {/* 25 recordings or 10 words: would they like to be an editor? */}
+      {invite && <EditorInviteBanner recordings={invite.recordings} words={invite.words} dismiss={dismissEditorInvite} />}
 
       {news.total > 0 && (
         <div role="status" className="flex items-start gap-4 rounded-sm bg-lacquer px-5 py-4 text-paper">

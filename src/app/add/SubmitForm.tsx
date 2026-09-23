@@ -12,6 +12,7 @@ import TakeControls from "@/components/TakeControls";
 import Recorder from "@/components/Recorder";
 import { useL } from "@/components/LangProvider";
 import DuplicateWarning from "./DuplicateWarning";
+import HanziTraditional from "./HanziTraditional";
 
 /* ---------------------------------------------------------------------------
    Add a word. One form, read top to bottom: the word, what it means, how it
@@ -131,6 +132,10 @@ export default function SubmitForm({
   const L = useL();
 
   const [hanzi, setHanzi] = useState("");
+  // What is saved: the traditional form when the characters were typed in
+  // simplified (HanziTraditional), else the characters as typed.
+  const [hanziTrad, setHanziTrad] = useState<string | null>(null);
+  const hanziToSave = hanziTrad ?? hanzi;
   const [romanization, setRomanization] = useState(initialRomanization);
   const [ipa, setIpa] = useState("");
   const [originArea, setOriginArea] = useState(defaultOriginArea);
@@ -158,7 +163,7 @@ export default function SubmitForm({
     setSenses((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i)));
   }
 
-  const wordShown = romanization.trim() || hanzi.trim();
+  const wordShown = romanization.trim() || hanziToSave.trim();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -180,7 +185,7 @@ export default function SubmitForm({
     setSubmitting(true);
     try {
       const { data: newId, error: rpcErr } = await supabase.rpc("submit_entry", {
-        p_hanzi: hanzi,
+        p_hanzi: hanziToSave,
         p_romanization: romanization,
         p_ipa: ipa,
         // Recordings live in the recordings table now; the legacy column stays empty.
@@ -320,7 +325,8 @@ export default function SubmitForm({
             </span>
           </label>
         </div>
-        <DuplicateWarning hanzi={hanzi} romanization={romanization} />
+        <HanziTraditional value={hanzi} onResolved={setHanziTrad} />
+        <DuplicateWarning hanzi={hanziToSave} romanization={romanization} />
         <label className={`${fieldLabel} sm:max-w-[50%] sm:pr-2`}>
           IPA <span className="text-inkFaint">{L("(optional)", "（選填）")}</span>
           <input value={ipa} onChange={(e) => setIpa(e.target.value)} placeholder="tsʰuo˨˦˨" className={inputCls} />
