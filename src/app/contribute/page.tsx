@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 import { one } from "@/lib/entries";
 import { topContributors, type TopContributor } from "@/lib/public-stats";
 import { originArea } from "@/lib/origins";
-import { formatDate } from "@/lib/dates";
+import LocalTime from "@/components/LocalTime";
 import { translator, type Key } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
@@ -320,7 +320,7 @@ export default async function ContributePage() {
                           {t(r.kind === "recorded" ? "hub.recent.recorded" : "hub.recent.added", { who: r.who || t("hub.recent.someone") })}
                         </span>
                       </span>
-                      <span className="block text-xs leading-[1.35] text-inkMute">{formatDate(r.at)}</span>
+                      <span className="block text-xs leading-[1.35] text-inkMute"><LocalTime iso={r.at} /></span>
                     </Link>
                   </div>
                 ))

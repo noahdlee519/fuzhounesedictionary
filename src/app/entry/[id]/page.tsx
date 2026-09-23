@@ -11,7 +11,7 @@ import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
 import Recorder from "@/components/Recorder";
 import PlayButton from "@/components/PlayButton";
-import { formatDate } from "@/lib/dates";
+import LocalTime from "@/components/LocalTime";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
 import DeleteEntry from "@/components/DeleteEntry";
 import SavedNotice from "@/components/SavedNotice";
@@ -286,7 +286,7 @@ export default async function EntryPage({
 
         <div className="flex flex-col items-start gap-1.5 sm:items-end sm:pt-2 sm:text-right">
           <p className="meta text-inkFaint">
-            Added {formatDate(entry.created_at)}
+            Added <LocalTime iso={entry.created_at} />
             {contributor && (
               <>
                 {" · contributed by "}

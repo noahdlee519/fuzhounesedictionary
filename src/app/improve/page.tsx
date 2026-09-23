@@ -196,19 +196,27 @@ export default async function ImprovePage({
 
   const ids = rows.map((r: any) => r.id);
 
-  // Quick record's own batch, independent of the list's sort and page.
+  /* Quick record's own batch, independent of the list's sort and page. Drawn
+     from every word in the dictionary, recorded or not (Noah, 23 Sep 2026):
+     a word with a recording still wants yours, in your own variety. The
+     same filters as the list. */
   let quickRows: any[] = [];
   let quickOffset = 0;
-  if (need === "recording" && !error && total > 0) {
+  let quickTotal = 0;
+  if (need === "recording" && !error) {
+    const quickQuery = (opts?: { count: "exact"; head: true }) => {
+      let q = supabase
+        .from("needs_work")
+        .select(`id, headword, hanzi, romanization, short_gloss, needs_recording${pos ? ", senses!inner(part_of_speech)" : ""}`, opts);
+      if (origin) q = q.eq("origin_area", origin);
+      if (pos) q = q.eq("senses.part_of_speech", pos);
+      return q;
+    };
+    const { count: qc } = await quickQuery({ count: "exact", head: true });
+    quickTotal = qc ?? 0;
     const asked = parseInt(searchParams.qo ?? "", 10);
-    quickOffset = Number.isFinite(asked) && asked >= 0 && asked < total ? asked : randomOffset(total);
-    let q = supabase
-      .from("needs_work")
-      .select(`id, headword, hanzi, romanization, short_gloss, needs_recording${pos ? ", senses!inner(part_of_speech)" : ""}`)
-      .eq("needs_recording", true);
-    if (origin) q = q.eq("origin_area", origin);
-    if (pos) q = q.eq("senses.part_of_speech", pos);
-    const { data: qd } = await q
+    quickOffset = Number.isFinite(asked) && asked >= 0 && asked < quickTotal ? asked : randomOffset(quickTotal);
+    const { data: qd } = await quickQuery()
       .order("headword", { ascending: true })
       .range(quickOffset, quickOffset + QUICK_BATCH - 1);
     quickRows = seededShuffle((qd ?? []) as any[], quickOffset);
@@ -287,10 +295,9 @@ export default async function ImprovePage({
 
   /* Quick record: one word at a time, big, with the recorder under it and a
      "Next word" that moves along — so a speaker can say ten words in a row
-     without scanning the list. It walks the words on this page that still
-     need a recording and that this person has not recorded to the cap, then
-     turns to the next page. */
-  const recordable = quickRows.filter((r) => r.needs_recording && (takes[r.id] ?? 0) < MAX_RECORDINGS_PER_WORD);
+     without scanning the list. It walks the batch drawn above, leaving out
+     the words this person has already recorded to the cap. */
+  const recordable = quickRows.filter((r) => (takes[r.id] ?? 0) < MAX_RECORDINGS_PER_WORD);
   const quickHere = (o: number) => {
     const h = href(origin, page);
     return `${h}${h.endsWith("?") ? "" : "&"}qo=${o}`;
@@ -314,8 +321,8 @@ export default async function ImprovePage({
               <>
                 {recordingsTrusted()
                   ? L(
-                      "None of the words listed here has a recording yet. Press the button beside one and say it. For now, your recording goes live straight away, and an editor listens to it afterwards.",
-                      "這裡列出的詞都還沒有錄音。按下旁邊的按鈕，講出來。目前錄音會直接上線，之後由編輯再聽一次。"
+                      "None of the words listed here has a recording yet. Press the button beside one and say it. Your recording goes live straight away, and an editor listens to it afterwards.",
+                      "這裡列出的詞都還沒有錄音。按下旁邊的按鈕，講出來。錄音會直接上線，之後由編輯再聽一次。"
                     )
                   : L(
                       "None of the words listed here has a recording yet. Press the button beside one, say it, and an editor will check it before it appears.",
@@ -326,8 +333,8 @@ export default async function ImprovePage({
               <>
                 {recordingsTrusted()
                   ? L(
-                      "Each word listed here is missing something. Fill in what you can—a recording, the pronunciation, a sentence. For now, recordings go live straight away and are checked afterwards; an editor checks the rest before it appears.",
-                      "這裡列出的每個詞都缺了點什麼。能補多少就補多少——錄音、發音、例句。目前錄音會直接上線，之後再審；其他內容經編輯審過後才會刊出。"
+                      "Each word listed here is missing something. Fill in what you can—a recording, the pronunciation, a sentence. Recordings go live straight away and are checked afterwards; an editor checks the rest before it appears.",
+                      "這裡列出的每個詞都缺了點什麼。能補多少就補多少——錄音、發音、例句。錄音會直接上線，之後再審；其他內容經編輯審過後才會刊出。"
                     )
                   : L(
                       "Each word listed here is missing something. Fill in what you can—a recording, the pronunciation, a sentence—and an editor will check it before it appears.",
@@ -382,10 +389,11 @@ export default async function ImprovePage({
             headword: r.headword,
             gloss: r.short_gloss ?? null,
             senseId: senses[r.id]?.[0]?.id ?? null,
+            recorded: !r.needs_recording,
           }))}
           start={n}
           batch={quickOffset}
-          nextPage={`${quickHere(randomOffset(total))}#quick`}
+          nextPage={`${quickHere(randomOffset(quickTotal))}#quick`}
           userId={user.id}
           isEditor={Boolean(profile?.is_editor)}
         />

@@ -11,7 +11,7 @@ import SignInButton from "@/components/SignInButton";
 import { translator } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import ContributeTabs from "@/components/ContributeTabs";
-import { formatDateTime } from "@/lib/dates";
+import LocalTime from "@/components/LocalTime";
 import {
   approve,
   reject,
@@ -201,7 +201,7 @@ export default async function AdminPage() {
                     <span className={s.kind === "report" ? "meta text-lacquer ring-1 ring-lacquer px-2 py-0.5" : chip}>{s.kind === "edit" ? "suggested edit" : s.kind === "report" ? "report" : s.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto meta text-inkFaint">
-                      {formatDateTime(s.created_at)}
+                      <LocalTime iso={s.created_at} time />
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
                   </div>
@@ -279,7 +279,7 @@ export default async function AdminPage() {
                       </span>
                     )}
                     <span className="ml-auto meta text-inkFaint">
-                      {formatDateTime(r.created_at)}
+                      <LocalTime iso={r.created_at} time />
                       {c?.display_name ? ` · ${c.display_name}` : ""}
                     </span>
                   </div>
@@ -379,7 +379,7 @@ export default async function AdminPage() {
                     <span className="meta border border-lacquer px-1.5 py-0.5 text-lacquer">Possible duplicate</span>
                   )}
                   <span className="ml-auto meta text-inkFaint">
-                    {formatDateTime(e.created_at)}
+                    <LocalTime iso={e.created_at} time />
                     {" · "}
                     {e.contributor?.id ? (
                       <Link href={`/contributor/${e.contributor.id}`} className="hover:text-lacquer">
