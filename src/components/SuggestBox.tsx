@@ -15,11 +15,11 @@ export interface SenseOption {
 }
 
 const chipCls =
-  "inline-block cursor-pointer list-none border px-2 py-0.5 meta " +
+  "rounded-sm inline-block cursor-pointer list-none border px-2 py-0.5 meta " +
   "transition-colors [&::-webkit-details-marker]:hidden [&::marker]:content-['']";
 
 const fieldCls =
-  "mt-1 w-full border border-rule bg-paper px-3 py-2 text-sm outline-none " +
+  "rounded-sm mt-1 w-full border border-rule bg-paper px-3 py-2 text-sm outline-none " +
   "focus:border-lacquer placeholder:text-inkFaint";
 
 const labelCls = "block meta text-inkFaint";
@@ -47,7 +47,7 @@ export default function SuggestBox({
 
   if (pending) {
     return (
-      <span className="inline-block border border-rule px-2 py-0.5 meta text-inkFaint">
+      <span className="rounded-sm inline-block border border-rule px-2 py-0.5 meta text-inkFaint">
         {isIpa ? L("your IPA · awaiting review", "你的 IPA · 審核中") : L("your example · awaiting review", "你的例句 · 審核中")}
       </span>
     );
@@ -63,7 +63,7 @@ export default function SuggestBox({
 
       <form
         action={suggest}
-        className="mt-2 max-w-md space-y-3 border border-rule bg-paper p-4 font-sans normal-case tracking-normal"
+        className="rounded-sm mt-2 max-w-md space-y-3 border border-rule bg-paper p-4 font-sans normal-case tracking-normal"
       >
         <input type="hidden" name="kind" value={kind} />
         <input type="hidden" name="entry_id" value={entryId} />
@@ -131,7 +131,7 @@ export default function SuggestBox({
 
         <SubmitButton
           pending={L("Sending…", "送出中…")}
-          className="border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="rounded-sm border border-lacquer bg-lacquer px-3 py-1.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           {L("Send for review", "送交審核")}
         </SubmitButton>

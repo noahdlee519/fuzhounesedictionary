@@ -18,11 +18,11 @@ export default function DeleteEntry({
 }) {
   return (
     <details className={`group inline-block ${className}`}>
-      <summary className="inline-block cursor-pointer list-none border border-rule px-2 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
+      <summary className="rounded-sm inline-block cursor-pointer list-none border border-rule px-2 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
         <span className="group-open:hidden">Delete word</span>
         <span className="hidden group-open:inline">Cancel</span>
       </summary>
-      <form action={deleteEntry} className="mt-2 max-w-md space-y-2 border border-lacquer bg-surface p-3">
+      <form action={deleteEntry} className="rounded-sm mt-2 max-w-md space-y-2 border border-lacquer bg-surface p-3">
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="back" value={back} />
         <p className="text-sm text-ink">
@@ -31,7 +31,7 @@ export default function DeleteEntry({
         </p>
         <SubmitButton
           pending="Deleting…"
-          className="border border-lacquer bg-lacquer px-3 py-1 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="rounded-sm border border-lacquer bg-lacquer px-3 py-1 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           Yes, delete this word
         </SubmitButton>

@@ -61,7 +61,7 @@ export default function RecordingByRow({
   );
 
   return (
-    <div className="border border-rule bg-surface p-4">
+    <div className="rounded-sm border border-rule bg-surface p-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {w && w.status === "approved" ? (
           <Link href={`/entry/${w.id}`} className="hover:underline">

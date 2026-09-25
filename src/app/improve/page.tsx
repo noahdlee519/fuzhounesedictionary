@@ -367,7 +367,7 @@ export default async function ImprovePage({
       </section>
 
       {(sentLabel || searchParams.problem) && (
-        <div className="flex flex-wrap items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-3">
+        <div className="rounded-sm flex flex-wrap items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-3">
           {sentLabel ? (
             <SavedNotice message={L("✓ {label}—thank you", "✓ {label}，謝謝你", { label: sentLabel })} />
           ) : (
@@ -457,13 +457,13 @@ export default async function ImprovePage({
       </section>
 
       {error && (
-        <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+        <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
           {L("The worklist is unavailable at the moment. Please check back shortly.", "待補清單暫時無法使用，請稍後再試。")}
         </p>
       )}
 
       {!error && rows.length === 0 && (
-        <div className="border border-rule bg-surface p-8">
+        <div className="rounded-sm border border-rule bg-surface p-8">
           <p className="text-inkSoft">
             {origin
               ? L("Every word from {place} is complete.", "來自{zhPlace}的詞都已完整。", {
@@ -507,12 +507,12 @@ export default async function ImprovePage({
                     {r.romanization || r.headword}
                   </Link>
                   {wordOrigin && (
-                    <span className="meta text-inkFaint ring-1 ring-rule px-2 py-0.5">
+                    <span className="rounded-sm meta text-inkFaint ring-1 ring-rule px-2 py-0.5">
                       {wordOrigin}
                     </span>
                   )}
                   {r.votes > 0 && (
-                    <span className="meta text-lacquer ring-1 ring-lacquer px-2 py-0.5">
+                    <span className="rounded-sm meta text-lacquer ring-1 ring-lacquer px-2 py-0.5">
                       {/* Upvotes on an open request for a recording of this
                           word (Noah, 23 Sep 2026: "1 asked" said too little). */}
                       {L(r.votes === 1 ? "1 person wants a recording" : "{n} people want a recording", "{n} 人想聽錄音", { n: r.votes })}
@@ -588,12 +588,12 @@ export default async function ImprovePage({
               max={totalPages}
               defaultValue={page}
               aria-label={L("Page number, 1 to {n}", "頁碼，1 至 {n}", { n: totalPages })}
-              className="w-12 border border-rule bg-surface px-1.5 py-0.5 text-center text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="rounded-sm w-12 border border-rule bg-surface px-1.5 py-0.5 text-center text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <span>{L("of {n}", "頁，共 {n} 頁", { n: totalPages })}</span>
             <button
               type="submit"
-              className="ml-1 border border-rule px-2 py-0.5 text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
+              className="rounded-sm ml-1 border border-rule px-2 py-0.5 text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
             >
               {L("Go", "前往")}
             </button>

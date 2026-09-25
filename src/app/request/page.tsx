@@ -66,7 +66,7 @@ export default async function WantedPage({
   const votedIds = new Set<string>((myVotes ?? []).map((v: any) => v.request_id));
 
   const inputCls =
-    "w-full border border-rule bg-surface px-3 py-2 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint";
+    "rounded-sm w-full border border-rule bg-surface px-3 py-2 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint";
 
   return (
     <div className="space-y-9">
@@ -81,7 +81,7 @@ export default async function WantedPage({
       )}
 
       {notice && (
-        <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+        <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
           {notice}
           {found && (
             <>
@@ -95,7 +95,7 @@ export default async function WantedPage({
       )}
 
       {user ? (
-        <section className="border border-rule bg-surface p-5">
+        <section className="rounded-sm border border-rule bg-surface p-5">
           <form action={requestWord} className="space-y-3">
             <input type="hidden" name="back" value="/request" />
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
@@ -108,7 +108,7 @@ export default async function WantedPage({
                 <input name="note" placeholder={L("What it means, or where you heard it", "意思，或在哪裡聽到的")} className={inputCls} />
               </label>
             </div>
-            <SubmitButton pending={L("Sending…", "送出中…")} className="border border-lacquer bg-lacquer px-4 py-2 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60">
+            <SubmitButton pending={L("Sending…", "送出中…")} className="rounded-sm border border-lacquer bg-lacquer px-4 py-2 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60">
               {L("Request this word", "請求這個詞")}
             </SubmitButton>
           </form>
@@ -148,7 +148,7 @@ export default async function WantedPage({
             const display = r.entry_id ? (r.hanzi || r.romanization || r.entry_headword || r.term) : r.term;
             const needsVoice = Boolean(r.entry_id);
             return (
-              <li key={r.id} className="flex items-stretch gap-4 border border-rule bg-surface p-4">
+              <li key={r.id} className="rounded-sm flex items-stretch gap-4 border border-rule bg-surface p-4">
                 <div className="flex flex-col items-center justify-center">
                   <RequestVote
                     id={r.id}
@@ -170,7 +170,7 @@ export default async function WantedPage({
                     ) : (
                       <span className="romanization font-display text-lg font-semibold text-ink">{display}</span>
                     )}
-                    <span className="meta text-inkFaint ring-1 ring-rule px-2 py-0.5">
+                    <span className="rounded-sm meta text-inkFaint ring-1 ring-rule px-2 py-0.5">
                       {needsVoice ? L("needs a recording", "需要錄音") : L("needs an entry", "尚無詞條")}
                     </span>
                   </div>

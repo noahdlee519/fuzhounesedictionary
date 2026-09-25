@@ -107,7 +107,7 @@ export default function RecordingList({
                   </>
                 )}
                 {r.status !== "approved" && (
-                  <span className="ml-2 inline-block whitespace-nowrap border border-rule px-1.5 py-0.5 text-inkFaint">
+                  <span className="rounded-sm ml-2 inline-block whitespace-nowrap border border-rule px-1.5 py-0.5 text-inkFaint">
                     {r.status === "pending" ? "awaiting review" : r.status}
                   </span>
                 )}

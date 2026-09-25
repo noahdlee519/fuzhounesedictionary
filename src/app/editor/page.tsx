@@ -32,9 +32,9 @@ export const metadata: Metadata = {
 };
 
 const chip =
-  "meta text-inkSoft ring-1 ring-rule px-2 py-0.5";
+  "rounded-sm meta text-inkSoft ring-1 ring-rule px-2 py-0.5";
 const btn =
-  "border px-4 py-1.5 meta transition-[color,background-color,border-color,opacity,transform] active:scale-[.97]";
+  "rounded-sm border px-4 py-1.5 meta transition-[color,background-color,border-color,opacity,transform] active:scale-[.97]";
 
 export default async function AdminPage() {
   const { user, profile } = await getSessionUser();
@@ -149,7 +149,7 @@ export default async function AdminPage() {
     e?.code === "PGRST205" || /schema cache|does not exist/i.test(e?.message ?? "");
   const problem = (what: string, file: string, e: { code?: string; message?: string } | null) =>
     e ? (
-      <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+      <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
         <span className="font-medium text-ink">{what} could not be loaded.</span>{" "}
         {missingTable(e) ? (
           <>
@@ -189,7 +189,7 @@ export default async function AdminPage() {
               const { entry: e, contributor: c, sense } = s;
               const origin = formatOrigin(s.origin_area, s.origin_locality);
               return (
-                <div key={s.id} className="border border-rule bg-surface p-4">
+                <div key={s.id} className="rounded-sm border border-rule bg-surface p-4">
                   <div className="flex flex-wrap items-baseline gap-3">
                     {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <Link
@@ -198,7 +198,7 @@ export default async function AdminPage() {
                     >
                       {e?.romanization || e?.headword}
                     </Link>
-                    <span className={s.kind === "report" ? "meta text-lacquer ring-1 ring-lacquer px-2 py-0.5" : chip}>{s.kind === "edit" ? "suggested edit" : s.kind === "report" ? "report" : s.kind}</span>
+                    <span className={s.kind === "report" ? "rounded-sm meta text-lacquer ring-1 ring-lacquer px-2 py-0.5" : chip}>{s.kind === "edit" ? "suggested edit" : s.kind === "report" ? "report" : s.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto meta text-inkFaint">
                       <LocalTime iso={s.created_at} time />
@@ -239,7 +239,7 @@ export default async function AdminPage() {
                         id={`snote-${s.id}`}
                         name="note"
                         placeholder="Reason (optional)"
-                        className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+                        className="rounded-sm border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
                       <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
                         ✕ Reject
@@ -263,7 +263,7 @@ export default async function AdminPage() {
               const { entry: e, contributor: c } = r;
               const origin = formatOrigin(r.origin_area, r.origin_locality);
               return (
-                <div key={r.id} className="border border-rule bg-surface p-4">
+                <div key={r.id} className="rounded-sm border border-rule bg-surface p-4">
                   <div className="flex flex-wrap items-baseline gap-3">
                     {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <Link
@@ -274,7 +274,7 @@ export default async function AdminPage() {
                     </Link>
                     {origin && <span className={chip}>{origin}</span>}
                     {r.status === "approved" && (
-                      <span className="meta px-2 py-0.5 text-lacquer ring-1 ring-lacquer" title="Went live when it was saved (trust window); not yet checked">
+                      <span className="rounded-sm meta px-2 py-0.5 text-lacquer ring-1 ring-lacquer" title="Went live when it was saved (trust window); not yet checked">
                         live
                       </span>
                     )}
@@ -339,7 +339,7 @@ export default async function AdminPage() {
                         id={`rnote-${r.id}`}
                         name="note"
                         placeholder="Reason (optional)"
-                        className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+                        className="rounded-sm border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
                       <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
                         {r.status === "approved" ? "✕ Take down" : "✕ Reject"}
@@ -357,7 +357,7 @@ export default async function AdminPage() {
 
       {waiting === 0 ? (
         !anyFailed && (
-          <div className="border border-rule bg-surface p-8 text-inkSoft">
+          <div className="rounded-sm border border-rule bg-surface p-8 text-inkSoft">
             Nothing waiting for review.
           </div>
         )
@@ -367,7 +367,7 @@ export default async function AdminPage() {
             const senses: Sense[] = sortSenses(e.senses);
             const origin = formatOrigin(e.origin_area, e.origin_locality) || e.variety;
             return (
-              <div key={e.id} className="border border-rule bg-surface p-4">
+              <div key={e.id} className="rounded-sm border border-rule bg-surface p-4">
                 <div className="flex flex-wrap items-baseline gap-3">
                   {e.hanzi && <span className="font-display text-2xl font-bold">{e.hanzi}</span>}
                   <span className="romanization font-display text-lg font-semibold text-lacquer">
@@ -376,7 +376,7 @@ export default async function AdminPage() {
                   {e.ipa && <span className="text-sm text-inkFaint">/{e.ipa}/</span>}
                   {origin && <span className={chip}>{origin}</span>}
                   {dupes.has(e.id) && (
-                    <span className="meta border border-lacquer px-1.5 py-0.5 text-lacquer">Possible duplicate</span>
+                    <span className="rounded-sm meta border border-lacquer px-1.5 py-0.5 text-lacquer">Possible duplicate</span>
                   )}
                   <span className="ml-auto meta text-inkFaint">
                     <LocalTime iso={e.created_at} time />
@@ -436,7 +436,7 @@ export default async function AdminPage() {
                       id={`note-${e.id}`}
                       name="note"
                       placeholder="Reason (optional)"
-                      className="border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+                      className="rounded-sm border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                     />
                     <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
                       ✕ Reject

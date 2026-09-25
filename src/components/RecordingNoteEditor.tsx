@@ -44,11 +44,11 @@ export default function RecordingNoteEditor({
           defaultValue={text}
           maxLength={MAX_RECORDING_NOTE}
           placeholder="e.g. a sentence you said it in, or how it is used"
-          className="grow border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+          className="rounded-sm grow border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
         />
         <SubmitButton
           pending="Saving…"
-          className="border border-rule px-3 py-1.5 meta text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-60"
+          className="rounded-sm border border-rule px-3 py-1.5 meta text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-60"
         >
           Save note
         </SubmitButton>

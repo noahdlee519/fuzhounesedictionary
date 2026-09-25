@@ -274,12 +274,12 @@ export default async function EntryPage({
           {wordOrigin && entry.origin_area ? (
             <Link
               href={`/browse?origin=${encodeURIComponent(entry.origin_area)}`}
-              className="meta text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
+              className="rounded-sm meta text-inkSoft ring-1 ring-rule px-2 py-1 hover:text-lacquer hover:ring-lacquer"
             >
               {wordOrigin}
             </Link>
           ) : entry.variety ? (
-            <span className="meta text-inkSoft ring-1 ring-rule px-2 py-1">{entry.variety}</span>
+            <span className="rounded-sm meta text-inkSoft ring-1 ring-rule px-2 py-1">{entry.variety}</span>
           ) : null}
         </div>
         </div>
@@ -310,7 +310,7 @@ export default async function EntryPage({
       </header>
 
       {(searchParams.saved || searchParams.problem) && (
-        <p className="flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
+        <p className="rounded-sm flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
           {searchParams.saved ? (
             <SavedNotice message="Note saved" />
           ) : (
@@ -377,7 +377,7 @@ export default async function EntryPage({
             return (Recorder.tsx explains). The one thing sign-in still gates
             is the cap, which only a known contributor can be measured
             against. */}
-        <div className="border border-dashed border-rule p-4">
+        <div className="rounded-sm border border-dashed border-rule p-4">
           {user && capped ? (
             cappedNote
           ) : (
@@ -432,7 +432,7 @@ export default async function EntryPage({
       {entry.notes && (
         <section className="space-y-2">
           <h2 className="meta text-inkFaint">Notes</h2>
-          <div className="bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
+          <div className="rounded-sm bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
             {linkifyNotes(entry.notes)}
           </div>
         </section>
@@ -453,7 +453,7 @@ export default async function EntryPage({
                 <li key={r.id} className="tip-host group relative hover:z-40 focus-within:z-40">
                   <Link
                     href={`/entry/${r.id}`}
-                    className="inline-flex items-baseline gap-1.5 border border-rule px-2.5 py-1 text-[13px] transition-colors hover:border-lacquer hover:text-lacquer"
+                    className="rounded-sm inline-flex items-baseline gap-1.5 border border-rule px-2.5 py-1 text-[13px] transition-colors hover:border-lacquer hover:text-lacquer"
                   >
                     {r.hanzi && <span className="font-display font-semibold">{r.hanzi}</span>}
                     <span className="romanization text-inkSoft">{r.romanization || r.headword}</span>
@@ -461,7 +461,7 @@ export default async function EntryPage({
                   {meanings.length > 0 && (
                     <div
                       role="tooltip"
-                      className="tip pointer-events-none invisible absolute left-0 top-[calc(100%+8px)] group-data-[flip=right]:left-auto group-data-[flip=right]:right-0 z-30 w-max max-w-[min(20rem,calc(100vw-2rem))] border border-ruleStrong bg-paper px-3 py-2.5 text-[13px] leading-snug text-inkSoft opacity-0 shadow-[0_2px_10px_rgb(0_0_0/.09)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+                      className="rounded-sm tip pointer-events-none invisible absolute left-0 top-[calc(100%+8px)] group-data-[flip=right]:left-auto group-data-[flip=right]:right-0 z-30 w-max max-w-[min(20rem,calc(100vw-2rem))] border border-ruleStrong bg-paper px-3 py-2.5 text-[13px] leading-snug text-inkSoft opacity-0 shadow-[0_2px_10px_rgb(0_0_0/.09)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
                     >
                       <p className="mb-1 text-ink">
                         {r.hanzi && <span className="font-display font-semibold">{r.hanzi} </span>}

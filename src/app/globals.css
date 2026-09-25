@@ -492,7 +492,7 @@ html.no-tx *, html.no-tx *::before, html.no-tx *::after { transition: none !impo
 .audio-tip {
   position: absolute; top: calc(100% + 10px); z-index: 40;
   width: max-content; max-width: 15rem;
-  padding: 7px 10px; border-radius: 4px;
+  padding: 7px 10px; border-radius: 2px;
   background: var(--ink); color: var(--paper);
   font-family: var(--font-ui), "Helvetica Neue", Arial, system-ui, sans-serif;
   font-size: 12px; line-height: 1.35; font-weight: 400; letter-spacing: 0; text-align: left;

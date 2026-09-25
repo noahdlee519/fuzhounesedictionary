@@ -21,7 +21,7 @@ export default function WithdrawRecording({ id, back }: { id: string; back: stri
         <span className="text-xs text-inkSoft">{L("Delete your recording? This can’t be undone.", "要刪除你的錄音嗎？刪除後無法復原。")}</span>
         <SubmitButton
           pending={L("Deleting…", "刪除中…")}
-          className="border border-lacquer bg-lacquer px-2 py-0.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="rounded-sm border border-lacquer bg-lacquer px-2 py-0.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           {L("Yes, delete", "確定刪除")}
         </SubmitButton>

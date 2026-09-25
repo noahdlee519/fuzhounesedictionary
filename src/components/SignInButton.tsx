@@ -37,7 +37,7 @@ export default function SignInButton({
       disabled={busy}
       className={
         className ??
-        "inline-flex items-center gap-2 border border-rule bg-surface px-5 py-2.5 text-ink transition-colors hover:border-lacquer hover:text-lacquer"
+        "rounded-sm inline-flex items-center gap-2 border border-rule bg-surface px-5 py-2.5 text-ink transition-colors hover:border-lacquer hover:text-lacquer"
       }
     >
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">

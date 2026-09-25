@@ -45,7 +45,7 @@ const emptySense = (): SenseDraft => ({
 });
 
 const inputCls =
-  "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
+  "rounded-sm mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
 const fieldLabel = "block text-sm";
 const eyebrow = "meta text-lacquer";
 
@@ -241,7 +241,7 @@ export default function SubmitForm({
   if (savedEntryId) {
     return (
       <div className="space-y-6">
-        <div className="border-l-2 border-lacquer bg-surface p-4">
+        <div className="rounded-sm border-l-2 border-lacquer bg-surface p-4">
           <p className="font-display text-lg font-semibold">
             {L("", "「")}
             <span className="romanization">{wordShown}</span>
@@ -256,7 +256,7 @@ export default function SubmitForm({
         </div>
 
         {recordingFailed && (
-          <div className="space-y-3 border border-rule p-4">
+          <div className="rounded-sm space-y-3 border border-rule p-4">
             <p className="text-sm text-lacquer">{recordingFailed}</p>
             <p className="meta text-inkFaint">{L("Try the word again", "重錄這個詞")}</p>
             <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="headword" />
@@ -266,7 +266,7 @@ export default function SubmitForm({
         {savedSenses.length > 0 && (
           <div className="space-y-4">
             {savedSenses.map((s) => (
-              <div key={s.id} className="space-y-2 border border-rule p-4">
+              <div key={s.id} className="rounded-sm space-y-2 border border-rule p-4">
                 <p className="romanization text-inkSoft">{s.example}</p>
                 <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="example" senseId={s.id} />
               </div>
@@ -277,7 +277,7 @@ export default function SubmitForm({
         <div className="flex flex-wrap items-center gap-4 border-t border-rule pt-4">
           <Link
             href="/add?success=1"
-            className="border border-lacquer bg-lacquer px-6 py-2.5 font-semibold text-paper transition-opacity hover:opacity-90"
+            className="rounded-sm border border-lacquer bg-lacquer px-6 py-2.5 font-semibold text-paper transition-opacity hover:opacity-90"
           >
             {L("Done", "完成")}
           </Link>
@@ -292,7 +292,7 @@ export default function SubmitForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div role="alert" className="border-l-2 border-lacquer bg-surface p-3 text-sm text-inkSoft">
+        <div role="alert" className="rounded-sm border-l-2 border-lacquer bg-surface p-3 text-sm text-inkSoft">
           {error}
         </div>
       )}
@@ -339,7 +339,7 @@ export default function SubmitForm({
         lead={L("One English meaning is enough. Add another if the word has more than one.", "一個英文意思就夠了。如果這個詞有好幾個意思，可以再加。")}
       >
         {senses.map((s, i) => (
-          <div key={i} className="space-y-3 border border-rule p-4">
+          <div key={i} className="rounded-sm space-y-3 border border-rule p-4">
             <div className="flex items-center justify-between">
               <span className="meta text-inkFaint">
                 {L("Meaning {n}", "意思 {n}", { n: i + 1 })}
@@ -433,7 +433,7 @@ export default function SubmitForm({
             )}
           </p>
         ) : (
-          <div className="space-y-3 border border-rule p-4">
+          <div className="rounded-sm space-y-3 border border-rule p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               {/* Blank until the word is typed; the "the word above"
                   placeholder was removed (Noah, 23 Sep 2026). */}
@@ -471,7 +471,7 @@ export default function SubmitForm({
                   onChange={(e) => setRecNote(e.target.value)}
                   maxLength={MAX_RECORDING_NOTE}
                   placeholder={L("e.g. a sentence you said it in, or how it is used", "例如：你用這個詞講的一句話，或它怎麼用")}
-                  className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+                  className="rounded-sm mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                 />
               </label>
             )}
@@ -530,7 +530,7 @@ export default function SubmitForm({
         <button
           type="submit"
           disabled={submitting}
-          className="border border-lacquer bg-lacquer px-8 py-3 font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="rounded-sm border border-lacquer bg-lacquer px-8 py-3 font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {submitting ? L("Sending…", "送出中…") : L("Submit for review", "送出審核")}
         </button>

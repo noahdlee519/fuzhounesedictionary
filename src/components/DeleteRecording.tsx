@@ -19,7 +19,7 @@ export default function DeleteRecording({
 }) {
   return (
     <details className={`group inline-block ${className}`}>
-      <summary className="inline-block cursor-pointer list-none border border-rule px-1.5 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
+      <summary className="rounded-sm inline-block cursor-pointer list-none border border-rule px-1.5 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
         {/* Open, the same button closes the question again. */}
         <span className="group-open:hidden">Delete</span>
         <span className="hidden group-open:inline">Cancel</span>
@@ -30,7 +30,7 @@ export default function DeleteRecording({
         <span className="text-xs text-inkSoft">Remove this recording?</span>
         <SubmitButton
           pending="Deleting…"
-          className="border border-lacquer bg-lacquer px-2 py-0.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
+          className="rounded-sm border border-lacquer bg-lacquer px-2 py-0.5 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
           Yes, delete
         </SubmitButton>

@@ -229,11 +229,11 @@ export default async function AccountPage({
 
         {show === "words" && (
           entriesError ? (
-            <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+            <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
               Your words could not be loaded just now. Please check back shortly.
             </p>
           ) : entries.length === 0 ? (
-            <div className="border border-rule bg-surface p-8">
+            <div className="rounded-sm border border-rule bg-surface p-8">
               <p className="text-inkSoft">You haven&apos;t added any words yet.</p>
               <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word</Link>
             </div>
@@ -251,7 +251,7 @@ export default async function AccountPage({
                   </div>
                 );
                 return (
-                  <div key={e.id} className="border border-rule bg-surface p-4">
+                  <div key={e.id} className="rounded-sm border border-rule bg-surface p-4">
                     {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
                     {first && <p className="mt-1 text-sm text-inkSoft">{first.definition_en}</p>}
                     {e.status === "rejected" && e.review_notes && (
@@ -266,7 +266,7 @@ export default async function AccountPage({
 
         {show === "meanings" && (
           meanings.length === 0 ? (
-            <div className="border border-rule bg-surface p-8">
+            <div className="rounded-sm border border-rule bg-surface p-8">
               <p className="text-inkSoft">No meanings yet.</p>
               <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word</Link>
             </div>
@@ -287,7 +287,7 @@ export default async function AccountPage({
                   </div>
                 );
                 return (
-                  <div key={m.id} className="border border-rule bg-surface p-4">
+                  <div key={m.id} className="rounded-sm border border-rule bg-surface p-4">
                     {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
                     <p className="mt-1 text-sm text-inkSoft">{m.definition_en}</p>
                   </div>
@@ -298,7 +298,7 @@ export default async function AccountPage({
         )}
 
         {show === "recordings" && (searchParams.saved || searchParams.problem || searchParams.withdrawn) && (
-          <p className="flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
+          <p className="rounded-sm flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
             {searchParams.withdrawn ? (
               <SavedNotice message="Recording deleted" />
             ) : searchParams.saved ? (
@@ -313,7 +313,7 @@ export default async function AccountPage({
 
         {show === "recordings" && (
           recordings.length === 0 ? (
-            <div className="border border-rule bg-surface p-8">
+            <div className="rounded-sm border border-rule bg-surface p-8">
               <p className="text-inkSoft">You haven&apos;t recorded anything yet.</p>
               <Link href="/improve" className="mt-2 inline-block font-medium text-lacquer hover:underline">
                 Record a word &rarr;
@@ -350,7 +350,7 @@ export default async function AccountPage({
           </p>
         </div>
 
-        <form action={saveProfile} className="space-y-4 border border-rule bg-surface p-5">
+        <form action={saveProfile} className="rounded-sm space-y-4 border border-rule bg-surface p-5">
           <label className="block">
             <span className={labelCls}>Display name</span>
             <input

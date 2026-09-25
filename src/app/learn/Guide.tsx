@@ -51,7 +51,7 @@ const Num = ({ children }: { children: React.ReactNode }) => (
 const Unchecked = () => (
   <span
     title="Not yet checked by a speaker"
-    className="ml-2 whitespace-nowrap border border-rule px-1.5 py-0.5 align-middle meta text-[12px] text-inkFaint"
+    className="rounded-sm ml-2 whitespace-nowrap border border-rule px-1.5 py-0.5 align-middle meta text-[12px] text-inkFaint"
   >
     unchecked
   </span>
@@ -213,7 +213,7 @@ export const ToneChart = () => (
     {TONES.map((t) => (
       <figure
         key={t.pitch}
-        className="border border-rule bg-paper p-3.5"
+        className="rounded-sm border border-rule bg-paper p-3.5"
       >
         <div className="text-rule">
           <ToneGlyph levels={t.levels} short={t.short} extra={t.extra} />
@@ -455,7 +455,7 @@ export default function Guide() {
           Longer words work in pairs. A four-syllable word behaves roughly like two two-syllable
           words in a row, so the same grid does the job twice.
         </P>
-        <div className="border-l-2 border-lacquer bg-surface p-4">
+        <div className="rounded-sm border-l-2 border-lacquer bg-surface p-4">
           <p className="max-w-[62ch] text-sm text-inkSoft">
             Three of the printed rules change the <i>last</i> syllable as well, which cuts against
             everything else in the table. One of them cites a tone that does not exist. They are
@@ -535,7 +535,7 @@ export default function Guide() {
           above it free for the tone. For example, the Bàng-uâ-cê name of the city is{" "}
           <Rom>Hók-ciŭ</Rom>. It never travelled much beyond the mission churches.
         </P>
-        <div className="border-l-2 border-lacquer bg-surface p-4">
+        <div className="rounded-sm border-l-2 border-lacquer bg-surface p-4">
           <p className="meta text-lacquer">Missing</p>
           <p className="mt-2 max-w-[62ch] text-sm text-inkSoft">
             A confirmed Bàng-uâ-cê mark for each tone. The Tones section now shows a reconstructed
@@ -596,7 +596,7 @@ export default function Guide() {
       </Section>
 
       <Section id="phrases" title="Phrasebook">
-        <div className="border-l-2 border-lacquer bg-surface p-4">
+        <div className="rounded-sm border-l-2 border-lacquer bg-surface p-4">
           <p className="max-w-[64ch] text-sm text-inkSoft">
             This is the thinnest part of the site and the hardest to fill honestly. A phrase with the
             wrong tone on it teaches someone a different word, so nothing goes in here on a guess.

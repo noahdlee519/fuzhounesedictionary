@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const cls =
-  "mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
+  "rounded-sm mt-1 w-full border border-rule bg-surface px-3 py-2 outline-none focus:border-lacquer placeholder:text-inkFaint";
 
 export default async function EditEntryPage({
   params,
@@ -91,7 +91,7 @@ export default async function EditEntryPage({
         <fieldset className="space-y-4">
           <legend className="meta text-inkFaint">Meanings</legend>
           {senses.map((s, i) => (
-            <div key={s.id} className="space-y-3 border border-rule p-4">
+            <div key={s.id} className="rounded-sm space-y-3 border border-rule p-4">
               <input type="hidden" name="sense_id" value={s.id} />
               <span className="meta text-inkFaint">Meaning {i + 1}</span>
               <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
@@ -118,7 +118,7 @@ export default async function EditEntryPage({
         <label className="block"><span className="text-sm font-medium">Notes</span>
           <textarea name="notes" defaultValue={entry.notes ?? ""} rows={2} className={cls} /></label>
 
-        <button className="border border-lacquer bg-lacquer px-8 py-3 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer">Save changes</button>
+        <button className="rounded-sm border border-lacquer bg-lacquer px-8 py-3 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer">Save changes</button>
       </form>
 
       {/* Outside the edit form: a form cannot nest inside another form. */}

@@ -326,7 +326,7 @@ export default function Recorder({
                 maxLength={MAX_RECORDING_NOTE}
                 disabled={noteState === "saving"}
                 placeholder={L("e.g. a sentence you said it in, or how it is used", "例如：你用這個詞講的一句話，或它怎麼用")}
-                className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm text-ink outline-none focus:border-lacquer placeholder:text-inkFaint"
+                className="rounded-sm mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm text-ink outline-none focus:border-lacquer placeholder:text-inkFaint"
               />
             </label>
             <button
@@ -454,7 +454,7 @@ export default function Recorder({
                 ? L("e.g. how you would actually say it, if it differs", "例如：如果你平常的講法不一樣，實際怎麼講")
                 : L("e.g. a sentence you said it in, or how it is used", "例如：你用這個詞講的一句話，或它怎麼用")
             }
-            className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
+            className="rounded-sm mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
           />
         </label>
       )}

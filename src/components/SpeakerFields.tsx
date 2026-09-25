@@ -95,7 +95,7 @@ export default function SpeakerFields({
               onChange={(e) => set({ ...value, name: e.target.value })}
               maxLength={60}
               placeholder={L("e.g. my grandmother, Ah Ma, Mei", "例如：我外婆、阿嬤、阿梅")}
-              className="mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm text-ink outline-none focus:border-lacquer focus-visible:outline-none placeholder:text-inkFaint"
+              className="rounded-sm mt-1 w-full border border-rule bg-paper px-3 py-1.5 text-sm text-ink outline-none focus:border-lacquer focus-visible:outline-none placeholder:text-inkFaint"
             />
           </label>
           <label className="block" htmlFor={`${idBase}-area`}>
@@ -104,7 +104,7 @@ export default function SpeakerFields({
               id={`${idBase}-area`}
               value={value.area}
               onChange={(e) => set({ ...value, area: e.target.value })}
-              className="mt-1 w-full border border-rule bg-paper px-2 py-1.5 text-sm text-ink outline-none focus:border-lacquer focus-visible:outline-none"
+              className="rounded-sm mt-1 w-full border border-rule bg-paper px-2 py-1.5 text-sm text-ink outline-none focus:border-lacquer focus-visible:outline-none"
             >
               <option value="">{L("Not sure", "不確定")}</option>
               {ORIGIN_GROUPS.map((g) => (

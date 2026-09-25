@@ -89,7 +89,7 @@ export default async function ContributorPage({
     entry: one(r.entry),
   }));
   const unavailable = (
-    <p className="border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
+    <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
       Unavailable at the moment. Please check back shortly.
     </p>
   );

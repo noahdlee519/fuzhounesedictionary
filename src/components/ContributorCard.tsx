@@ -13,7 +13,7 @@ export default function ContributorCard({ c }: { c: ContributorHit }) {
   return (
     <Link
       href={`/contributor/${c.id}`}
-      className="flex items-center gap-3 border border-rule bg-surface px-4 py-3 transition-colors hover:border-lacquer"
+      className="rounded-sm flex items-center gap-3 border border-rule bg-surface px-4 py-3 transition-colors hover:border-lacquer"
     >
       <Avatar src={c.avatar_url} name={c.display_name} size={36} className="ring-1 ring-rule" />
       <span className="min-w-0">

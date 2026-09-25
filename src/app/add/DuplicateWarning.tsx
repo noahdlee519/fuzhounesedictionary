@@ -69,7 +69,7 @@ export default function DuplicateWarning({ hanzi, romanization }: { hanzi: strin
   if (!matches.length) return null;
 
   return (
-    <div role="status" className="border-l-2 border-lacquer bg-surface px-4 py-3 text-sm text-inkSoft">
+    <div role="status" className="rounded-sm border-l-2 border-lacquer bg-surface px-4 py-3 text-sm text-inkSoft">
       <p>
         {L("This word may already be in the dictionary:", "這個詞可能已經在辭典裡了：")}
       </p>
