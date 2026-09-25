@@ -1,6 +1,8 @@
 import { voteRecording } from "@/app/entry/actions";
 import SubmitButton from "./SubmitButton";
 import VoteSignIn from "./VoteSignIn";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 export interface VoteState {
   up: number;
@@ -28,6 +30,7 @@ export default function VoteButtons({
   back: string;
   signedIn: boolean;
 }) {
+  const L = pick(getLang());
   /* A drawn thumb rather than the emoji: an emoji is set by the visitor's
      platform, so it changes colour and shape from phone to laptop and sits
      oddly beside a serif. This one is a single stroke in the current colour
@@ -48,7 +51,7 @@ export default function VoteButtons({
       // Looks and presses like the real thing; VoteSignIn (around both)
       // explains that a sign-in is needed.
       return (
-        <button type="button" className={cls} aria-label={`${n}: ${label}. Sign in to vote`}>
+        <button type="button" className={cls} aria-label={L("{n}: {label}. Sign in to vote", "{n}：{label}。登入後即可投票", { n, label })}>
           <span aria-hidden="true" className={glyph === "down" ? "scale-y-[-1]" : ""}>{thumb}</span> {n}
         </button>
       );
@@ -58,7 +61,7 @@ export default function VoteButtons({
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="value" value={value} />
         <input type="hidden" name="back" value={back} />
-        <SubmitButton pending="…" className={cls} aria-pressed={active} title={active ? `Withdraw: ${label}` : label}>
+        <SubmitButton pending="…" className={cls} aria-pressed={active} title={active ? L("Withdraw: {label}", "收回：{label}", { label }) : label}>
           <span aria-hidden="true" className={glyph === "down" ? "scale-y-[-1]" : ""}>{thumb}</span> {n}
           <span className="sr-only">{label}</span>
         </SubmitButton>
@@ -67,8 +70,8 @@ export default function VoteButtons({
   };
   const pair = (
     <span className="inline-flex items-center gap-1">
-      {btn(1, "up", "Sounds right to me", state.up)}
-      {btn(-1, "down", "Sounds different where I'm from", state.down)}
+      {btn(1, "up", L("Sounds right to me", "聽起來沒錯"), state.up)}
+      {btn(-1, "down", L("Sounds different where I'm from", "我那裡的講法不一樣"), state.down)}
     </span>
   );
   return signedIn ? pair : <VoteSignIn next={back}>{pair}</VoteSignIn>;

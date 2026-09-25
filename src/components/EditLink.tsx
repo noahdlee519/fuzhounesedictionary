@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useL } from "@/components/LangProvider";
 
 /* An editor's "Edit" that tells the edit page where to return to after
    Save: the page this one was reached from, when that is a page on this site
@@ -18,6 +19,7 @@ export default function EditLink({
   here: string;
   className?: string;
 }) {
+  const L = useL();
   const [back, setBack] = useState(here);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function EditLink({
 
   return (
     <Link href={`/editor/edit/${entryId}?back=${encodeURIComponent(back)}`} className={className}>
-      Edit
+      {L("Edit", "修改")}
     </Link>
   );
 }

@@ -14,17 +14,23 @@ import { one } from "@/lib/entries";
 import { topContributors, type TopContributor } from "@/lib/public-stats";
 import { originArea } from "@/lib/origins";
 import LocalTime from "@/components/LocalTime";
-import { translator, type Key } from "@/lib/i18n";
+import { translator, pick as pickLang, type Key } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
+import { romText } from "@/lib/rom";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Contribute",
-  description:
-    "Help the Fuzhounese dictionary whatever your level: record a word, add a word, improve a word, or ask for one. Everything is read by an editor before it goes live.",
-  alternates: { canonical: "/contribute" },
-};
+export function generateMetadata(): Metadata {
+  const L = pickLang(getLang());
+  return {
+    title: L("Contribute", "貢獻"),
+    description: L(
+      "Help the Fuzhounese dictionary whatever your level: record a word, add a word, improve a word, or ask for one. Everything is read by an editor before it goes live.",
+      "不論程度如何，都能幫福州話辭典一把：錄一個詞、新增詞條、完善詞條，或請求詞條。所有內容上線前都由編輯審閱。"
+    ),
+    alternates: { canonical: "/contribute" },
+  };
+}
 
 /* The Contribute hub, from the mock-up: the four ways in as tiles with the
    time each takes, what people are waiting for beside what just arrived,
@@ -73,6 +79,7 @@ interface Recent {
 export default async function ContributePage() {
   const lang = getLang();
   const t = translator(lang);
+  const L = pickLang(lang);
   const supabase = createClient();
   const { user: meUser, profile: me } = await getSessionUser();
   const editor = Boolean(me?.is_editor);
@@ -210,13 +217,13 @@ export default async function ContributePage() {
             lede where an editor looks first. */}
         {editor && (
           <div className="mt-8">
-          <p className="eyebrow mb-2">Editors:</p>
+          <p className="eyebrow mb-2">{L("Editors:", "編輯：")}</p>
           <Link href="/editor" className="btn btn-ghost gap-3">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 11l2.5 2.5L16 9" />
               <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
             </svg>
-            Review contributions
+            {L("Review contributions", "審核貢獻")}
             {waiting > 0 && (
               <span className="min-w-[22px] rounded-full bg-lacquer px-1.5 text-center text-xs font-bold leading-[22px] tabular-nums text-white">
                 {waiting > 99 ? "99+" : waiting}
@@ -314,7 +321,7 @@ export default async function ContributePage() {
                     <Link href={`/entry/${r.id}`} className="group min-w-0 flex-1">
                       <span className="text-[15px]">
                         {r.hanzi && <span className="han font-medium group-hover:text-lacquer">{r.hanzi} </span>}
-                        <span className="romanization text-xs text-ink">{r.romanization}</span>
+                        <span className="romanization text-xs text-ink">{romText(r.romanization, r.romanization)}</span>
                         <span className="text-inkSoft">
                           {"—"}
                           {t(r.kind === "recorded" ? "hub.recent.recorded" : "hub.recent.added", { who: r.who || t("hub.recent.someone") })}
@@ -371,7 +378,7 @@ export default async function ContributePage() {
                     <Avatar src={p.avatar_url} name={p.display_name} size={44} className="ring-1 ring-rule" />
                     <span className="min-w-0 flex-1">
                       <span className="h3 block truncate transition-colors group-hover:text-lacquer">
-                        {p.display_name || "A contributor"}
+                        {p.display_name || L("A contributor", "一位貢獻者")}
                       </span>
                       <span className="block text-sm text-inkSoft">{line}</span>
                     </span>

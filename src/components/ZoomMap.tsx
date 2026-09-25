@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useL } from "./LangProvider";
 
 /* A map you can look at closer. The cursor is a magnifier with a plus;
    a click zooms in around the point you clicked, a second click (or
@@ -18,6 +19,7 @@ export default function ZoomMap({
   height: number;
   scale?: number;
 }) {
+  const L = useL();
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
   const box = useRef<HTMLButtonElement>(null);
 
@@ -48,7 +50,7 @@ export default function ZoomMap({
       type="button"
       onClick={toggle}
       aria-pressed={Boolean(origin)}
-      aria-label={origin ? "Zoom out of the map" : "Zoom in on the map"}
+      aria-label={origin ? L("Zoom out of the map", "縮小地圖") : L("Zoom in on the map", "放大地圖")}
       className={`block w-full overflow-hidden rounded-none border-0 bg-transparent p-0 text-left ${origin ? "cursor-zoom-out" : "cursor-zoom-in"}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -63,3 +63,17 @@ export function formatOrigin(
 
 export const ORIGIN_PRECISIONS = ["hidden", "area", "locality"] as const;
 export type OriginPrecision = (typeof ORIGIN_PRECISIONS)[number];
+
+/** A place's name for a Chinese reader: its characters, or for the areas
+ *  whose English label is a description, the description in Chinese (the
+ *  same wording as the account page's place list). */
+const ORIGIN_ZH: Record<string, string> = {
+  fuzhou_unsure: "福州市區（不確定哪一區）",
+  matsu: "馬祖（連江）",
+  ningde: "寧德一帶（福寧）",
+  fujian_other: "福建其他地方",
+  overseas: "海外社群",
+};
+export function originLabel(a: { code: string; label: string; hanzi: string }, lang: "en" | "zh"): string {
+  return lang === "zh" ? ORIGIN_ZH[a.code] ?? a.hanzi : `${a.label} ${a.hanzi}`;
+}

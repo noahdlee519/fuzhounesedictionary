@@ -13,12 +13,17 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Request a word",
-  description:
-    "Ask for a Fuzhounese word that is missing from the dictionary, or for a recording of one that has none yet.",
-  alternates: { canonical: "/request" },
-};
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("Request a word", "請求詞條"),
+    description: L(
+      "Ask for a Fuzhounese word that is missing from the dictionary, or for a recording of one that has none yet.",
+      "請求辭典裡還沒有的福州話詞，或替還沒有錄音的詞請求錄音。"
+    ),
+    alternates: { canonical: "/request" },
+  };
+}
 
 interface RankedRow {
   id: string;

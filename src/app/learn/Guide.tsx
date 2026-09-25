@@ -208,7 +208,14 @@ function ToneGlyph({ levels, short }: { levels: number[]; short?: boolean; extra
   );
 }
 
-export const ToneChart = () => (
+// lang: the Learn panels pass the visitor's language; the guide leaves it
+// out and gets English. The Chinese glosses sit here beside the English ones.
+const TONE_GLOSS_ZH: Record<string, string> = {
+  "44": "天空", "53": "人", "31": "我", "213": "四", "242": "二",
+  "23": "福氣", "5": "日、太陽", "21": "八種聲調",
+};
+
+export const ToneChart = ({ lang = "en" }: { lang?: "en" | "zh" }) => (
   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
     {TONES.map((t) => (
       <figure
@@ -225,7 +232,7 @@ export const ToneChart = () => (
           {t.name ? (
             <span className="font-display text-sm text-inkSoft">{t.name}</span>
           ) : (
-            <span className="meta text-[12px] text-inkFaint">in-word</span>
+            <span className="meta text-[12px] text-inkFaint">{lang === "zh" ? "詞中" : "in-word"}</span>
           )}
         </figcaption>
         {t.buc && (
@@ -235,7 +242,11 @@ export const ToneChart = () => (
               <span className="romanization text-inkSoft">{t.buc}</span>
             ) : (
               <span
-                title="Bàng-uâ-cê—unchecked: the mark-to-tone mapping isn't confirmed yet"
+                title={
+                  lang === "zh"
+                    ? "平話字——未核實：聲調符號與聲調的對應尚未確認"
+                    : "Bàng-uâ-cê—unchecked: the mark-to-tone mapping isn't confirmed yet"
+                }
                 className="romanization text-inkSoft underline decoration-dotted decoration-inkFaint underline-offset-2"
               >
                 {t.buc}
@@ -243,7 +254,11 @@ export const ToneChart = () => (
             )}
           </div>
         )}
-        {t.en && <p className="mt-0.5 text-[13px] italic leading-snug text-inkSoft">{t.en}</p>}
+        {t.en && (
+          <p className={`mt-0.5 text-[13px] leading-snug text-inkSoft ${lang === "zh" ? "" : "italic"}`}>
+            {lang === "zh" ? TONE_GLOSS_ZH[t.pitch] ?? t.en : t.en}
+          </p>
+        )}
       </figure>
     ))}
   </div>

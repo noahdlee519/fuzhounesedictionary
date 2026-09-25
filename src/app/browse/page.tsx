@@ -11,12 +11,14 @@ import { one, toCards, CARD_EMBEDS, withCardEmbeds } from "@/lib/entries";
 import { unstable_cache } from "next/cache";
 import { createClient as createAnonClient } from "@supabase/supabase-js";
 import { filterTally, hasUpdatedAt } from "@/lib/public-stats";
-import { translator } from "@/lib/i18n";
+import { translator, pick, type Pick as Lpick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { getSafe } from "@/lib/safe";
 import { withoutExplicit } from "@/lib/content-filter";
-import { ORIGIN_AREAS, originArea } from "@/lib/origins";
+import { ORIGIN_AREAS, originArea, originLabel } from "@/lib/origins";
 import type { Metadata } from "next";
+import RomToggle from "@/components/RomToggle";
+import { getRom } from "@/lib/rom";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
@@ -65,10 +67,10 @@ const browseTotal = unstable_cache(
    which is what you get on choosing it.
    --------------------------------------------------------------------------- */
 const SORTS = {
-  fz: { label: "Fuzhounese", kind: "text", column: "headword", natural: "asc" },
-  en: { label: "English", kind: "text", column: "definition_en", natural: "asc" },
-  added: { label: "Date added", kind: "date", column: "created_at", natural: "desc" },
-  edited: { label: "Date edited", kind: "date", column: "updated_at", natural: "desc" },
+  fz: { en: "Fuzhounese", zh: "福州話", kind: "text", column: "headword", natural: "asc" },
+  en: { en: "English", zh: "英文", kind: "text", column: "definition_en", natural: "asc" },
+  added: { en: "Date added", zh: "加入日期", kind: "date", column: "created_at", natural: "desc" },
+  edited: { en: "Date edited", zh: "編輯日期", kind: "date", column: "updated_at", natural: "desc" },
 } as const;
 
 type SortKey = keyof typeof SORTS;
@@ -78,9 +80,9 @@ const SORT_KEYS = Object.keys(SORTS) as SortKey[];
 
 /* The direction chip's wording. Text sorts read as letters, date sorts as
    time, so "reverse" means something a reader can picture in both. */
-function dirLabel(kind: "text" | "date", dir: Dir) {
-  if (kind === "text") return dir === "asc" ? "A–Z" : "Z–A";
-  return dir === "desc" ? "Newest first" : "Oldest first";
+function dirLabel(L: Lpick, kind: "text" | "date", dir: Dir) {
+  if (kind === "text") return dir === "asc" ? L("A–Z", "依字母") : L("Z–A", "依字母倒序");
+  return dir === "desc" ? L("Newest first", "最新的在前") : L("Oldest first", "最舊的在前");
 }
 
 /* Links from before 2026-09-09 carried the key and direction in one word
@@ -101,6 +103,27 @@ const POS_NOTES: Record<string, string> = {
   "measure word":
     "A counting word that goes between a number and a noun, like the \u201csheets\u201d in \u201cthree sheets of paper\u201d. Fuzhounese needs one, and which word you use depends on the kind of thing being counted.",
 };
+const POS_NOTES_ZH: Record<string, string> = {
+  particle:
+    "本身沒有意思、只負責語法作用的短詞：把陳述句變成問句、表示複數，或表示某件事已經發生。",
+  "measure word":
+    "放在數字和名詞之間的計數詞，像「三張紙」的「張」。福州話一定要用，用哪一個要看所數的東西屬於哪一類。",
+};
+
+/* Display names for the part-of-speech chips; the URL keeps the English
+   value. The same names as on the Improve page. */
+const POS_ZH: Record<string, string> = {
+  noun: "名詞",
+  verb: "動詞",
+  adjective: "形容詞",
+  adverb: "副詞",
+  pronoun: "代詞",
+  numeral: "數詞",
+  "measure word": "量詞",
+  particle: "助詞",
+  phrase: "片語",
+  "proper noun": "專有名詞",
+};
 
 /* The chips read as one alphabetical run in both rows. The parts of speech
    were in a grammar book's order and the origins in geographical groups, but
@@ -115,19 +138,28 @@ const ORIGIN_CHIPS = [
   ...ORIGIN_AREAS.filter((a) => a.code !== PINNED_ORIGIN).sort((a, b) => a.label.localeCompare(b.label, "en")),
 ];
 
-export const metadata: Metadata = {
-  title: "Browse all words",
-  description:
-    "Every word in the Fuzhounese-English Dictionary, A to Z or by date, filtered by part of speech and by where in the Fuzhou region it is from.",
-  alternates: { canonical: "/browse" },
-};
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("Browse all words", "瀏覽所有詞條"),
+    description: L(
+      "Every word in the Fuzhounese-English Dictionary, A to Z or by date, filtered by part of speech and by where in the Fuzhou region it is from.",
+      "福州話–英文辭典裡的每一個詞，可依字母或日期排序，並依詞性和在福州地區的來源篩選。"
+    ),
+    alternates: { canonical: "/browse" },
+  };
+}
 
 export default async function BrowsePage({
   searchParams,
 }: {
   searchParams: { page?: string; pos?: string; origin?: string; sort?: string; dir?: string };
 }) {
-  const t = translator(getLang());
+  const uiLang = getLang();
+  const t = translator(uiLang);
+  const L = pick(uiLang);
+  const posLabel = (p: string) => L(p, POS_ZH[p] ?? p);
+  const placeLabel = (code: string) => L(originArea(code)!.label, originArea(code)!.hanzi);
   const safe = getSafe();
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
@@ -236,7 +268,7 @@ export default async function BrowsePage({
   if (lang === "fz") {
     const { data, error } = list;
     if (error) failed = true;
-    entries = await toCards(supabase, data ?? []);
+    entries = await toCards(supabase, data ?? [], uiLang);
   } else {
     const { data, error } = list;
     if (error) failed = true;
@@ -247,7 +279,7 @@ export default async function BrowsePage({
     const rows = ((data ?? []) as any[])
       .map((r) => ({ ...one<any>(r.entry), senses: [{ definition_en: r.definition_en, part_of_speech: r.part_of_speech, sort: r.sort ?? 0 }] }))
       .filter((e) => e.id && !seen.has(e.id) && seen.add(e.id));
-    entries = await toCards(supabase, rows);
+    entries = await toCards(supabase, rows, uiLang);
   }
 
   const posCounts = new Map(Object.entries(tally.pos));
@@ -281,16 +313,18 @@ export default async function BrowsePage({
     redirect(hrefWith({ page: totalPages > 1 ? String(totalPages) : "" }));
   }
 
-  const chip = (label: string, href: string, active: boolean, empty = false) => {
-    const info = POS_NOTES[label];
-    const tipId = info ? `tip-${label.replace(/\s+/g, "-")}` : undefined;
+  /* `value` is the English part of speech a chip stands for, when its label
+     is a translation of it; the hover note is looked up by that. */
+  const chip = (label: string, href: string, active: boolean, empty = false, value: string = label) => {
+    const info = (uiLang === "zh" ? POS_NOTES_ZH : POS_NOTES)[value];
+    const tipId = info ? `tip-${value.replace(/\s+/g, "-")}` : undefined;
     return (
       <Link
         key={label}
         href={href}
         aria-current={active ? "true" : undefined}
         aria-describedby={tipId}
-        title={empty ? `No ${label} in the dictionary yet` : undefined}
+        title={empty ? L("No {label} in the dictionary yet", "辭典裡還沒有{label}", { label }) : undefined}
         className={
           "chip " +
           (info ? "has-info " : "") +
@@ -319,9 +353,9 @@ export default async function BrowsePage({
      on screen would return, in the reader's language. */
   const countLine = [
     pos
-      ? t(total === 1 ? "browse.count.pos.one" : "browse.count.pos", { n: total.toLocaleString(), pos })
+      ? t(total === 1 ? "browse.count.pos.one" : "browse.count.pos", { n: total.toLocaleString(), pos: posLabel(pos) })
       : t(total === 1 ? "browse.count.one" : "browse.count", { n: total.toLocaleString() }),
-    origin ? t("browse.from", { place: originArea(origin)!.label }) : "",
+    origin ? t("browse.from", { place: placeLabel(origin) }) : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -357,14 +391,14 @@ export default async function BrowsePage({
       />
 
       {/* On a phone, behind one "Filters" button (FilterPanel); wider, as is. */}
-      <FilterPanel summary={[pos, origin ? originArea(origin)!.label : ""].filter(Boolean).join(" · ")}>
+      <FilterPanel summary={[pos ? posLabel(pos) : "", origin ? placeLabel(origin) : ""].filter(Boolean).join(" · ")}>
       <div className="space-y-2">
         {/* Both filters fold away, open by default — the same <details> idiom
             as the guide sections, so they need no JavaScript. A chosen filter
             still shows in the count line below even when its row is folded. */}
         <details open className="group/pos">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 meta text-inkFaint marker:content-none hover:text-lacquer [&::-webkit-details-marker]:hidden">
-            Part of speech
+            {L("Part of speech", "詞性")}
             <span aria-hidden className="text-[10px] transition-transform group-open/pos:rotate-90">
               &#9656;
             </span>
@@ -372,16 +406,16 @@ export default async function BrowsePage({
           {/* relative: the info panels are positioned against this row, so they
               stay inside the content column however the chips wrap */}
           <div className="relative mt-2 flex flex-wrap gap-2">
-            {chip("All", hrefWith({ pos: "" }), !pos)}
+            {chip(L("All", "全部"), hrefWith({ pos: "" }), !pos)}
             {POS_CHIPS.map((p) =>
-              chip(p, hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p))
+              chip(posLabel(p), hrefWith({ pos: p }), pos === p, countsKnown && !posCounts.get(p), p)
             )}
           </div>
         </details>
 
         <details open className="group pt-2">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 meta text-inkFaint marker:content-none hover:text-lacquer [&::-webkit-details-marker]:hidden">
-            Origin
+            {L("Origin", "來源")}
             <span
               aria-hidden
               className="text-[10px] transition-transform group-open:rotate-90"
@@ -390,10 +424,10 @@ export default async function BrowsePage({
             </span>
           </summary>
           <div className="mt-2 flex flex-wrap gap-2">
-            {chip("Anywhere", hrefWith({ origin: "" }), !origin)}
+            {chip(L("Anywhere", "不限地區"), hrefWith({ origin: "" }), !origin)}
             {ORIGIN_CHIPS.map((a) =>
               chip(
-                `${a.label} ${a.hanzi}`,
+                originLabel(a, uiLang),
                 hrefWith({ origin: a.code }),
                 origin === a.code,
                 countsKnown && !originCounts.get(a.code)
@@ -409,26 +443,34 @@ export default async function BrowsePage({
       <div className="!mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div>
           {/* The label on its own line, the options on the next. */}
-          <p className="meta mb-2 text-inkFaint">Sort</p>
+          <p className="meta mb-2 text-inkFaint">{L("Sort", "排序")}</p>
           <div className="flex flex-wrap items-center gap-2">
           {/* Choosing a key resets the direction to that key's natural one. */}
-          {sortKeys.map((k) => chip(SORTS[k].label, hrefWith({ sort: k, dir: "" }), sort === k))}
+          {sortKeys.map((k) => chip(L(SORTS[k].en, SORTS[k].zh), hrefWith({ sort: k, dir: "" }), sort === k))}
           {/* One chip for the order. It names the current order and flips it
               when clicked, so there is never a second, near-identical chip. */}
           <Link
             href={hrefWith({ dir: asc ? "desc" : "asc" })}
-            aria-label={`Order: ${dirLabel(kind, dir)}. Reverse to ${dirLabel(kind, asc ? "desc" : "asc")}`}
-            title="Reverse the order"
+            aria-label={L("Order: {now}. Reverse to {then}", "順序：{now}。改為{then}", { now: dirLabel(L, kind, dir), then: dirLabel(L, kind, asc ? "desc" : "asc") })}
+            title={L("Reverse the order", "反轉順序")}
             // Not a chip: it is an action, not a filter, so it reads as a
             // link — bold, underlined, the arrows in red.
             className="ml-2 inline-flex items-center gap-1.5 text-[15px] font-semibold text-ink underline decoration-ruleStrong decoration-[1.5px] underline-offset-[5px] transition-colors hover:decoration-lacquer"
           >
             <span aria-hidden className="text-[13px] leading-none text-lacquer">&#8645;</span>
-            {dirLabel(kind, dir)}
+            {dirLabel(L, kind, dir)}
           </Link>
           </div>
         </div>
-        <p className="meta text-inkFaint">{countLine}</p>
+        {/* Which romanization the cards are in (RomToggle; Noah, 25 Sep
+            2026), over the count. */}
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <div className="flex items-center gap-2">
+            <span className="meta text-inkFaint">{L("Romanization", "羅馬字")}</span>
+            <RomToggle sys={getRom()} />
+          </div>
+          <p className="meta text-inkFaint">{countLine}</p>
+        </div>
       </div>
 
       {/* Three columns on a laptop, two on a tablet, one on a phone. The gaps
@@ -440,16 +482,16 @@ export default async function BrowsePage({
         ))}
         {failed && (
           <p className="bg-paper p-5 text-sm text-inkSoft sm:col-span-2 lg:col-span-3">
-            The word list is unavailable at the moment. Please check back shortly.
+            {L("The word list is unavailable at the moment. Please check back shortly.", "詞表暫時無法使用，請稍後再試。")}
           </p>
         )}
         {!failed && entries.length === 0 && (
           <p className="bg-paper p-5 text-inkSoft sm:col-span-2 lg:col-span-3">
             {origin
-              ? `Nothing recorded from ${originArea(origin)!.label} yet.`
+              ? L("Nothing recorded from {place} yet.", "還沒有來自{place}的詞。", { place: placeLabel(origin) })
               : pos
-                ? `No ${pos}s yet.`
-                : "No approved words yet. Be the first to add one."}
+                ? L("No {pos}s yet.", "還沒有{pos}。", { pos: posLabel(pos) })
+                : L("No approved words yet. Be the first to add one.", "還沒有已審核的詞。來新增第一個吧。")}
           </p>
         )}
       </div>
@@ -460,7 +502,7 @@ export default async function BrowsePage({
             href={hrefWith({ page: page - 1 > 1 ? String(page - 1) : "" })}
             className="text-inkSoft hover:text-lacquer"
           >
-            ← Previous
+            {L("← Previous", "← 上一頁")}
           </Link>
         ) : (
           <span />
@@ -476,7 +518,7 @@ export default async function BrowsePage({
             {origin && <input type="hidden" name="origin" value={origin} />}
             {sort !== DEFAULT_SORT && <input type="hidden" name="sort" value={sort} />}
             {dir !== natural && <input type="hidden" name="dir" value={dir} />}
-            <label htmlFor="page-jump">Page</label>
+            <label htmlFor="page-jump">{L("Page", "第")}</label>
             <input
               id="page-jump"
               name="page"
@@ -485,23 +527,23 @@ export default async function BrowsePage({
               min={1}
               max={totalPages}
               defaultValue={page}
-              aria-label={`Page number, 1 to ${totalPages}`}
+              aria-label={L("Page number, 1 to {n}", "頁碼，1 至 {n}", { n: totalPages })}
               className="rounded-sm w-12 border border-rule bg-surface px-1.5 py-0.5 text-center text-xs tabular-nums text-ink outline-none focus:border-lacquer [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
-            <span>of {totalPages}</span>
+            <span>{L("of {n}", "頁，共 {n} 頁", { n: totalPages })}</span>
             <button
               type="submit"
               className="rounded-sm ml-1 border border-rule px-2 py-0.5 text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer"
             >
-              Go
+              {L("Go", "前往")}
             </button>
           </form>
         ) : (
-          <span className="text-inkFaint">Page 1 of 1</span>
+          <span className="text-inkFaint">{L("Page 1 of 1", "第 1 頁，共 1 頁")}</span>
         )}
         {hasNext ? (
           <Link href={hrefWith({ page: String(page + 1) })} className="text-inkSoft hover:text-lacquer">
-            Next →
+            {L("Next →", "下一頁 →")}
           </Link>
         ) : (
           <span />

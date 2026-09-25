@@ -1,14 +1,21 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
 import type { ContributorHit } from "@/lib/contributors";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 /* A person in search results: picture, name, where their Fuzhounese is from
    (if they chose to say), and how much they have published. */
 export default function ContributorCard({ c }: { c: ContributorHit }) {
-  const name = c.display_name || "A contributor";
+  const L = pick(getLang());
+  const name = c.display_name || L("A contributor", "一位貢獻者");
   const parts = [
-    c.words ? `${c.words} word${c.words === 1 ? "" : "s"}` : null,
-    c.recordings ? `${c.recordings} recording${c.recordings === 1 ? "" : "s"}` : null,
+    c.words ? (c.words === 1 ? L("1 word", "1 個詞") : L("{n} words", "{n} 個詞", { n: c.words })) : null,
+    c.recordings
+      ? c.recordings === 1
+        ? L("1 recording", "1 段錄音")
+        : L("{n} recordings", "{n} 段錄音", { n: c.recordings })
+      : null,
   ].filter(Boolean);
   return (
     <Link

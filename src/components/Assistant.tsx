@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import SignInButton from "./SignInButton";
 import { holdQuestion, takeQuestion } from "@/lib/held-question";
+import { useL, useLang } from "./LangProvider";
 
 /* "Ask the dictionary" — the panel under the search bar.
 
@@ -20,6 +21,7 @@ interface Turn {
 }
 
 const STARTERS = ["What does “chia” mean in English?", "What is a measure word?", "Which words are from Changle?"];
+const STARTERS_ZH = ["「chia」的英文是什麼意思？", "什麼是量詞？", "哪些詞來自長樂？"];
 
 /* One conversation per browser tab. Kept small (the last 40 turns) and read
    inside try/catch: private windows and some embedded views throw on access. */
@@ -56,6 +58,8 @@ export default function Assistant({
   /** Called when a question held from before a sign-in is about to be asked. */
   onHeld?: () => void;
 }) {
+  const L = useL();
+  const starters = useLang() === "zh" ? STARTERS_ZH : STARTERS;
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -141,14 +145,14 @@ export default function Assistant({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setNotice(json.message ?? "The assistant could not answer just now.");
+        setNotice(json.message ?? L("The assistant could not answer just now.", "助手暫時無法回答。"));
         setTurns((t) => t.slice(0, -1));
         setDraft(q);
         return;
       }
       setTurns((t) => [...t, { role: "assistant", content: json.answer ?? "" }]);
     } catch {
-      setNotice("The assistant could not be reached. Check your connection and try again.");
+      setNotice(L("The assistant could not be reached. Check your connection and try again.", "連不上助手。請檢查網路連線後再試一次。"));
       setTurns((t) => t.slice(0, -1));
       setDraft(q);
     } finally {
@@ -163,7 +167,7 @@ export default function Assistant({
      under it says where the answers come from. */
   const talking = turns.length > 0 || gated || busy || notice;
   return (
-    <section aria-label="Ask the dictionary" className="page-fade rounded-sm bg-surface p-5 sm:p-7">
+    <section aria-label={L("Ask the dictionary", "問問辭典")} className="page-fade rounded-sm bg-surface p-5 sm:p-7">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -171,7 +175,7 @@ export default function Assistant({
         }}
       >
         <label htmlFor="ask-input" className="sr-only">
-          Ask the assistant
+          {L("Ask the assistant", "問問助手")}
         </label>
         <input
           id="ask-input"
@@ -179,7 +183,7 @@ export default function Assistant({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           maxLength={500}
-          placeholder={narrow ? "Ask any question" : "Ask anything—e.g. how do I say “I love eating dingbianhu”?"}
+          placeholder={narrow ? L("Ask any question", "隨便問個問題") : L("Ask anything—e.g. how do I say “I love eating dingbianhu”?", "隨便問——例如：「我很愛吃鼎邊糊」怎麼講？")}
           autoComplete="off"
           disabled={busy}
           className="ui h-14 w-full min-w-0 rounded-sm border border-ink bg-paper px-5 text-[17px] tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus-visible:outline-none disabled:cursor-not-allowed"
@@ -189,9 +193,9 @@ export default function Assistant({
 
       {turns.length === 0 && !gated && (
         <>
-        <p className="footnote mt-5">Try an example query</p>
+        <p className="footnote mt-5">{L("Try an example query", "試試範例問題")}</p>
         <div className="mt-2 flex flex-wrap gap-2.5">
-          {STARTERS.map((q) => (
+          {starters.map((q) => (
             <button
               key={q}
               type="button"
@@ -225,11 +229,11 @@ export default function Assistant({
           {gated && (
             <div className="space-y-2">
               <p className="font-semibold text-ink">{gated}</p>
-              <p className="text-inkSoft">Sign in to see the answer. Your question will be asked as soon as you are back.</p>
+              <p className="text-inkSoft">{L("Sign in to see the answer. Your question will be asked as soon as you are back.", "登入即可看到答案。你一回來，問題就會送出。")}</p>
               <div className="pt-2">
                 <SignInButton
                   next={typeof window === "undefined" ? "/" : window.location.pathname + window.location.search}
-                  label="Sign in"
+                  label={L("Sign in", "登入")}
                   className="btn btn-primary [&>svg]:hidden"
                 />
               </div>
@@ -239,7 +243,7 @@ export default function Assistant({
           {busy && (
             <p className="flex items-center gap-2.5 text-inkSoft">
               <span className="spinner text-lacquer" aria-hidden />
-              Looking…
+              {L("Looking…", "查詢中…")}
             </p>
           )}
           {notice && (
@@ -262,7 +266,7 @@ export default function Assistant({
             }}
             className="footnote transition-colors hover:text-lacquer"
           >
-            Clear conversation
+            {L("Clear conversation", "清除對話")}
           </button>
         )}
       </div>

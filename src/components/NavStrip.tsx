@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useL } from "./LangProvider";
 
 /* The site links on a phone: one row that scrolls sideways if it must. The
    fade at its right edge says "there is more" — so it is only drawn when
    there is more, not over a last link that fits (globals.css .nav-strip). */
 export default function NavStrip({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  const L = useL();
   const ref = useRef<HTMLElement>(null);
   const [more, setMore] = useState(false);
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function NavStrip({ className = "", children }: { className?: str
     };
   }, []);
   return (
-    <nav ref={ref} aria-label="Site" data-more={more ? "" : undefined} className={className}>
+    <nav ref={ref} aria-label={L("Site", "網站")} data-more={more ? "" : undefined} className={className}>
       {children}
     </nav>
   );

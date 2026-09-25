@@ -1,5 +1,5 @@
 import { getSessionUser } from "@/lib/auth";
-import { translator } from "@/lib/i18n";
+import { translator, pick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import NavLink from "./NavLink";
 import SignInButton from "./SignInButton";
@@ -47,6 +47,7 @@ export default async function Header() {
 export function HeaderView({ user, profile, waiting = 0, news = 0 }: SessionShape & { waiting?: number; news?: number }) {
   const lang = getLang();
   const t = translator(lang);
+  const L = pick(lang);
   const navLink = "tap ui inline-flex items-center rounded-sm px-1 py-2 text-[13px] min-[400px]:px-1.5 font-medium leading-none transition-colors md:px-2 md:text-sm lg:px-2.5";
 
   return (
@@ -104,7 +105,7 @@ export function HeaderView({ user, profile, waiting = 0, news = 0 }: SessionShap
               {waiting > 0 && (
                 <span
                   className="relative z-10 ml-0.5 inline-block min-w-[18px] -translate-y-1.5 rounded-full bg-lacquer px-1 text-center text-[10px] font-bold leading-[18px] tabular-nums text-white ring-2 ring-paper md:absolute md:-right-1.5 md:-top-1.5 md:ml-0 md:translate-y-0"
-                  aria-label={`${waiting} waiting for review`}
+                  aria-label={L("{n} waiting for review", "{n} 項待審", { n: waiting })}
                 >
                   {waiting > 99 ? "99+" : waiting}
                 </span>
@@ -141,7 +142,7 @@ export function HeaderView({ user, profile, waiting = 0, news = 0 }: SessionShap
               {news > 0 && (
                 <span
                   className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-lacquer ring-2 ring-paper"
-                  aria-label="New on your account page"
+                  aria-label={L("New on your account page", "帳號頁面有新消息")}
                 />
               )}
             </NavLink>

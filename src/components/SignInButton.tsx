@@ -2,18 +2,21 @@
 
 import { useState } from "react";
 import { startGoogleSignIn } from "@/lib/supabase/sign-in";
+import { useL } from "./LangProvider";
 
 // Kicks off Google OAuth. After Google, the user returns to /auth/callback,
 // which sets the session and redirects to `next`.
 export default function SignInButton({
   next = "/",
-  label = "Sign in with Google",
+  label: labelProp,
   className,
 }: {
   next?: string;
   label?: string;
   className?: string;
 }) {
+  const L = useL();
+  const label = labelProp ?? L("Sign in with Google", "使用 Google 登入");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -46,7 +49,7 @@ export default function SignInButton({
         <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z" />
         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z" />
       </svg>
-      {busy ? "Opening Google…" : label}
+      {busy ? L("Opening Google…", "正在開啟 Google…") : label}
     </button>
     {error && (
       <span role="alert" className="text-sm text-lacquer">

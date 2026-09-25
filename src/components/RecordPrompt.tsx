@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 /* The empty dotted circle that stands where a play button would be, on a word
    with no recording yet, with a microphone in it: the one thing this word is
@@ -21,13 +23,14 @@ export default function RecordPrompt({
   size?: "md" | "xs";
   className?: string;
 }) {
+  const L = pick(getLang());
   const box = size === "md" ? "h-14 w-14 border-2" : "h-9 w-9 border";
   const glyph = size === "md" ? 22 : 15;
   return (
     <Link
       href={`/entry/${entryId}#recordings`}
-      aria-label={`Record ${word}: no recording yet`}
-      title="No recording yet. Record it"
+      aria-label={L("Record {w}: no recording yet", "為「{w}」錄音：還沒有錄音", { w: word })}
+      title={L("No recording yet. Record it", "還沒有錄音，來錄一段吧")}
       className={`group inline-flex shrink-0 items-center justify-center rounded-full border-dashed border-ruleStrong text-inkMute transition-[color,border-color,transform] duration-150 hover:border-lacquer hover:text-lacquer focus-visible:border-lacquer focus-visible:text-lacquer active:scale-[.96] ${box} ${className}`}
     >
       {/* A microphone: capsule, cradle, stand. Drawn, not an emoji, so it is

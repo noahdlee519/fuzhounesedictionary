@@ -10,22 +10,28 @@ import ContributeTabs from "@/components/ContributeTabs";
 import Recorder from "@/components/Recorder";
 import SavedNotice from "@/components/SavedNotice";
 import SuggestBox, { type SenseOption } from "@/components/SuggestBox";
-import { formatOrigin, originArea, ORIGIN_AREAS } from "@/lib/origins";
+import { formatOrigin, originArea, ORIGIN_AREAS, originLabel } from "@/lib/origins";
 import FilterPanel from "@/components/FilterPanel";
 import { MAX_RECORDINGS_PER_WORD, PARTS_OF_SPEECH } from "@/lib/constants";
 import { sortSenses } from "@/lib/entries";
 import { missionTally } from "@/lib/public-stats";
 import { getLang } from "@/lib/lang";
 import { pick, type Pick } from "@/lib/i18n";
+import { romText } from "@/lib/rom";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Improve the dictionary",
-  description:
-    "Every word in the Fuzhounese Dictionary that is still missing something—a recording, IPA, an example sentence—so you can work straight down the list.",
-  alternates: { canonical: "/improve" },
-};
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("Improve the dictionary", "完善辭典"),
+    description: L(
+      "Every word in the Fuzhounese Dictionary that is still missing something—a recording, IPA, an example sentence—so you can work straight down the list.",
+      "福州話辭典裡所有還缺點什麼的詞——錄音、IPA、例句——讓你可以從上往下一個一個補。"
+    ),
+    alternates: { canonical: "/improve" },
+  };
+}
 
 const PAGE_SIZE = 25;
 
@@ -159,7 +165,7 @@ export default async function ImprovePage({
   const asc = dir === "asc";
   const dirLabel = (d: Dir) =>
     sortKind === "text"
-      ? d === "asc" ? "A–Z" : "Z–A"
+      ? d === "asc" ? L("A–Z", "依字母") : L("Z–A", "依字母倒序")
       : sortKind === "date"
         ? d === "desc" ? L("Newest first", "最新的在前") : L("Oldest first", "最舊的在前")
         : d === "desc" ? L("Most first", "最多的在前") : L("Fewest first", "最少的在前");
@@ -385,7 +391,7 @@ export default async function ImprovePage({
           words={recordable.map((r: any) => ({
             id: r.id,
             hanzi: r.hanzi ?? null,
-            romanization: r.romanization ?? null,
+            romanization: romText(r.romanization, r.headword),
             headword: r.headword,
             gloss: r.short_gloss ?? null,
             senseId: senses[r.id]?.[0]?.id ?? null,
@@ -415,7 +421,7 @@ export default async function ImprovePage({
             </div>
           </div>
         )}
-        <FilterPanel summary={[pos ? posLabel(L, pos) : "", origin ? originArea(origin)!.label : ""].filter(Boolean).join(" · ")}>
+        <FilterPanel summary={[pos ? posLabel(L, pos) : "", origin ? L(originArea(origin)!.label, originArea(origin)!.hanzi) : ""].filter(Boolean).join(" · ")}>
           <div className="space-y-2">
             {filterGroup(
               L("Part of speech", "詞性"),
@@ -430,7 +436,7 @@ export default async function ImprovePage({
               need === "recording",
               <>
                 {chip(L("Anywhere", "不限地區"), href("", 1), !origin)}
-                {ORIGIN_CHIPS.map((a) => chip(`${a.label} ${a.hanzi}`, href(a.code, 1), origin === a.code))}
+                {ORIGIN_CHIPS.map((a) => chip(originLabel(a, getLang()), href(a.code, 1), origin === a.code))}
               </>
             )}
           </div>
@@ -504,7 +510,7 @@ export default async function ImprovePage({
                     href={`/entry/${r.id}`}
                     className="romanization font-display text-lg font-semibold text-lacquer hover:underline"
                   >
-                    {r.romanization || r.headword}
+                    {romText(r.romanization, r.headword)}
                   </Link>
                   {wordOrigin && (
                     <span className="rounded-sm meta text-inkFaint ring-1 ring-rule px-2 py-0.5">

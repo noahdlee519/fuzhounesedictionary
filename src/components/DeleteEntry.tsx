@@ -1,5 +1,7 @@
 import { deleteEntry } from "@/app/editor/actions";
 import SubmitButton from "./SubmitButton";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 /* An editor's control for removing a whole word.
 
@@ -16,24 +18,27 @@ export default function DeleteEntry({
   back: string;
   className?: string;
 }) {
+  const L = pick(getLang());
   return (
     <details className={`group inline-block ${className}`}>
       <summary className="rounded-sm inline-block cursor-pointer list-none border border-rule px-2 py-0.5 meta text-inkFaint transition-colors hover:border-lacquer hover:text-lacquer group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
-        <span className="group-open:hidden">Delete word</span>
-        <span className="hidden group-open:inline">Cancel</span>
+        <span className="group-open:hidden">{L("Delete word", "刪除詞條")}</span>
+        <span className="hidden group-open:inline">{L("Cancel", "取消")}</span>
       </summary>
       <form action={deleteEntry} className="rounded-sm mt-2 max-w-md space-y-2 border border-lacquer bg-surface p-3">
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="back" value={back} />
         <p className="text-sm text-ink">
-          Remove this word from the dictionary for good? Its meanings, every recording of it, and
-          any suggestions or requests for it go with it. This cannot be undone.
+          {L(
+            "Remove this word from the dictionary for good? Its meanings, every recording of it, and any suggestions or requests for it go with it. This cannot be undone.",
+            "要把這個詞從辭典裡永久刪除嗎？它的義項、所有錄音，以及相關的建議和請求都會一併刪除。此操作無法復原。"
+          )}
         </p>
         <SubmitButton
-          pending="Deleting…"
+          pending={L("Deleting…", "刪除中…")}
           className="rounded-sm border border-lacquer bg-lacquer px-3 py-1 meta text-paper transition-[color,background-color,border-color,transform] active:scale-[.97] hover:bg-transparent hover:text-lacquer disabled:opacity-60"
         >
-          Yes, delete this word
+          {L("Yes, delete this word", "確定刪除這個詞")}
         </SubmitButton>
       </form>
     </details>

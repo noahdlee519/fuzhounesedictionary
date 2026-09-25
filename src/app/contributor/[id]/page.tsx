@@ -9,10 +9,13 @@ import RecordingByRow, { type RecordingByRowProps } from "@/components/Recording
 import Pager from "@/components/Pager";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const L = pick(getLang());
   const supabase = createClient();
   const { data } = await supabase
     .from("profiles")
@@ -20,13 +23,15 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     .eq("id", params.id)
     .maybeSingle();
 
-  if (!data) return { title: "Contributor not found" };
+  if (!data) return { title: L("Contributor not found", "找不到這位貢獻者") };
 
-  const name = data.display_name || "A contributor";
+  const name = data.display_name || L("A contributor", "一位貢獻者");
   const origin = formatOrigin(data.origin_area, data.origin_locality);
   return {
     title: name,
-    description: `Words contributed to the ${SITE_NAME} by ${name}${origin ? `, whose Fuzhounese is from ${origin}` : ""}.`,
+    description: origin
+      ? L("Words contributed to the {site} by {name}, whose Fuzhounese is from {origin}.", "{name} 為福州話辭典貢獻的詞。{name} 的福州話來自 {origin}。", { site: SITE_NAME, name, origin })
+      : L("Words contributed to the {site} by {name}.", "{name} 為福州話辭典貢獻的詞。", { site: SITE_NAME, name }),
     alternates: { canonical: `/contributor/${params.id}` },
     robots: { index: false, follow: true },
   };
@@ -41,6 +46,8 @@ export default async function ContributorPage({
   params: { id: string };
   searchParams: { page?: string };
 }) {
+  const lang = getLang();
+  const L = pick(lang);
   const supabase = createClient();
   // Recordings are paged; words are not (yet).
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
@@ -83,14 +90,14 @@ export default async function ContributorPage({
   ]);
 
   // Same card, same recording count, as everywhere else on the site.
-  const entries: CardProps[] = await toCards(supabase, data ?? []);
+  const entries: CardProps[] = await toCards(supabase, data ?? [], getLang());
   const recordings: RecordingByRowProps[] = (recData ?? []).map((r: any) => ({
     ...r,
     entry: one(r.entry),
   }));
   const unavailable = (
     <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
-      Unavailable at the moment. Please check back shortly.
+      {L("Unavailable at the moment. Please check back shortly.", "暫時無法使用，請稍後再試。")}
     </p>
   );
 
@@ -102,7 +109,7 @@ export default async function ContributorPage({
   if (!recError && page > recPages) {
     redirect(`/contributor/${params.id}${recPages > 1 ? `?page=${recPages}` : ""}#recordings`);
   }
-  const since = new Date(profile.created_at).toLocaleDateString("en-GB", {
+  const since = new Date(profile.created_at).toLocaleDateString(lang === "zh" ? "zh-TW" : "en-GB", {
     year: "numeric",
     month: "long",
   });
@@ -111,22 +118,22 @@ export default async function ContributorPage({
     <div className="space-y-8">
       <section className="flex items-start justify-between gap-6 border-b border-rule pb-6">
         <div className="min-w-0">
-          <p className="meta text-lacquer">Contributor</p>
+          <p className="meta text-lacquer">{L("Contributor", "貢獻者")}</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-            {profile.display_name || "Anonymous contributor"}
+            {profile.display_name || L("Anonymous contributor", "匿名貢獻者")}
           </h1>
           {origin && (
             <p className="mt-3 text-inkSoft">
-              <span className="meta text-inkFaint">Fuzhounese from </span>
+              <span className="meta text-inkFaint">{L("Fuzhounese from ", "福州話來自 ")}</span>
               {origin}
             </p>
           )}
           <p className="mt-2 meta text-inkFaint">
-            Member since {since}
+            {L("Member since {since}", "{since}加入", { since })}
           </p>
           <p className="mt-1 meta text-inkFaint">
-            {total.toLocaleString()} word{total === 1 ? "" : "s"} ·{" "}
-            {totalRecs.toLocaleString()} recording{totalRecs === 1 ? "" : "s"}
+            {total === 1 ? L("{n} word", "{n} 個詞", { n: total.toLocaleString() }) : L("{n} words", "{n} 個詞", { n: total.toLocaleString() })} ·{" "}
+            {totalRecs === 1 ? L("{n} recording", "{n} 段錄音", { n: totalRecs.toLocaleString() }) : L("{n} recordings", "{n} 段錄音", { n: totalRecs.toLocaleString() })}
           </p>
         </div>
         {/* Bigger than the header avatar — this is the one page about the person. */}
@@ -134,11 +141,11 @@ export default async function ContributorPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-display text-lg font-bold tracking-tight">Words</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight">{L("Words", "詞")}</h2>
         {entriesError ? (
           unavailable
         ) : entries.length === 0 ? (
-          <p className="text-inkSoft">No published words yet.</p>
+          <p className="text-inkSoft">{L("No published words yet.", "還沒有已刊出的詞。")}</p>
         ) : (
           <div className="grid gap-px border-y border-rule bg-rule sm:grid-cols-2 lg:grid-cols-3">
             {entries.map((e) => <EntryCard key={e.id} entry={e} />)}
@@ -148,12 +155,12 @@ export default async function ContributorPage({
 
       <section id="recordings" className="scroll-mt-3 space-y-3">
         <h2 className="border-t border-rule pt-5 font-display text-lg font-bold tracking-tight">
-          Recordings
+          {L("Recordings", "錄音")}
         </h2>
         {recError ? (
           unavailable
         ) : recordings.length === 0 ? (
-          <p className="text-inkSoft">No published recordings yet.</p>
+          <p className="text-inkSoft">{L("No published recordings yet.", "還沒有已刊出的錄音。")}</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {recordings.map((r) => <RecordingByRow key={r.id} recording={r} />)}
@@ -164,7 +171,7 @@ export default async function ContributorPage({
 
       <p className="border-t border-rule pt-5">
         <Link href="/learn" className="meta text-inkSoft hover:text-lacquer">
-          Browse all words
+          {L("Browse all words", "瀏覽所有詞條")}
         </Link>
       </p>
     </div>

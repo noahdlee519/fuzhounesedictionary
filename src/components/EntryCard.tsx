@@ -2,6 +2,9 @@ import Link from "next/link";
 import PlayButton from "./PlayButton";
 import RecordPrompt from "./RecordPrompt";
 import type { AudioCredit } from "@/lib/entries";
+import { romText } from "@/lib/rom";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 export interface CardProps {
   id: string;
@@ -39,6 +42,7 @@ export interface CardProps {
    border of their own. The play button is a sibling of the link, not inside
    it: a button inside an anchor is invalid and unreachable by keyboard. */
 export default function EntryCard({ entry }: { entry: CardProps }) {
+  const L = pick(getLang());
   const n = entry.recordings ?? 0;
   const href = `/entry/${entry.id}`;
 
@@ -55,10 +59,10 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
           {entry.hanzi ? (
             <div className="han text-[32px] font-medium leading-[1.15]">{entry.hanzi}</div>
           ) : (
-            <div className="text-[26px] font-semibold leading-[1.15] tracking-tight">{entry.romanization || entry.headword}</div>
+            <div className="text-[26px] font-semibold leading-[1.15] tracking-tight">{romText(entry.romanization, entry.headword)}</div>
           )}
           {entry.hanzi && (
-            <div className="romanization mt-1.5 text-sm font-semibold">{entry.romanization || entry.headword}</div>
+            <div className="romanization mt-1.5 text-sm font-semibold">{romText(entry.romanization, entry.headword)}</div>
           )}
           {/* The meaning in ink; with more than one, the count always on a
               line of its own under it. */}
@@ -75,7 +79,7 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
             </p>
           )}
           {entry.gloss && (entry.senses ?? 0) > 1 && (
-            <p className="mt-0.5 text-[12px] text-inkMute">{entry.senses} meanings</p>
+            <p className="mt-0.5 text-[12px] text-inkMute">{L("{n} meanings", "{n} 個義項", { n: entry.senses ?? 0 })}</p>
           )}
           {entry.caption && <p className="mt-2 text-xs text-inkSoft">{entry.caption}</p>}
         </Link>
@@ -84,7 +88,7 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
             <PlayButton
               src={entry.audio}
               size="md"
-              label={`Play ${entry.hanzi || entry.romanization || entry.headword}`}
+              label={L("Play {w}", "播放 {w}", { w: entry.hanzi || entry.romanization || entry.headword })}
               credit={entry.audioCredit}
               tipAlign="right"
             />
@@ -105,17 +109,19 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
           {entry.origin && <span>{entry.origin}</span>}
         </span>
         {!entry.audio && (
-          <span className="shrink-0 whitespace-nowrap text-amber">needs a recording</span>
+          <span className="shrink-0 whitespace-nowrap text-amber">{L("needs a recording", "還需要錄音")}</span>
         )}
         {entry.audio && n === 1 && (
-          <span className="shrink-0 whitespace-nowrap font-medium text-inkFaint">1 recording so far</span>
+          <span className="shrink-0 whitespace-nowrap font-medium text-inkFaint">{L("1 recording so far", "目前 1 段錄音")}</span>
         )}
         {entry.audio && n > 1 && (
           <Link
             href={`${href}#recordings`}
             className="relative z-10 shrink-0 whitespace-nowrap font-medium text-inkSoft hover:text-lacquer"
           >
-            Listen to {n - 1} more recording{n - 1 === 1 ? "" : "s"}
+            {n - 1 === 1
+              ? L("Listen to 1 more recording", "再聽 1 段錄音")
+              : L("Listen to {n} more recordings", "再聽 {n} 段錄音", { n: n - 1 })}
           </Link>
         )}
       </div>

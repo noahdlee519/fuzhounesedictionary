@@ -101,6 +101,7 @@ export default function SiniticTree({
   legend,
   sources,
   sourcesLabel = "Sources",
+  ariaLabel = "The Chinese language family: ten groups, with Min divided into coastal and inland Min; Fuzhounese is in the Houguan subgroup of Eastern Min, a coastal Min language.",
 }: {
   caption: string;
   legend: { north: string; central: string; south: string; min: string };
@@ -108,6 +109,8 @@ export default function SiniticTree({
   sources: { label: string; href: string }[];
   /** The "i" button's name for screen readers. */
   sourcesLabel?: string;
+  /** What the tree says, for screen readers. */
+  ariaLabel?: string;
 }) {
   const rows = flatten(TREE);
   const W = 300;
@@ -120,7 +123,7 @@ export default function SiniticTree({
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label="The Chinese language family: ten groups, with Min divided into coastal and inland Min; Fuzhounese is in the Houguan subgroup of Eastern Min, a coastal Min language."
+        aria-label={ariaLabel}
         className="block h-auto w-full overflow-visible"
       >
         {/* Connectors first, so the dots sit on top of them. */}

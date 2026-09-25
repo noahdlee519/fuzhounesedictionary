@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { AudioCredit } from "@/lib/entries";
+import { useL } from "./LangProvider";
 
 /* One round button that plays a recording.
 
@@ -37,6 +38,7 @@ export default function PlayButton({
   /** Which edge the panel lines up with — the side with room to spare. */
   tipAlign?: "left" | "right";
 }) {
+  const L = useL();
   const tipId = useId();
   const audio = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -107,10 +109,10 @@ export default function PlayButton({
           type="button"
           onClick={toggle}
           disabled={failed}
-          aria-label={playing ? `Pause: ${label}` : `Play: ${label}`}
+          aria-label={playing ? L("Pause: {label}", "暫停：{label}", { label }) : L("Play: {label}", "播放：{label}", { label })}
           aria-pressed={playing}
           aria-describedby={credit ? tipId : undefined}
-          title={failed ? "This recording could not be loaded" : undefined}
+          title={failed ? L("This recording could not be loaded", "這段錄音無法載入") : undefined}
           className={`inline-flex shrink-0 items-center justify-center rounded-full bg-lacquer text-white transition-[transform,opacity] hover:opacity-90 active:scale-[.96] disabled:cursor-not-allowed disabled:opacity-40 ${box}`}
         >
           {kind === "speaker" ? (

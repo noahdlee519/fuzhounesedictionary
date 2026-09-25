@@ -15,19 +15,39 @@ import Pager from "@/components/Pager";
 import { saveProfile, deleteAccount, dismissApprovals, dismissEditorWelcome, dismissEditorInvite } from "./actions";
 import { formatOrigin } from "@/lib/origins";
 import type { Metadata } from "next";
-import { STATUS_STYLE } from "@/lib/status";
+import { STATUS_STYLE, statusLabel } from "@/lib/status";
 import { firstSense, one, sortSenses } from "@/lib/entries";
 import { getSafe } from "@/lib/safe";
+import { getLang } from "@/lib/lang";
+import { pick, type Pick } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "My account",
-  robots: { index: false, follow: false },
-};
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("My account", "我的帳號"),
+    robots: { index: false, follow: false },
+  };
+}
 
 const labelCls = "field-label";
 const inputCls = "field-input";
+
+/* Part of speech is stored in English; Chinese readers get a label. */
+const POS_ZH: Record<string, string> = {
+  noun: "名詞",
+  verb: "動詞",
+  adjective: "形容詞",
+  adverb: "副詞",
+  pronoun: "代詞",
+  numeral: "數詞",
+  "measure word": "量詞",
+  particle: "助詞",
+  phrase: "片語",
+  "proper noun": "專有名詞",
+};
+const posLabel = (L: Pick, p: string) => L(p, POS_ZH[p] ?? p);
 
 export default async function AccountPage({
   searchParams,
@@ -36,12 +56,14 @@ export default async function AccountPage({
 }) {
   const { user } = await getSessionUser();
   const safe = getSafe();
+  const lang = getLang();
+  const L = pick(lang);
 
   if (!user) {
     return (
       <div className="max-w-lg space-y-4">
-        <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">My account</h1>
-        <p className="text-inkSoft">Sign in to see the words you&apos;ve contributed.</p>
+        <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{L("My account", "我的帳號")}</h1>
+        <p className="text-inkSoft">{L("Sign in to see the words you've contributed.", "登入即可查看你貢獻的詞。")}</p>
         <div className="flex justify-center"><SignInButton next="/account" /></div>
       </div>
     );
@@ -94,7 +116,7 @@ export default async function AccountPage({
   const recBack = `/account?show=recordings${recPage > 1 ? `&page=${recPage}` : ""}`;
 
   const since = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString("en-GB", { year: "numeric", month: "long" })
+    ? new Date(profile.created_at).toLocaleDateString(lang === "zh" ? "zh-TW" : "en-GB", { year: "numeric", month: "long" })
     : null;
 
   const precision = profile?.origin_precision ?? "hidden";
@@ -111,17 +133,17 @@ export default async function AccountPage({
       {welcome && (
         <div role="status" className="flex items-start gap-4 rounded-sm bg-lacquer px-5 py-4 text-paper">
           <p className="min-w-0 flex-1 text-[15px] leading-snug">
-            <span className="font-semibold">Congratulations, you are now an editor.</span>{" "}
-            Entries you write are published automatically, and you can review contributions{" "}
+            <span className="font-semibold">{L("Congratulations, you are now an editor.", "恭喜，你現在是編輯了。")}</span>{L(" ", "")}
+            {L("Entries you write are published automatically, and you can review contributions ", "你寫的詞條會自動刊出，也可以在")}
             <Link href="/contribute" className="underline underline-offset-2 hover:opacity-80">
-              here
+              {L("here", "這裡")}
             </Link>
-            .
+            {L(".", "審核大家的貢獻。")}
           </p>
           <form action={dismissEditorWelcome}>
             <button
               type="submit"
-              aria-label="Dismiss"
+              aria-label={L("Dismiss", "關閉")}
               className="-m-1 inline-flex h-8 w-8 items-center justify-center rounded-sm text-lg leading-none transition-colors hover:bg-white/15"
             >
               ×
@@ -137,17 +159,19 @@ export default async function AccountPage({
         <div role="status" className="flex items-start gap-4 rounded-sm bg-lacquer px-5 py-4 text-paper">
           <p className="min-w-0 flex-1 text-[15px] leading-snug">
             <span className="font-semibold">
-              {news.total === 1 ? "1 of your edits was accepted" : `${news.total} of your edits were accepted`}
+              {news.total === 1
+                ? L("1 of your edits was accepted", "你有 1 項修改已獲核准")
+                : L("{n} of your edits were accepted", "你有 {n} 項修改已獲核准", { n: news.total })}
             </span>
-            {" — thank you. "}
+            {L(" — thank you. ", "——謝謝你！")}
             <Link href={`/account?show=${newsShow}#contributions`} className="whitespace-nowrap underline underline-offset-2 hover:opacity-80">
-              See your contributions
+              {L("See your contributions", "查看你的貢獻")}
             </Link>
           </p>
           <form action={dismissApprovals}>
             <button
               type="submit"
-              aria-label="Dismiss"
+              aria-label={L("Dismiss", "關閉")}
               className="-m-1 inline-flex h-8 w-8 items-center justify-center rounded-sm text-lg leading-none transition-colors hover:bg-white/15"
             >
               ×
@@ -171,13 +195,13 @@ export default async function AccountPage({
           </div>
           <div className="min-w-0 flex-1 pt-1">
             <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-              {profile?.display_name || "My account"}
+              {profile?.display_name || L("My account", "我的帳號")}
             </h1>
             <p className="truncate text-sm text-inkFaint">{user.email}</p>
-            {since && <p className="text-sm text-inkFaint">Member since {since}</p>}
+            {since && <p className="text-sm text-inkFaint">{L("Member since {since}", "{since}加入", { since })}</p>}
             <p className="text-sm">
               <Link href={`/contributor/${user.id}`} className="text-lacquer underline-offset-2 hover:underline">
-                View profile
+                {L("View profile", "查看個人頁面")}
               </Link>
             </p>
           </div>
@@ -186,7 +210,7 @@ export default async function AccountPage({
               they stack at the right, level with the name. */}
           <div className="flex w-full items-center gap-5 sm:ml-auto sm:w-auto sm:flex-col sm:items-end sm:gap-2.5 sm:pt-[10px]">
             <form action="/auth/signout" method="post">
-              <button className="meta text-inkFaint transition-colors hover:text-lacquer">Sign out</button>
+              <button className="meta text-inkFaint transition-colors hover:text-lacquer">{L("Sign out", "登出")}</button>
             </form>
             {/* Kept beside sign-out rather than down in the profile form: it
                 is a setting for reading the dictionary, not something saved
@@ -198,11 +222,11 @@ export default async function AccountPage({
 
       {/* ---- contributions: three tiles that double as tabs ---------------- */}
       <section id="contributions" className="scroll-mt-20 space-y-4">
-        <nav aria-label="Your contributions" className="grid grid-cols-3 gap-3">
+        <nav aria-label={L("Your contributions", "你的貢獻")} className="grid grid-cols-3 gap-3">
           {[
-            { key: "words", n: entries.length, label: entries.length === 1 ? "word added" : "words added" },
-            { key: "meanings", n: meanings.length, label: meanings.length === 1 ? "meaning" : "meanings" },
-            { key: "recordings", n: recordings.length, label: recordings.length === 1 ? "recording" : "recordings" },
+            { key: "words", n: entries.length, label: entries.length === 1 ? L("word added", "個新增的詞") : L("words added", "個新增的詞") },
+            { key: "meanings", n: meanings.length, label: meanings.length === 1 ? L("meaning", "個意思") : L("meanings", "個意思") },
+            { key: "recordings", n: recordings.length, label: recordings.length === 1 ? L("recording", "段錄音") : L("recordings", "段錄音") },
           ].map((t) => {
             const active = show === t.key;
             return (
@@ -230,12 +254,12 @@ export default async function AccountPage({
         {show === "words" && (
           entriesError ? (
             <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
-              Your words could not be loaded just now. Please check back shortly.
+              {L("Your words could not be loaded just now. Please check back shortly.", "目前無法載入你的詞，請稍後再試。")}
             </p>
           ) : entries.length === 0 ? (
             <div className="rounded-sm border border-rule bg-surface p-8">
-              <p className="text-inkSoft">You haven&apos;t added any words yet.</p>
-              <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add your first word</Link>
+              <p className="text-inkSoft">{L("You haven't added any words yet.", "你還沒有新增任何詞。")}</p>
+              <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">{L("Add your first word", "新增你的第一個詞")}</Link>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -246,7 +270,7 @@ export default async function AccountPage({
                     {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
                     <span className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
-                      {e.status}
+                      {statusLabel(e.status, lang)}
                     </span>
                   </div>
                 );
@@ -255,7 +279,7 @@ export default async function AccountPage({
                     {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
                     {first && <p className="mt-1 text-sm text-inkSoft">{first.definition_en}</p>}
                     {e.status === "rejected" && e.review_notes && (
-                      <p className="mt-2 text-sm text-inkFaint">Editor note: {e.review_notes}</p>
+                      <p className="mt-2 text-sm text-inkFaint">{L("Editor note: ", "編輯附註：")}{e.review_notes}</p>
                     )}
                   </div>
                 );
@@ -267,8 +291,8 @@ export default async function AccountPage({
         {show === "meanings" && (
           meanings.length === 0 ? (
             <div className="rounded-sm border border-rule bg-surface p-8">
-              <p className="text-inkSoft">No meanings yet.</p>
-              <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">Add a word</Link>
+              <p className="text-inkSoft">{L("No meanings yet.", "還沒有任何意思。")}</p>
+              <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">{L("Add a word", "新增詞條")}</Link>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -279,10 +303,10 @@ export default async function AccountPage({
                     {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
                     <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
                     {m.part_of_speech && (
-                      <span className="meta text-inkFaint">{m.part_of_speech}</span>
+                      <span className="meta text-inkFaint">{posLabel(L, m.part_of_speech)}</span>
                     )}
                     <span className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
-                      {e.status}
+                      {statusLabel(e.status, lang)}
                     </span>
                   </div>
                 );
@@ -300,13 +324,13 @@ export default async function AccountPage({
         {show === "recordings" && (searchParams.saved || searchParams.problem || searchParams.withdrawn) && (
           <p className="rounded-sm flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
             {searchParams.withdrawn ? (
-              <SavedNotice message="Recording deleted" />
+              <SavedNotice message={L("Recording deleted", "錄音已刪除")} />
             ) : searchParams.saved ? (
-              <SavedNotice message="Note saved" />
+              <SavedNotice message={L("Note saved", "附註已儲存")} />
             ) : searchParams.problem === "withdraw" ? (
-              <span role="alert">That recording could not be deleted. Please try again.</span>
+              <span role="alert">{L("That recording could not be deleted. Please try again.", "無法刪除那段錄音，請再試一次。")}</span>
             ) : (
-              <span role="alert">The note could not be saved. Please try again.</span>
+              <span role="alert">{L("The note could not be saved. Please try again.", "無法儲存附註，請再試一次。")}</span>
             )}
           </p>
         )}
@@ -314,9 +338,9 @@ export default async function AccountPage({
         {show === "recordings" && (
           recordings.length === 0 ? (
             <div className="rounded-sm border border-rule bg-surface p-8">
-              <p className="text-inkSoft">You haven&apos;t recorded anything yet.</p>
+              <p className="text-inkSoft">{L("You haven't recorded anything yet.", "你還沒有任何錄音。")}</p>
               <Link href="/improve" className="mt-2 inline-block font-medium text-lacquer hover:underline">
-                Record a word &rarr;
+                {L("Record a word →", "錄一個詞 →")}
               </Link>
             </div>
           ) : (
@@ -341,22 +365,22 @@ export default async function AccountPage({
       {/* ------------------------------------------------------------------ */}
       <section className="space-y-4 border-t border-rule pt-8">
         <div>
-          <h2 className="font-display text-lg font-bold tracking-tight">Your Fuzhounese</h2>
+          <h2 className="font-display text-lg font-bold tracking-tight">{L("Your Fuzhounese", "你的福州話")}</h2>
           <p className="mt-1 max-w-2xl text-sm text-inkSoft">
-            Fuzhounese changes from county to county and village to village, so knowing where a word
-            comes from is part of the record. Tell us where yours is from and it will be offered as
-            the default when you add a word. This is optional, and nothing appears publicly unless you
-            choose it below.
+            {L(
+              "Fuzhounese changes from county to county and village to village, so knowing where a word comes from is part of the record. Tell us where yours is from and it will be offered as the default when you add a word. This is optional, and nothing appears publicly unless you choose it below.",
+              "福州話每個縣、每個村講法都不一樣，所以一個詞來自哪裡，也是記錄的一部分。告訴我們你的福州話來自哪裡，新增詞條時就會預先填好。這一項可以不填；除非你在下面選擇公開，否則什麼都不會公開顯示。"
+            )}
           </p>
         </div>
 
         <form action={saveProfile} className="rounded-sm space-y-4 border border-rule bg-surface p-5">
           <label className="block">
-            <span className={labelCls}>Display name</span>
+            <span className={labelCls}>{L("Display name", "顯示名稱")}</span>
             <input
               name="display_name"
               defaultValue={profile?.display_name ?? ""}
-              placeholder="How you want to be credited"
+              placeholder={L("How you want to be credited", "你希望以什麼名字署名")}
               className={inputCls}
             />
           </label>
@@ -369,11 +393,11 @@ export default async function AccountPage({
           />
 
           <fieldset className="space-y-2">
-            <legend className={labelCls}>What may we show publicly?</legend>
+            <legend className={labelCls}>{L("What may we show publicly?", "可以公開顯示哪些資訊？")}</legend>
             {[
-              ["hidden", "Nothing", "Your origin is not shown, and the village is not stored."],
-              ["area", "County or district only", "e.g. “Changle 長樂”. The village is not stored."],
-              ["locality", "County and village", "e.g. “Jinfeng, Changle 長樂”."],
+              ["hidden", L("Nothing", "不顯示"), L("Your origin is not shown, and the village is not stored.", "不顯示你的來源，也不儲存鄉鎮／村。")],
+              ["area", L("County or district only", "只顯示縣或區"), L("e.g. “Changle 長樂”. The village is not stored.", "例如「Changle 長樂」。不儲存鄉鎮／村。")],
+              ["locality", L("County and village", "顯示縣／區和鄉鎮／村"), L("e.g. “Jinfeng, Changle 長樂”.", "例如「Jinfeng, Changle 長樂」。")],
             ].map(([value, title, note]) => (
               <label key={value} className="flex items-start gap-3">
                 <input
@@ -393,21 +417,21 @@ export default async function AccountPage({
 
           {publicLine && (
             <p className="text-sm text-inkSoft">
-              Currently shown on your profile: <span className="font-medium text-ink">{publicLine}</span>
+              {L("Currently shown on your profile: ", "目前在你的個人頁面上顯示：")}<span className="font-medium text-ink">{publicLine}</span>
             </p>
           )}
 
           <div className="flex flex-wrap items-center gap-4">
             <SubmitButton
-              pending="Saving…"
+              pending={L("Saving…", "儲存中…")}
               className="btn btn-primary btn-sm"
             >
-              Save
+              {L("Save", "儲存")}
             </SubmitButton>
-            {searchParams.saved && show !== "recordings" && <SavedNotice />}
+            {searchParams.saved && show !== "recordings" && <SavedNotice message={L("Changes saved", "已儲存變更")} />}
             {searchParams.problem && searchParams.problem !== "confirm" && show !== "recordings" && (
               <span role="alert" className="text-sm text-lacquer">
-                Your changes could not be saved just now. Please try again.
+                {L("Your changes could not be saved just now. Please try again.", "目前無法儲存你的變更，請再試一次。")}
               </span>
             )}
           </div>
@@ -416,32 +440,32 @@ export default async function AccountPage({
 
       {/* ---- delete account ------------------------------------------------ */}
       <section id="delete" className="scroll-mt-3 space-y-3 border-t border-rule pt-8">
-        <h2 className="font-display text-lg font-bold tracking-tight">Delete your account</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight">{L("Delete your account", "刪除帳號")}</h2>
         <p className="max-w-2xl text-sm text-inkSoft">
-          This removes your profile, your email, your picture, and any words still waiting for
-          review or rejected. Words and meanings already published stay in the dictionary under its
-          licence, credited to &ldquo;a contributor&rdquo; instead of your name. Your recordings
-          stay too unless you tick the box. This cannot be undone.
+          {L(
+            "This removes your profile, your email, your picture, and any words still waiting for review or rejected. Words and meanings already published stay in the dictionary under its licence, credited to “a contributor” instead of your name. Your recordings stay too unless you tick the box. This cannot be undone.",
+            "這會刪除你的個人資料、電子郵件、頭像，以及所有仍在待審或已退回的詞。已刊出的詞和意思會依辭典的授權條款繼續保留，署名改為「一位貢獻者」，不再顯示你的名字。除非你勾選下面的方框，否則你的錄音也會保留。刪除後無法復原。"
+          )}
         </p>
         {searchParams.problem === "confirm" && (
           <p role="alert" className="text-sm text-lacquer">
-            Type the word &ldquo;delete&rdquo; in the box to confirm.
+            {L("Type the word “delete” in the box to confirm.", "請在方框中輸入「delete」以確認。")}
           </p>
         )}
         <details className="group">
           <summary className="btn btn-ghost btn-sm inline-flex cursor-pointer list-none group-open:border-lacquer group-open:text-lacquer [&::-webkit-details-marker]:hidden [&::marker]:content-['']">
-            Delete my account…
+            {L("Delete my account…", "刪除我的帳號…")}
           </summary>
           <form action={deleteAccount} className="mt-3 max-w-md space-y-3 rounded-sm border border-lacquer bg-surface p-4">
             <label className="flex items-start gap-3 text-sm">
               <input type="checkbox" name="recordings" className="mt-1 accent-lacquer" />
               <span>
-                Also delete my recordings
-                <span className="block text-inkFaint">Every take, published or not, and the audio files.</span>
+                {L("Also delete my recordings", "同時刪除我的錄音")}
+                <span className="block text-inkFaint">{L("Every take, published or not, and the audio files.", "每一段錄音（無論是否已刊出）及其音檔。")}</span>
               </span>
             </label>
             <label className="block text-sm">
-              <span className={labelCls}>Type &ldquo;delete&rdquo; to confirm</span>
+              <span className={labelCls}>{L("Type “delete” to confirm", "輸入「delete」以確認")}</span>
               <input
                 name="confirm"
                 required
@@ -451,10 +475,10 @@ export default async function AccountPage({
               />
             </label>
             <SubmitButton
-              pending="Deleting…"
+              pending={L("Deleting…", "刪除中…")}
               className="btn btn-primary btn-sm"
             >
-              Delete my account for good
+              {L("Delete my account for good", "永久刪除我的帳號")}
             </SubmitButton>
           </form>
         </details>

@@ -15,6 +15,22 @@ import { useL } from "./LangProvider";
 
 const KEY = "fz:speaker";
 
+/* Chinese for the place list's group headings, and for the few choices
+   whose English label is a description rather than a place name — the same
+   wording as the account page (OriginPlaceFields). */
+const GROUP_ZH: Record<string, string> = {
+  "Fuzhou city": "福州市區",
+  "Fuzhou prefecture": "福州其他縣市",
+  "Beyond Fuzhou": "福州以外",
+};
+const AREA_ZH: Record<string, string> = {
+  fuzhou_unsure: "福州市區（不確定哪一區）",
+  matsu: "馬祖（連江）",
+  ningde: "寧德一帶（福寧）",
+  fujian_other: "福建其他地方",
+  overseas: "海外社群",
+};
+
 export function loadSpeaker(): Speaker | null {
   try {
     const raw = localStorage.getItem(KEY);
@@ -108,10 +124,10 @@ export default function SpeakerFields({
             >
               <option value="">{L("Not sure", "不確定")}</option>
               {ORIGIN_GROUPS.map((g) => (
-                <optgroup key={g} label={g}>
+                <optgroup key={g} label={L(g, GROUP_ZH[g] ?? g)}>
                   {ORIGIN_AREAS.filter((a) => a.group === g).map((a) => (
                     <option key={a.code} value={a.code}>
-                      {a.label} {a.hanzi}
+                      {AREA_ZH[a.code] ? L(`${a.label} ${a.hanzi}`, AREA_ZH[a.code]) : `${a.label} ${a.hanzi}`}
                     </option>
                   ))}
                 </optgroup>

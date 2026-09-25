@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useL } from "./LangProvider";
 import {
   AVATAR_BUCKET,
   AVATAR_EXT,
@@ -33,6 +34,7 @@ export default function AvatarUpload({
   avatarUrl: string | null;
   name: string | null;
 }) {
+  const L = useL();
   const hasAvatar = !!avatarUrl;
   const dialog = useRef<HTMLDialogElement>(null);
   const router = useRouter();
@@ -59,12 +61,12 @@ export default function AvatarUpload({
 
     setError(null);
     if (!(AVATAR_MIME_TYPES as readonly string[]).includes(file.type)) {
-      setError("Please choose a PNG, JPG, WebP or GIF.");
+      setError(L("Please choose a PNG, JPG, WebP or GIF.", "請選擇 PNG、JPG、WebP 或 GIF 圖檔。"));
       return;
     }
     if (file.size > MAX_AVATAR_BYTES) {
       const mb = (file.size / (1024 * 1024)).toFixed(1);
-      setError(`That picture is ${mb} MB. The limit is ${MAX_MB} MB \u2014 please pick a smaller one.`);
+      setError(L("That picture is {mb} MB. The limit is {max} MB \u2014 please pick a smaller one.", "這張圖片有 {mb} MB，上限是 {max} MB，請選一張小一點的。", { mb, max: MAX_MB }));
       return;
     }
 
@@ -77,7 +79,7 @@ export default function AvatarUpload({
       const { error: upErr } = await supabase.storage
         .from(AVATAR_BUCKET)
         .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
+      if (upErr) throw new Error(L("Upload failed: {msg}", "上傳失敗：{msg}", { msg: upErr.message }));
 
       const { data: pub } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
       const { error: updErr } = await supabase
@@ -88,7 +90,7 @@ export default function AvatarUpload({
 
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Could not upload that picture.");
+      setError(err?.message ?? L("Could not upload that picture.", "無法上傳這張圖片。"));
     } finally {
       setBusy(false);
     }
@@ -105,7 +107,7 @@ export default function AvatarUpload({
       if (updErr) throw new Error(updErr.message);
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Could not remove the picture.");
+      setError(err?.message ?? L("Could not remove the picture.", "無法移除這張圖片。"));
     } finally {
       setBusy(false);
     }
@@ -127,11 +129,11 @@ export default function AvatarUpload({
         }}
         className="text-xs font-medium text-inkFaint transition-colors hover:text-lacquer"
       >
-        Edit
+        {L("Edit", "編輯")}
       </button>
       <dialog
         ref={dialog}
-        aria-label="Profile picture"
+        aria-label={L("Profile picture", "頭像")}
         // A click on the backdrop (the dialog element itself, outside its
         // panel) closes it, as Escape does.
         onClick={(e) => {
@@ -141,11 +143,11 @@ export default function AvatarUpload({
       >
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <p className="meta text-inkFaint">Profile picture</p>
+            <p className="meta text-inkFaint">{L("Profile picture", "頭像")}</p>
             <button
               type="button"
               onClick={() => dialog.current?.close()}
-              aria-label="Close"
+              aria-label={L("Close", "關閉")}
               className="-mr-2 grid h-8 w-8 place-items-center rounded-sm text-inkFaint transition-colors hover:text-ink"
             >
               <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -158,7 +160,7 @@ export default function AvatarUpload({
           </div>
           <div className="mt-6 flex items-center justify-center gap-3">
             <label className={`btn btn-ghost btn-sm cursor-pointer ${busy ? "pointer-events-none opacity-60" : ""}`}>
-              {busy ? "Saving…" : hasAvatar ? "Change picture" : "Upload a picture"}
+              {busy ? L("Saving…", "儲存中…") : hasAvatar ? L("Change picture", "更換頭像") : L("Upload a picture", "上傳頭像")}
               <input type="file" accept={AVATAR_MIME_TYPES.join(",")} onChange={onFile} disabled={busy} className="hidden" />
             </label>
             {hasAvatar && (
@@ -166,8 +168,8 @@ export default function AvatarUpload({
                 type="button"
                 onClick={() => remove()}
                 disabled={busy}
-                aria-label={fallback ? "Remove picture (back to your Google picture)" : "Remove picture"}
-                title={fallback ? "Remove picture (back to your Google picture)" : "Remove picture"}
+                aria-label={fallback ? L("Remove picture (back to your Google picture)", "移除頭像（改回你的 Google 頭像）") : L("Remove picture", "移除頭像")}
+                title={fallback ? L("Remove picture (back to your Google picture)", "移除頭像（改回你的 Google 頭像）") : L("Remove picture", "移除頭像")}
                 className="grid h-9 w-9 place-items-center rounded-sm border border-ruleStrong text-inkSoft transition-colors hover:border-lacquer hover:text-lacquer disabled:opacity-50"
               >
                 {trash}
@@ -182,7 +184,7 @@ export default function AvatarUpload({
                 disabled={busy}
                 className="text-sm text-inkSoft underline decoration-rule underline-offset-4 transition-colors hover:text-lacquer disabled:opacity-50"
               >
-                Use my Google picture
+                {L("Use my Google picture", "使用我的 Google 頭像")}
               </button>
             </p>
           )}

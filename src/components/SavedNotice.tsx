@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useL } from "@/components/LangProvider";
 
 /* A quiet confirmation, used beside the Save button on /account and at the top
    of /improve.
@@ -13,11 +14,12 @@ import { useEffect, useState } from "react";
    role="status" rather than an alert: this is good news, not an interruption. */
 export default function SavedNotice({
   seconds = 5,
-  message = "Changes saved",
+  message,
 }: {
   seconds?: number;
   message?: string;
 }) {
+  const L = useL();
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function SavedNotice({
         (gone ? "opacity-0" : "opacity-100")
       }
     >
-      {message}
+      {message ?? L("Changes saved", "已儲存變更")}
     </span>
   );
 }

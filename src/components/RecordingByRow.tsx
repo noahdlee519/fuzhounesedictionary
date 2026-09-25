@@ -4,6 +4,8 @@ import { sortSenses } from "@/lib/entries";
 import RecordingNoteEditor from "./RecordingNoteEditor";
 import PlayButton from "./PlayButton";
 import WithdrawRecording from "./WithdrawRecording";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 /* One recording in a person's list — on their public profile and on their own
    account page. Reads: word · its first English meaning · the player · (status,
@@ -45,9 +47,10 @@ export default function RecordingByRow({
   /** Where the note form returns to; the page (and list page) it sits on. */
   back?: string;
 }) {
+  const L = pick(getLang());
   const note = (r.note ?? "").trim();
   const w = r.entry;
-  const name = w?.romanization || w?.headword || "a word";
+  const name = w?.romanization || w?.headword || L("a word", "一個詞");
   const meaning = sortSenses(w?.senses).find((s) => s.definition_en)?.definition_en;
   const title = (
     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -55,7 +58,7 @@ export default function RecordingByRow({
       <span className="romanization font-display font-semibold text-lacquer">{name}</span>
       {meaning && <span className="text-sm text-inkFaint">{meaning}</span>}
       {r.kind === "example" && (
-        <span className="meta text-inkFaint">in a sentence</span>
+        <span className="meta text-inkFaint">{L("in a sentence", "在句子裡")}</span>
       )}
     </span>
   );
@@ -74,7 +77,13 @@ export default function RecordingByRow({
           <span
             className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[r.status] ?? STATUS_STYLE.pending}`}
           >
-            {r.status}
+            {r.status === "pending"
+              ? L("pending", "待審")
+              : r.status === "approved"
+                ? L("approved", "已核准")
+                : r.status === "rejected"
+                  ? L("rejected", "已退回")
+                  : r.status}
           </span>
         )}
       </div>

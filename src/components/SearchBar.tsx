@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Assistant from "./Assistant";
+import { useL } from "./LangProvider";
 
 /* The big search box: a 56px field with a magnifier inside it and no button
    — Enter (or the keyboard's Search key) submits. A line beneath says how
    large the dictionary is and what to try. Optionally a small "Ask the
    assistant" button that unfolds the assistant panel under the box. */
-
-const FULL = "Search for a word";
-const SHORT = "Search for a word";
 
 const NARROW = "(max-width: 639px)";
 
@@ -31,9 +29,9 @@ export default function SearchBar({
   id = "site-search",
   hint,
   after,
-  placeholderFull = FULL,
-  placeholderShort = SHORT,
-  label = "Search the dictionary",
+  placeholderFull: placeholderFull0,
+  placeholderShort: placeholderShort0,
+  label: label0,
 }: {
   defaultValue?: string;
   signedIn?: boolean;
@@ -55,6 +53,10 @@ export default function SearchBar({
   placeholderShort?: string;
   label?: string;
 }) {
+  const L = useL();
+  const placeholderFull = placeholderFull0 ?? L("Search for a word", "搜尋一個詞");
+  const placeholderShort = placeholderShort0 ?? L("Search for a word", "搜尋一個詞");
+  const label = label0 ?? L("Search the dictionary", "搜尋辭典");
   // autoFocus is acted on when the element mounts, so it has to be right on
   // the very first client render — an effect is too late, and the phone
   // keyboard had already opened on every visit. React never renders autoFocus
@@ -110,7 +112,7 @@ export default function SearchBar({
               aria-controls={`${id}-ask`}
               className={"btn btn-sm " + (askOpen ? "btn-primary" : "btn-ghost")}
             >
-              Ask the assistant
+              {L("Ask the assistant", "問問助手")}
               <span aria-hidden className={"text-[10px] transition-transform " + (askOpen ? "rotate-90" : "")}>
                 &#9656;
               </span>

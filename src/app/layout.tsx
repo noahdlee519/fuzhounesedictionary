@@ -74,7 +74,23 @@ const rareHan = localFont({
   ],
 });
 
-export const metadata: Metadata = {
+/* The Chinese description, for a visitor who has switched to 中文 (the cookie
+   is read per request; crawlers have no cookie and get the English). */
+const SITE_DESCRIPTION_ZH =
+  "免費、協作的福州話辭典，支援英文和普通話。可以搜尋詞語和漢字，聆聽母語者的錄音。";
+
+export function generateMetadata(): Metadata {
+  const zh = getLang() === "zh";
+  const description = zh ? SITE_DESCRIPTION_ZH : SITE_DESCRIPTION;
+  return {
+    ...metadata,
+    description,
+    openGraph: { ...metadata.openGraph, description, locale: zh ? "zh_TW" : "en_US" },
+    twitter: { ...metadata.twitter, description },
+  };
+}
+
+const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_NAME,
@@ -170,7 +186,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:border focus:border-lacquer focus:bg-paper focus:px-3 focus:py-2 focus:text-sm"
         >
-          Skip to content
+          {lang === "zh" ? "跳到主要內容" : "Skip to content"}
         </a>
         {/* The lattice from the first design, kept as a faint texture in the
             margins beyond the content column on wide screens. */}
@@ -197,7 +213,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="text-lacquer">fuzhou</span>nese.org
             </span>
           </Link>
-          <nav aria-label="Footer" className="mt-4 flex flex-wrap gap-x-7 gap-y-2">
+          <nav aria-label={lang === "zh" ? "頁尾" : "Footer"} className="mt-4 flex flex-wrap gap-x-7 gap-y-2">
             {/* The page you are on is in bold (FooterLink). */}
             <FooterLink href="/browse" className="linkq">{t("nav.browse")}</FooterLink>
             <FooterLink href="/learn" className="linkq">{t("nav.learn")}</FooterLink>
@@ -218,9 +234,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </a>
             <span className="mx-2">·</span>
             {/* Privacy and Terms exist only in English; the Chinese footer says so. */}
-            <Link href="/privacy" className="hover:text-ink">{t("footer.privacy")}{lang === "zh" ? " (en)" : ""}</Link>
+            <Link href="/privacy" className="hover:text-ink">{t("footer.privacy")}</Link>
             <span className="mx-2">·</span>
-            <Link href="/terms" className="hover:text-ink">{t("footer.terms")}{lang === "zh" ? " (en)" : ""}</Link>
+            <Link href="/terms" className="hover:text-ink">{t("footer.terms")}</Link>
             <span className="mx-2">·</span>
             <Link href="/editor" className="hover:text-ink">{t("footer.editors")}</Link>
           </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useL } from "@/components/LangProvider";
 
 /* Three folder tabs under "How it works" — Features, Orthography, Sources —
    each showing one panel. One panel at a time; the first is open on arrival. The panel bodies are server-rendered
@@ -27,6 +28,7 @@ export default function LearnPanels({
    *  JavaScript runs). */
   initial?: string;
 }) {
+  const L = useL();
   // The Sources tab's key is "reading" (older links use it); "sources", the
   // name on the tab, opens it too.
   const ALIASES: Record<string, string> = { sources: "reading" };
@@ -92,7 +94,7 @@ export default function LearnPanels({
      a shade darker. One is always open — a folder does not close. */
   return (
     <section ref={top} className="scroll-mt-20">
-      <div role="tablist" aria-label="About Fuzhounese" className="relative z-10 -mb-px flex gap-1">
+      <div role="tablist" aria-label={L("About Fuzhounese", "關於福州話")} className="relative z-10 -mb-px flex gap-1">
         {panels.map((p) => {
           const active = p.key === open;
           return (
@@ -129,7 +131,7 @@ export default function LearnPanels({
 
           {(prev || next) && (
             <nav
-              aria-label="Neighbouring sections"
+              aria-label={L("Neighbouring sections", "相鄰的章節")}
               className="flex items-center justify-between gap-4 border-t border-rule pt-4 text-sm font-medium"
             >
               {prev ? (

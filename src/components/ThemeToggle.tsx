@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useL } from "./LangProvider";
 
 /* Light / dark switch. The page starts in whatever <html data-theme> the
    inline script in layout.tsx stamped (a stored choice, else the system
@@ -12,12 +13,14 @@ import { useEffect, useState } from "react";
 export default function ThemeToggle({
   className = "",
   icon = false,
-  label = "Dark mode",
+  label: labelProp,
 }: {
   className?: string;
   icon?: boolean;
   label?: string;
 }) {
+  const L = useL();
+  const label = labelProp ?? L("Dark mode", "深色模式");
   const [dark, setDark] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -74,7 +77,7 @@ export default function ThemeToggle({
       disabled={dark === null}
       className={`inline-flex items-center gap-2 meta text-inkFaint transition-colors hover:text-lacquer disabled:opacity-60 ${className}`}
     >
-      <span>{dark ? "Dark" : "Light"} mode</span>
+      <span>{dark ? L("Dark mode", "深色模式") : L("Light mode", "淺色模式")}</span>
       <span
         aria-hidden="true"
         className={

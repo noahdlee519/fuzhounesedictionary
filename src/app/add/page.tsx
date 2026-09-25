@@ -10,12 +10,17 @@ import { pick } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Add a word",
-  description:
-    "Contribute a Fuzhounese word: characters, romanization, meanings, a recording, and where your variant is from.",
-  alternates: { canonical: "/add" },
-};
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("Add a word", "新增詞條"),
+    description: L(
+      "Contribute a Fuzhounese word: characters, romanization, meanings, a recording, and where your variant is from.",
+      "貢獻一個福州話詞：漢字、羅馬字、意思、錄音，以及你的講法來自哪裡。"
+    ),
+    alternates: { canonical: "/add" },
+  };
+}
 
 export default async function SubmitPage({
   searchParams,

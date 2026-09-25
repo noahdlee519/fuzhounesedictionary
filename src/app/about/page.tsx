@@ -5,17 +5,22 @@ import SiniticTree from "@/components/SiniticTree";
 import type { Metadata } from "next";
 import ZoomMap from "@/components/ZoomMap";
 import { FUJIAN_MAP } from "./fujian-map";
-import { translator, type Key } from "@/lib/i18n";
+import { translator, pick, type Key } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "About",  // the root layout appends " · Fuzhounese-English Dictionary"
-  description:
-    "The story behind the collaborative Fuzhounese-English dictionary, where Fuzhounese is spoken, how the dictionary is built, and the person who built it.",
-  alternates: { canonical: "/about" },
-};
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("About", "關於"),  // the root layout appends " · Fuzhounese-English Dictionary"
+    description: L(
+      "The story behind the collaborative Fuzhounese-English dictionary, where Fuzhounese is spoken, how the dictionary is built, and the person who built it.",
+      "這部協作的福州話–英文辭典背後的故事：福州話在哪裡使用、辭典怎麼建立，以及建立它的人。"
+    ),
+    alternates: { canonical: "/about" },
+  };
+}
 
 /* The About page, in the 9 Sep 2026 design: Noah's story as the hero, the
    dictionary's numbers, the two maps under "Where it is spoken", how the
@@ -25,6 +30,7 @@ export const metadata: Metadata = {
 export default async function AboutPage() {
   const lang = getLang();
   const t = translator(lang);
+  const L = pick(lang);
 
   /* A string with "[text](href)" links in it, rendered with the links in
      red. Internal paths go through next/link; mailto and http through <a>. */
@@ -124,6 +130,11 @@ export default async function AboutPage() {
         <aside className="hidden landscape:lg:block landscape:lg:pt-2">
           <SiniticTree
             caption={t("about.tree.caption")}
+            ariaLabel={L(
+              "The Chinese language family: ten groups, with Min divided into coastal and inland Min; Fuzhounese is in the Houguan subgroup of Eastern Min, a coastal Min language.",
+              "漢語族譜：十大方言區，閩語又分沿海閩語與內陸閩語；福州話屬於閩東語侯官片，是一種沿海閩語。"
+            )}
+            sourcesLabel={L("Sources", "資料來源")}
             legend={{
               north: t("about.tree.north"),
               central: t("about.tree.central"),
@@ -149,14 +160,24 @@ export default async function AboutPage() {
             <div
               className="w-full [&>svg]:h-auto [&>svg]:w-full"
               // role and aria-label are on the <svg> root itself.
-              dangerouslySetInnerHTML={{ __html: FUJIAN_MAP }}
+              dangerouslySetInnerHTML={{
+                __html: lang === "zh"
+                  ? FUJIAN_MAP.replace(
+                      /aria-label="[^"]*"/,
+                      'aria-label="中國東南的福建省地圖，標出省會福州，並以陰影標示講閩東語的福州、寧德兩地"'
+                    )
+                  : FUJIAN_MAP,
+              }}
             />
             <figcaption className="footnote mt-3">{t("about.map.fujian")}</figcaption>
           </figure>
           <figure>
             <ZoomMap
               src="/diaspora-map.svg"
-              alt="World map of where Fuzhounese is spoken—Fuzhou in eastern Fujian, China, and diaspora communities in New York, Toronto, London, Tokyo, Kuala Lumpur, Singapore, Sibu, Jakarta and Sydney."
+              alt={L(
+                "World map of where Fuzhounese is spoken—Fuzhou in eastern Fujian, China, and diaspora communities in New York, Toronto, London, Tokyo, Kuala Lumpur, Singapore, Sibu, Jakarta and Sydney.",
+                "福州話使用地區的世界地圖：中國福建東部的福州，以及紐約、多倫多、倫敦、東京、吉隆坡、新加坡、詩巫、雅加達和雪梨的海外社群。"
+              )}
               width={520}
               height={264}
             />

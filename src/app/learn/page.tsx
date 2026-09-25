@@ -5,22 +5,32 @@ import type { Metadata } from "next";
 import Guide, { Contents, Sources } from "./Guide";
 import { SHOW_GUIDE } from "./config";
 import LearnPanels from "./LearnPanels";
-import { learnPanels, panelAnchors } from "./panels";
+import { buildLearnPanels, panelAnchors } from "./panels";
 import { starterWords, type StarterSection } from "./starter";
 import PlayButton from "@/components/PlayButton";
 import RecordPrompt from "@/components/RecordPrompt";
-import { translator } from "@/lib/i18n";
+import { translator, pick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
+import { romText } from "@/lib/rom";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Learn Fuzhounese",
-  description: SHOW_GUIDE
-    ? "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z."
-    : "Fifty everyday Fuzhounese words with recordings, and how the language works—its tones, tone sandhi, measure words and how it is written—with the sources to read next.",
-  alternates: { canonical: "/learn" },
-};
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("Learn Fuzhounese", "學福州話"),
+    description: SHOW_GUIDE
+      ? L(
+          "How Fuzhounese works: its seven tones, tone sandhi, initial assimilation, how it is written down, how it differs from Mandarin, a phrasebook, and every word in the dictionary A to Z.",
+          "福州話怎麼運作：七個聲調、連讀變調、聲母類化、怎麼書寫、和普通話有什麼不同、常用語手冊，以及辭典裡依字母排列的每一個詞。"
+        )
+      : L(
+          "Fifty everyday Fuzhounese words with recordings, and how the language works—its tones, tone sandhi, measure words and how it is written—with the sources to read next.",
+          "五十個附錄音的福州話日常詞，以及這個語言怎麼運作——聲調、連讀變調、量詞和書寫方式——還有延伸閱讀的資料來源。"
+        ),
+    alternates: { canonical: "/learn" },
+  };
+}
 
 /* The word list that used to sit under these panels is now /browse. Links
    from before the move carried its filters here; send them on. */
@@ -43,6 +53,7 @@ export default async function LearnPage({
 
   const lang = getLang();
   const t = translator(lang);
+  const L = pick(lang);
   let starter: StarterSection[] = [];
   try {
     starter = await starterWords();
@@ -75,13 +86,16 @@ export default async function LearnPage({
         {SHOW_GUIDE && (
           <>
             <p className="read mt-6 text-[17px] leading-relaxed text-inkSoft">
-              A dictionary can tell you what a word means. It cannot tell you that the word changes
-              shape when you put another one after it, which in Fuzhounese it almost always does.
-              This page is for that. Open whichever section you need.
+              {L(
+                "A dictionary can tell you what a word means. It cannot tell you that the word changes shape when you put another one after it, which in Fuzhounese it almost always does. This page is for that. Open whichever section you need.",
+                "辭典能告訴你一個詞是什麼意思，卻沒辦法告訴你：後面再接一個詞時，這個詞會變樣——在福州話裡幾乎總是如此。這一頁就是為此而寫的。需要哪一節，就打開哪一節。"
+              )}
             </p>
             <p className="read mt-3 text-[17px] leading-relaxed text-inkSoft">
-              Everything here is sourced, and the sources are listed at the bottom. Where something
-              has not been confirmed by a speaker, it says so.
+              {L(
+                "Everything here is sourced, and the sources are listed at the bottom. Where something has not been confirmed by a speaker, it says so.",
+                "這裡的每一項內容都有出處，資料來源列在頁尾。尚未經母語者確認的地方，會特別註明。"
+              )}
             </p>
           </>
         )}
@@ -96,7 +110,7 @@ export default async function LearnPage({
         {/* Features · Orthography · Sources — one panel at a time,
             the first open on arrival. Content lives in panels.tsx. */}
         <div className="mt-6">
-          <LearnPanels panels={learnPanels} anchors={panelAnchors} initial={searchParams.tab} />
+          <LearnPanels panels={buildLearnPanels(lang)} anchors={panelAnchors} initial={searchParams.tab} />
         </div>
       </section>
 
@@ -120,7 +134,7 @@ export default async function LearnPage({
                       )}
                       <Link href={`/entry/${w.id}`} className="group min-w-0 flex-1">
                         <span className="han text-[19px] font-medium group-hover:text-lacquer">{w.hanzi}</span>{" "}
-                        <span className="romanization text-xs text-inkSoft">{w.romanization}</span>
+                        <span className="romanization text-xs text-inkSoft">{romText(w.romanization, w.romanization)}</span>
                         {(w.gloss || w.glossZh) && (
                           <span className="block truncate text-xs leading-[1.35] text-inkSoft">
                             {(lang === "zh" && w.glossZh) || w.gloss}

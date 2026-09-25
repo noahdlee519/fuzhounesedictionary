@@ -4,13 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import SignInButton from "./SignInButton";
 import SubmitButton from "./SubmitButton";
 import { suggestEdit } from "@/app/entry/actions";
+import { useL } from "./LangProvider";
 
 /* "Suggest an edit" on a word page. It used to open the visitor's mail app,
    which most people abandon. Now it folds open a box right here: say what
    should change, send, and it waits in the review queue for an editor.
    Signed out, the box asks for a sign-in first — a suggestion is credited
    and an editor may need to ask about it. */
-const REASONS = ["Wrong or misleading", "Offensive or inappropriate", "Duplicate of another word", "Something else"];
+/* The value sent is always the English reason, so the review queue reads the
+   same whichever language the reporter used; only the label is translated. */
+const REASONS: [string, string][] = [
+  ["Wrong or misleading", "錯誤或有誤導"],
+  ["Offensive or inappropriate", "冒犯或不恰當"],
+  ["Duplicate of another word", "和另一個詞重複"],
+  ["Something else", "其他"],
+];
 
 /* Report works the same way: pick a reason, add a line if you like, and it
    goes to the same review queue as a 'report' (supabase/suggest_edit.sql). */
@@ -26,6 +34,7 @@ export default function SuggestEdit({
   /** From the address after sending: "sent", "empty", or an error message. */
   status?: string;
 }) {
+  const L = useL();
   const [open, setOpen] = useState(Boolean(status && status !== "sent"));
   const sent = status === "sent";
   const report = kind === "report";
@@ -33,7 +42,7 @@ export default function SuggestEdit({
   const problem =
     status && status !== "sent"
       ? status === "empty"
-        ? report ? "Please choose a reason." : "Please say what should change."
+        ? report ? L("Please choose a reason.", "請選一個原因。") : L("Please say what should change.", "請說明要修改什麼。")
         : status
       : null;
 
@@ -56,7 +65,7 @@ export default function SuggestEdit({
   if (sent) {
     return (
       <p id={anchor} role="status" className="meta text-lacquer">
-        {report ? "✓ Reported—thank you" : "✓ Suggestion sent—thank you"}
+        {report ? L("✓ Reported—thank you", "✓ 已檢舉，謝謝") : L("✓ Suggestion sent—thank you", "✓ 建議已送出，謝謝")}
       </p>
     );
   }
@@ -70,7 +79,7 @@ export default function SuggestEdit({
         aria-controls={`${anchor}-panel`}
         className={"meta transition-colors hover:text-lacquer " + (open ? "text-lacquer" : "text-inkFaint")}
       >
-        {report ? "Report" : "Suggest an edit"} {open ? "▾" : "▸"}
+        {report ? L("Report", "檢舉") : L("Suggest an edit", "建議修改")} {open ? "▾" : "▸"}
       </button>
       {/* Drops down over the page from the link, lined up with its right
           edge on a wide screen (it sits at the right of the page) and its
@@ -86,17 +95,19 @@ export default function SuggestEdit({
               <input type="hidden" name="kind" value={kind} />
               {report && (
                 <fieldset className="space-y-1.5">
-                  <legend className="field-label">What is wrong with this word?</legend>
-                  {REASONS.map((r, i) => (
+                  <legend className="field-label">{L("What is wrong with this word?", "這個詞有什麼問題？")}</legend>
+                  {REASONS.map(([r, rZh], i) => (
                     <label key={r} className="flex cursor-pointer items-center gap-2 text-sm text-ink">
                       <input type="radio" name="reason" value={r} required defaultChecked={i === 0} className="accent-[var(--lacquer)]" />
-                      {r}
+                      {L(r, rZh)}
                     </label>
                   ))}
                 </fieldset>
               )}
               <label htmlFor={`${anchor}-value`} className={report ? "field-label !mt-4" : "field-label"}>
-                {report ? "Anything the editor should know (optional)" : "What should change, and why?"}
+                {report
+                  ? L("Anything the editor should know (optional)", "有什麼要讓編輯知道的嗎？（選填）")
+                  : L("What should change, and why?", "要改什麼？為什麼？")}
               </label>
               <textarea
                 id={`${anchor}-value`}
@@ -107,8 +118,11 @@ export default function SuggestEdit({
                 rows={report ? 2 : 3}
                 placeholder={
                   report
-                    ? "e.g. This is the same word as 黃色."
-                    : "e.g. The romanization should be uòng, and it also means “a surname”."
+                    ? L("e.g. This is the same word as 黃色.", "例如：這和「黃色」是同一個詞。")
+                    : L(
+                        "e.g. The romanization should be uòng, and it also means “a surname”.",
+                        "例如：羅馬字應該是 uòng，另外也有「姓氏」的意思。"
+                      )
                 }
                 className="field-input min-h-[64px] resize-y"
               />
@@ -118,20 +132,23 @@ export default function SuggestEdit({
                 </p>
               )}
               <div className="flex flex-wrap items-center gap-4">
-                <SubmitButton pending="Sending…" className="btn btn-primary btn-sm">
-                  {report ? "Send report" : "Send suggestion"}
+                <SubmitButton pending={L("Sending…", "送出中…")} className="btn btn-primary btn-sm">
+                  {report ? L("Send report", "送出檢舉") : L("Send suggestion", "送出建議")}
                 </SubmitButton>
-                <span className="footnote">{report ? "An editor will look at it." : "An editor reads it before anything changes."}</span>
+                <span className="footnote">{report ? L("An editor will look at it.", "編輯會處理。") : L("An editor reads it before anything changes.", "編輯看過後才會修改。")}</span>
               </div>
             </form>
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-inkSoft">
                 {report
-                  ? "Sign in to report this word. An editor reads every report."
-                  : "Sign in to suggest an edit to this word. An editor reads every suggestion."}
+                  ? L("Sign in to report this word. An editor reads every report.", "登入後即可檢舉這個詞。每一則檢舉都有編輯閱讀。")
+                  : L(
+                      "Sign in to suggest an edit to this word. An editor reads every suggestion.",
+                      "登入後即可建議修改這個詞。每一則建議都有編輯閱讀。"
+                    )}
               </p>
-              <SignInButton next={`/entry/${entryId}#${anchor}`} label="Sign in" className="btn btn-primary btn-sm [&>svg]:hidden" />
+              <SignInButton next={`/entry/${entryId}#${anchor}`} label={L("Sign in", "登入")} className="btn btn-primary btn-sm [&>svg]:hidden" />
             </div>
           )}
         </div>

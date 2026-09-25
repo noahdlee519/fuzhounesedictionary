@@ -22,6 +22,11 @@ import SignInButton from "@/components/SignInButton";
 import SuggestEdit from "@/components/SuggestEdit";
 import EditLink from "@/components/EditLink";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
+import { getRom } from "@/lib/rom";
+import { bucToYngping, showRom } from "@/lib/romanization";
+import RomToggle from "@/components/RomToggle";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -39,13 +44,18 @@ const loadEntry = cache(async (id: string) => {
 });
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const lang = getLang();
+  const L = pick(lang);
   const data = await loadEntry(params.id);
-  if (!data) return { title: "Word not found" };
+  if (!data) return { title: L("Word not found", "找不到這個詞") };
 
   const name = entryTitle(data);
   const sense = firstSense(data.senses);
   const gloss = sense?.definition_en ? `\u201c${sense.definition_en}\u201d` : "";
-  const description = `${name} in Fuzhounese${gloss ? ` means ${gloss}` : ""}. Definitions, romanization and pronunciation from the ${SITE_NAME}.`;
+  const description =
+    lang === "zh"
+      ? `${name} 是福州話${sense?.definition_en ? `，意思是「${sense.definition_en}」` : ""}。${SITE_NAME} 提供釋義、羅馬字與發音。`
+      : `${name} in Fuzhounese${gloss ? ` means ${gloss}` : ""}. Definitions, romanization and pronunciation from the ${SITE_NAME}.`;
 
   return {
     title: name,
@@ -125,6 +135,7 @@ export default async function EntryPage({
   params: { id: string };
   searchParams: { saved?: string; problem?: string; edit?: string; report?: string };
 }) {
+  const L = pick(getLang());
   const supabase = createClient();
   // None of these depend on each other, so they go out together. Recordings
   // are keyed by entry id, not by the entry row, and RLS filters them to what
@@ -215,7 +226,10 @@ export default async function EntryPage({
   const capped = myTakes >= MAX_RECORDINGS_PER_WORD;
   const cappedNote = (
     <p className="text-sm text-inkFaint">
-      You have recorded this word twice, which is the limit per word.
+      {L(
+        "You have recorded this word twice, which is the limit per word.",
+        "你已經為這個詞錄了兩次，每個詞最多只能錄兩次。"
+      )}
     </p>
   );
 
@@ -232,11 +246,18 @@ export default async function EntryPage({
   const credit = contributor?.display_name ?? undefined;
   const wordOrigin = formatOrigin(entry.origin_area, entry.origin_locality);
 
+  /* The romanization in the reader's system (RomToggle), and the other
+     system underneath when the word converts (Noah, 25 Sep 2026). */
+  const romSys = getRom();
+  const storedRom = entry.romanization || entry.headword;
+  const shownRom = showRom(entry.romanization, entry.headword, romSys).text;
+  const yngping = bucToYngping(storedRom);
+
   return (
     <article className="space-y-9">
       <BackLink
         fallback="/"
-        fallbackLabel="← Back to search"
+        fallbackLabel={L("← Back to search", "← 返回搜尋")}
         className="meta text-inkFaint hover:text-lacquer"
       />
 
@@ -252,19 +273,35 @@ export default async function EntryPage({
         {/* Audio first, then the characters, then the romanization. */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           {topAudio && (
-            <PlayButton src={topAudio} size="lg" label={`${entryTitle(entry)}, said aloud`} />
+            <PlayButton src={topAudio} size="lg" label={L("{w}, said aloud", "{w} 的發音", { w: entryTitle(entry) })} />
           )}
           {entry.hanzi ? (
             <>
               <h1 className="han text-[clamp(48px,9vw,72px)] font-bold leading-none">{entry.hanzi}</h1>
               <span className="romanization text-3xl font-semibold text-lacquer">
-                {entry.romanization || entry.headword}
+                {shownRom}
               </span>
             </>
           ) : (
             <h1 className="romanization text-4xl font-semibold text-lacquer">
-              {entry.romanization || entry.headword}
+              {shownRom}
             </h1>
+          )}
+        </div>
+        {/* The same word in the other romanization, and the switch. A
+            spelling that is not Bàng-uâ-cê has no Yngping form; it says so
+            when Yngping is the one chosen. */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <RomToggle sys={romSys} />
+          {yngping ? (
+            <span className="text-inkSoft">
+              <span className="meta mr-1.5 text-inkFaint">{romSys === "yngping" ? L("Bàng-uâ-cê", "平話字") : L("Yngping", "榕拼")}</span>
+              <span className="romanization">{romSys === "yngping" ? storedRom : yngping}</span>
+            </span>
+          ) : (
+            romSys === "yngping" && (
+              <span className="text-inkFaint">{L("Not written in Bàng-uâ-cê, so shown as entered.", "這個詞不是用平話字寫的，所以照原樣顯示。")}</span>
+            )
           )}
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -286,12 +323,12 @@ export default async function EntryPage({
 
         <div className="flex flex-col items-start gap-1.5 sm:items-end sm:pt-2 sm:text-right">
           <p className="meta text-inkFaint">
-            Added <LocalTime iso={entry.created_at} />
+            {L("Added ", "新增於 ")}<LocalTime iso={entry.created_at} />
             {contributor && (
               <>
-                {" · contributed by "}
+                {L(" · contributed by ", " · 貢獻者：")}
                 <Link href={`/contributor/${contributor.id}`} className="hover:text-lacquer">
-                  {credit || "a contributor"}
+                  {credit || L("a contributor", "一位貢獻者")}
                 </Link>
               </>
             )}
@@ -312,9 +349,9 @@ export default async function EntryPage({
       {(searchParams.saved || searchParams.problem) && (
         <p className="rounded-sm flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
           {searchParams.saved ? (
-            <SavedNotice message="Note saved" />
+            <SavedNotice message={L("Note saved", "附註已儲存")} />
           ) : (
-            <span role="alert">The note could not be saved. Please try again.</span>
+            <span role="alert">{L("The note could not be saved. Please try again.", "附註無法儲存，請再試一次。")}</span>
           )}
         </p>
       )}
@@ -348,7 +385,7 @@ export default async function EntryPage({
                     isEditor={canDelete}
                     kind="example"
                     senseId={s.id}
-                    label="Read this sentence aloud"
+                    label={L("Read this sentence aloud", "把這個例句唸出來")}
                   />
                 )}
               </div>
@@ -358,13 +395,13 @@ export default async function EntryPage({
       </ol>
 
       <section id="recordings" className="scroll-mt-20 space-y-4">
-        <h2 className="meta text-inkFaint">{voiceCount ? "Recordings" : "Say this word"}</h2>
+        <h2 className="meta text-inkFaint">{voiceCount ? L("Recordings", "錄音") : L("Say this word", "錄下這個詞")}</h2>
         {/* the legacy single-file column still plays, if it holds anything */}
         {entry.audio_url && (
           <div className="flex items-center gap-3">
-            <PlayButton src={entry.audio_url} label={`${entryTitle(entry)}, the original recording`} />
+            <PlayButton src={entry.audio_url} label={L("{w}, the original recording", "{w}，原始錄音", { w: entryTitle(entry) })} />
             <span className="meta text-inkFaint">
-              submitted with the word
+              {L("submitted with the word", "隨詞條一起提交")}
             </span>
           </div>
         )}
@@ -384,8 +421,10 @@ export default async function EntryPage({
             <>
               {!user && !entry.audio_url && publishedHead.length === 0 && (
                 <p className="mb-3 text-sm text-inkSoft">
-                  No recording yet. If you know how this is said, your recording is the one thing
-                  this page is missing.
+                  {L(
+                    "No recording yet. If you know how this is said, your recording is the one thing this page is missing.",
+                    "還沒有錄音。如果你知道這個詞怎麼講，這一頁就只差你的錄音了。"
+                  )}
                 </p>
               )}
               <Recorder
@@ -396,8 +435,8 @@ export default async function EntryPage({
                 phraseSenseId={senses[0]?.id}
                 label={
                   publishedHead.length || entry.audio_url
-                    ? "Record this word on its own and/or in a sentence"
-                    : "Be the first to say this word"
+                    ? L("Record this word on its own and/or in a sentence", "單獨錄這個詞，或放在句子裡錄")
+                    : L("Be the first to say this word", "成為第一個錄下這個詞的人")
                 }
               />
               {/* No recording yet: someone who can't record can ask for one.
@@ -410,14 +449,14 @@ export default async function EntryPage({
                     <input type="hidden" name="term" value={entry.hanzi || entry.romanization || entry.headword} />
                     <input type="hidden" name="back" value={`/entry/${entry.id}`} />
                     <button className="text-sm text-lacquer hover:underline">
-                      Can&apos;t? Ask for a recording
+                      {L("Can't? Ask for a recording", "沒辦法錄？請求錄音")}
                     </button>
                   </form>
                 ) : (
                   <div className="mt-3">
                     <SignInButton
                       next={`/entry/${entry.id}`}
-                      label="Can't? Sign in to ask for a recording"
+                      label={L("Can't? Sign in to ask for a recording", "沒辦法錄？登入後請求錄音")}
                       className="text-sm text-lacquer hover:underline [&>svg]:hidden"
                     />
                   </div>
@@ -431,7 +470,7 @@ export default async function EntryPage({
       {/* Notes, with their label above the box like "Related words". */}
       {entry.notes && (
         <section className="space-y-2">
-          <h2 className="meta text-inkFaint">Notes</h2>
+          <h2 className="meta text-inkFaint">{L("Notes", "備註")}</h2>
           <div className="rounded-sm bg-surface p-4 text-sm text-inkSoft [overflow-wrap:anywhere]">
             {linkifyNotes(entry.notes)}
           </div>
@@ -440,7 +479,7 @@ export default async function EntryPage({
 
       {related.length > 0 && (
         <section className="space-y-2">
-          <h2 className="meta text-inkFaint">Related words</h2>
+          <h2 className="meta text-inkFaint">{L("Related words", "相關詞")}</h2>
           {/* Hovering (or tabbing to) a word shows what it means, in a panel
               under that word; TipRow flips it to the word's right edge when
               there is no room to the right. */}
@@ -456,7 +495,7 @@ export default async function EntryPage({
                     className="rounded-sm inline-flex items-baseline gap-1.5 border border-rule px-2.5 py-1 text-[13px] transition-colors hover:border-lacquer hover:text-lacquer"
                   >
                     {r.hanzi && <span className="font-display font-semibold">{r.hanzi}</span>}
-                    <span className="romanization text-inkSoft">{r.romanization || r.headword}</span>
+                    <span className="romanization text-inkSoft">{showRom(r.romanization, r.headword, romSys).text}</span>
                   </Link>
                   {meanings.length > 0 && (
                     <div
@@ -465,9 +504,9 @@ export default async function EntryPage({
                     >
                       <p className="mb-1 text-ink">
                         {r.hanzi && <span className="font-display font-semibold">{r.hanzi} </span>}
-                        <span className="romanization">{r.romanization || r.headword}</span>
+                        <span className="romanization">{showRom(r.romanization, r.headword, romSys).text}</span>
                         {meanings.length > 1 && (
-                          <span className="meta ml-2 text-inkFaint">{meanings.length} meanings</span>
+                          <span className="meta ml-2 text-inkFaint">{L("{n} meanings", "{n} 個義項", { n: meanings.length })}</span>
                         )}
                       </p>
                       {meanings.length === 1 ? (
@@ -479,7 +518,7 @@ export default async function EntryPage({
                               <span className="tabular-nums text-inkMute">{i + 1}.</span> {m}
                             </li>
                           ))}
-                          {meanings.length > 4 && <li className="text-inkMute">and {meanings.length - 4} more</li>}
+                          {meanings.length > 4 && <li className="text-inkMute">{L("and {n} more", "還有 {n} 個", { n: meanings.length - 4 })}</li>}
                         </ol>
                       )}
                     </div>

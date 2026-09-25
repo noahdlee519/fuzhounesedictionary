@@ -1,5 +1,6 @@
 import type { CardProps } from "@/components/EntryCard";
 import { originArea } from "@/lib/origins";
+import type { Lang } from "@/lib/i18n";
 
 /** What the tooltip on an audio button says: who is speaking, who recorded
  *  it, and where their Fuzhounese is from. Null when nothing is known. */
@@ -7,13 +8,23 @@ export interface AudioCredit {
   title: string;
   detail: string | null;
 }
-export function audioCredit(by: string | null, speaker: string | null, origin: string | null): AudioCredit | null {
+export function audioCredit(
+  by: string | null,
+  speaker: string | null,
+  origin: string | null,
+  lang: Lang = "en"
+): AudioCredit | null {
+  const zh = lang === "zh";
   const area = originArea(origin);
   const place = area ? `${area.label} ${area.hanzi}` : null;
   const sp = speaker?.trim();
-  if (sp) return { title: `Said by ${sp}`, detail: [by ? `recorded by ${by}` : null, place].filter(Boolean).join(" · ") || null };
-  if (by) return { title: `Recorded by ${by}`, detail: place };
-  return place ? { title: "Recorded by a contributor", detail: place } : null;
+  if (sp)
+    return {
+      title: zh ? `講者：${sp}` : `Said by ${sp}`,
+      detail: [by ? (zh ? `${by} 錄音` : `recorded by ${by}`) : null, place].filter(Boolean).join(" · ") || null,
+    };
+  if (by) return { title: zh ? `${by} 錄音` : `Recorded by ${by}`, detail: place };
+  return place ? { title: zh ? "由一位貢獻者錄音" : "Recorded by a contributor", detail: place } : null;
 }
 
 /** Senses in display order (the `sort` column), without mutating the input. */
@@ -166,7 +177,7 @@ export function withCardEmbeds<Q extends { eq: (c: string, v: any) => Q; order: 
 
 /** Rows with senses joined → cards with live recording counts and the
  *  recording each card plays, in two round trips for the whole page. */
-export async function toCards(supabase: { from: (t: string) => any }, rows: any[]): Promise<CardProps[]> {
+export async function toCards(supabase: { from: (t: string) => any }, rows: any[], lang: Lang = "en"): Promise<CardProps[]> {
   const ids = rows.map((r) => r.id);
   // Rows that carry CARD_EMBEDS bring their recordings and meaning counts
   // with them; only the votes and names are left to fetch.
@@ -182,7 +193,7 @@ export async function toCards(supabase: { from: (t: string) => any }, rows: any[
     return {
       ...toCard(r, s?.count ?? 0),
       audio: s?.top ?? r.audio_url ?? null,
-      audioCredit: s?.top ? audioCredit(s.topBy ?? null, s.topSpeaker ?? null, s.topOrigin ?? null) : null,
+      audioCredit: s?.top ? audioCredit(s.topBy ?? null, s.topSpeaker ?? null, s.topOrigin ?? null, lang) : null,
       senses: meanings.get(r.id),
     };
   });

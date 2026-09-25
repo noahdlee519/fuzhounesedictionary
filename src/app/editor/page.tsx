@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import { getSessionUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import SignInButton from "@/components/SignInButton";
-import { translator } from "@/lib/i18n";
+import { translator, pick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import ContributeTabs from "@/components/ContributeTabs";
 import LocalTime from "@/components/LocalTime";
@@ -26,9 +26,26 @@ import { one, sortSenses } from "@/lib/entries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Review",
-  robots: { index: false, follow: false },
+export function generateMetadata(): Metadata {
+  const L = pick(getLang());
+  return {
+    title: L("Review", "審核"),
+    robots: { index: false, follow: false },
+  };
+}
+
+/* Part of speech is stored in English; Chinese readers get a label. */
+const POS_ZH: Record<string, string> = {
+  noun: "名詞",
+  verb: "動詞",
+  adjective: "形容詞",
+  adverb: "副詞",
+  pronoun: "代詞",
+  numeral: "數詞",
+  "measure word": "量詞",
+  particle: "助詞",
+  phrase: "片語",
+  "proper noun": "專有名詞",
 };
 
 const chip =
@@ -40,6 +57,7 @@ export default async function AdminPage() {
   const { user, profile } = await getSessionUser();
 
   const t = translator(getLang());
+  const L = pick(getLang());
 
   if (!user) {
     return (
@@ -150,15 +168,15 @@ export default async function AdminPage() {
   const problem = (what: string, file: string, e: { code?: string; message?: string } | null) =>
     e ? (
       <p className="rounded-sm border-l-2 border-lacquer bg-surface p-4 text-sm text-inkSoft">
-        <span className="font-medium text-ink">{what} could not be loaded.</span>{" "}
+        <span className="font-medium text-ink">{L("{what} could not be loaded.", "無法載入{what}。", { what })}</span>{L(" ", "")}
         {missingTable(e) ? (
           <>
-            The database does not have that table yet: run{" "}
-            <code className="text-[13px]">supabase/{file}</code> in the Supabase SQL
-            editor and reload.
+            {L("The database does not have that table yet: run ", "資料庫還沒有這個資料表：請在 Supabase SQL 編輯器中執行 ")}
+            <code className="text-[13px]">supabase/{file}</code>
+            {L(" in the Supabase SQL editor and reload.", "，然後重新載入。")}
           </>
         ) : (
-          <>Please reload in a moment. ({e.message})</>
+          <>{L("Please reload in a moment. ({msg})", "請稍後重新載入。（{msg}）", { msg: e.message ?? "" })}</>
         )}
       </p>
     ) : null;
@@ -171,18 +189,20 @@ export default async function AdminPage() {
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <span />
         <span className="meta text-inkFaint">
-          {waiting} waiting
+          {t("tab.waiting", { n: waiting })}
         </span>
       </div>
 
-      {problem("Suggestions", "suggestions.sql", sugError)}
-      {problem("Recordings", "recordings.sql", recError)}
-      {problem("Words", "schema.sql", error)}
+      {problem(L("Suggestions", "建議"), "suggestions.sql", sugError)}
+      {problem(L("Recordings", "錄音"), "recordings.sql", recError)}
+      {problem(L("Words", "詞條"), "schema.sql", error)}
 
       {pendingSugs.length > 0 && (
         <section className="space-y-3">
           <h2 className="meta text-lacquer">
-            {pendingSugs.length} suggestion{pendingSugs.length === 1 ? "" : "s"} to read
+            {pendingSugs.length === 1
+              ? L("1 suggestion to read", "1 則建議待閱")
+              : L("{n} suggestions to read", "{n} 則建議待閱", { n: pendingSugs.length })}
           </h2>
           <div className="grid gap-3">
             {pendingSugs.map((s: any) => {
@@ -198,7 +218,7 @@ export default async function AdminPage() {
                     >
                       {e?.romanization || e?.headword}
                     </Link>
-                    <span className={s.kind === "report" ? "rounded-sm meta text-lacquer ring-1 ring-lacquer px-2 py-0.5" : chip}>{s.kind === "edit" ? "suggested edit" : s.kind === "report" ? "report" : s.kind}</span>
+                    <span className={s.kind === "report" ? "rounded-sm meta text-lacquer ring-1 ring-lacquer px-2 py-0.5" : chip}>{s.kind === "edit" ? L("suggested edit", "建議修改") : s.kind === "report" ? L("report", "檢舉") : s.kind}</span>
                     {origin && <span className={chip}>{origin}</span>}
                     <span className="ml-auto meta text-inkFaint">
                       <LocalTime iso={s.created_at} time />
@@ -211,7 +231,7 @@ export default async function AdminPage() {
                     {s.value_gloss && <p className="text-sm text-inkSoft">{s.value_gloss}</p>}
                     {sense?.definition_en && (
                       <p className="mt-1 meta text-inkFaint">
-                        for the sense: {sense.definition_en}
+                        {L("for the sense: ", "針對這個意思：")}{sense.definition_en}
                       </p>
                     )}
                   </div>
@@ -223,26 +243,26 @@ export default async function AdminPage() {
                       <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
                         {/* An edit is made by hand in the entry editor;
                             approving it only marks it done. */}
-                        {s.kind === "edit" || s.kind === "report" ? "✓ Done" : "✓ Publish"}
+                        {s.kind === "edit" || s.kind === "report" ? L("✓ Done", "✓ 完成") : L("✓ Publish", "✓ 刊出")}
                       </SubmitButton>
                     </form>
                     {(s.kind === "edit" || s.kind === "report") && (
                       <Link href={`/editor/edit/${s.entry_id}`} className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink`}>
-                        Edit the entry
+                        {L("Edit the entry", "編輯詞條")}
                       </Link>
                     )}
                     <form action={rejectSuggestion} className="flex items-center gap-2">
                       <input type="hidden" name="id" value={s.id} />
                       <input type="hidden" name="entry_id" value={s.entry_id} />
-                      <label htmlFor={`snote-${s.id}`} className="sr-only">Reason for rejection</label>
+                      <label htmlFor={`snote-${s.id}`} className="sr-only">{L("Reason for rejection", "退回原因")}</label>
                       <input
                         id={`snote-${s.id}`}
                         name="note"
-                        placeholder="Reason (optional)"
+                        placeholder={L("Reason (optional)", "原因（選填）")}
                         className="rounded-sm border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
                       <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
-                        ✕ Reject
+                        {L("✕ Reject", "✕ 退回")}
                       </SubmitButton>
                     </form>
                   </div>
@@ -256,7 +276,9 @@ export default async function AdminPage() {
       {pendingRecs.length > 0 && (
         <section className="space-y-3">
           <h2 className="meta text-lacquer">
-            {pendingRecs.length} recording{pendingRecs.length === 1 ? "" : "s"} to listen to
+            {pendingRecs.length === 1
+              ? L("1 recording to listen to", "1 段錄音待聽")
+              : L("{n} recordings to listen to", "{n} 段錄音待聽", { n: pendingRecs.length })}
           </h2>
           <div className="grid gap-3">
             {pendingRecs.map((r: any) => {
@@ -274,8 +296,8 @@ export default async function AdminPage() {
                     </Link>
                     {origin && <span className={chip}>{origin}</span>}
                     {r.status === "approved" && (
-                      <span className="rounded-sm meta px-2 py-0.5 text-lacquer ring-1 ring-lacquer" title="Went live when it was saved (trust window); not yet checked">
-                        live
+                      <span className="rounded-sm meta px-2 py-0.5 text-lacquer ring-1 ring-lacquer" title={L("Went live when it was saved (trust window); not yet checked", "儲存時就已上線（信任期間）；尚未審核")}>
+                        {L("live", "已上線")}
                       </span>
                     )}
                     <span className="ml-auto meta text-inkFaint">
@@ -294,10 +316,10 @@ export default async function AdminPage() {
                       if (!s?.example && !s?.definition_en) return null;
                       return (
                         <p className="mt-2 text-sm text-inkSoft">
-                          <span className="meta mr-2 text-inkFaint">sentence</span>
+                          <span className="meta mr-2 text-inkFaint">{L("sentence", "例句")}</span>
                           {s.example && <span className="romanization text-ink">{s.example}</span>}
                           {s.example_gloss && <span> — {s.example_gloss}</span>}
-                          {!s.example && s.definition_en && <span>for “{s.definition_en}”</span>}
+                          {!s.example && s.definition_en && <span>{L("for “{d}”", "對應「{d}」", { d: s.definition_en })}</span>}
                         </p>
                       );
                     }
@@ -316,9 +338,9 @@ export default async function AdminPage() {
                       </p>
                     );
                   })()}
-                  <div className="mt-3"><PlayButton src={r.audio_url} label={`${e?.romanization || e?.headword || "recording"}${c?.display_name ? `, recorded by ${c.display_name}` : ""}`} /></div>
+                  <div className="mt-3"><PlayButton src={r.audio_url} label={`${e?.romanization || e?.headword || L("recording", "錄音")}${c?.display_name ? L(", recorded by {name}", "，由 {name} 錄音", { name: c.display_name }) : ""}`} /></div>
                   {r.speaker_name && (
-                    <p className="mt-2 meta text-inkSoft">said by {r.speaker_name}, recorded by {c?.display_name || "the contributor"}</p>
+                    <p className="mt-2 meta text-inkSoft">{L("said by {speaker}, recorded by {name}", "由 {speaker} 發音，{name} 錄音", { speaker: r.speaker_name, name: c?.display_name || L("the contributor", "貢獻者") })}</p>
                   )}
                   {r.note && (
                     <p className="romanization mt-2 text-sm text-inkSoft">{r.note}</p>
@@ -328,21 +350,21 @@ export default async function AdminPage() {
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="entry_id" value={r.entry_id} />
                       <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
-                        {r.status === "approved" ? "✓ Keep" : "✓ Publish"}
+                        {r.status === "approved" ? L("✓ Keep", "✓ 保留") : L("✓ Publish", "✓ 刊出")}
                       </SubmitButton>
                     </form>
                     <form action={rejectRecording} className="flex items-center gap-2">
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="entry_id" value={r.entry_id} />
-                      <label htmlFor={`rnote-${r.id}`} className="sr-only">Reason for rejection</label>
+                      <label htmlFor={`rnote-${r.id}`} className="sr-only">{L("Reason for rejection", "退回原因")}</label>
                       <input
                         id={`rnote-${r.id}`}
                         name="note"
-                        placeholder="Reason (optional)"
+                        placeholder={L("Reason (optional)", "原因（選填）")}
                         className="rounded-sm border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                       />
                       <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
-                        {r.status === "approved" ? "✕ Take down" : "✕ Reject"}
+                        {r.status === "approved" ? L("✕ Take down", "✕ 撤下") : L("✕ Reject", "✕ 退回")}
                       </SubmitButton>
                     </form>
                     {/* Reject keeps the row; this removes it and its file. */}
@@ -358,7 +380,7 @@ export default async function AdminPage() {
       {waiting === 0 ? (
         !anyFailed && (
           <div className="rounded-sm border border-rule bg-surface p-8 text-inkSoft">
-            Nothing waiting for review.
+            {L("Nothing waiting for review.", "目前沒有待審的項目。")}
           </div>
         )
       ) : pending.length === 0 ? null : (
@@ -376,24 +398,24 @@ export default async function AdminPage() {
                   {e.ipa && <span className="text-sm text-inkFaint">/{e.ipa}/</span>}
                   {origin && <span className={chip}>{origin}</span>}
                   {dupes.has(e.id) && (
-                    <span className="rounded-sm meta border border-lacquer px-1.5 py-0.5 text-lacquer">Possible duplicate</span>
+                    <span className="rounded-sm meta border border-lacquer px-1.5 py-0.5 text-lacquer">{L("Possible duplicate", "可能重複")}</span>
                   )}
                   <span className="ml-auto meta text-inkFaint">
                     <LocalTime iso={e.created_at} time />
                     {" · "}
                     {e.contributor?.id ? (
                       <Link href={`/contributor/${e.contributor.id}`} className="hover:text-lacquer">
-                        {e.contributor.display_name ?? "unknown"}
+                        {e.contributor.display_name ?? L("unknown", "不明")}
                       </Link>
                     ) : (
-                      "unknown"
+                      L("unknown", "不明")
                     )}
                   </span>
                 </div>
 
                 {dupes.has(e.id) && (
                   <p className="mt-2 text-sm text-inkSoft">
-                    Already in the dictionary:{" "}
+                    {L("Already in the dictionary: ", "辭典裡已有：")}
                     {dupes.get(e.id)!.map((m, i) => (
                       <span key={m.id}>
                         {i > 0 && ", "}
@@ -406,13 +428,13 @@ export default async function AdminPage() {
                   </p>
                 )}
 
-                {e.audio_url && <div className="mt-3"><PlayButton src={e.audio_url} label={`${e.romanization || e.headword}, submitted recording`} /></div>}
+                {e.audio_url && <div className="mt-3"><PlayButton src={e.audio_url} label={L("{w}, submitted recording", "{w}，投稿的錄音", { w: e.romanization || e.headword })} /></div>}
 
                 <ol className="mt-3 space-y-1">
                   {senses.map((s, i) => (
                     <li key={s.id} className="text-sm">
                       <span className="text-inkFaint tabular-nums">{i + 1}.</span>{" "}
-                      {s.part_of_speech && <em className="text-lacquer">{s.part_of_speech} </em>}
+                      {s.part_of_speech && <em className="text-lacquer">{L(s.part_of_speech, POS_ZH[s.part_of_speech] ?? s.part_of_speech)} </em>}
                       {s.definition_en}
                       {s.gloss_zh && <span className="text-inkSoft"> · {s.gloss_zh}</span>}
                       {s.example && <span className="romanization text-inkSoft">—{s.example}</span>}
@@ -420,33 +442,33 @@ export default async function AdminPage() {
                   ))}
                 </ol>
 
-                {e.notes && <p className="mt-3 text-sm text-inkSoft">Notes: {e.notes}</p>}
+                {e.notes && <p className="mt-3 text-sm text-inkSoft">{L("Notes: ", "附註：")}{e.notes}</p>}
 
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
                   <form action={approve}>
                     <input type="hidden" name="id" value={e.id} />
                     <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
-                      ✓ Approve
+                      {L("✓ Approve", "✓ 核准")}
                     </SubmitButton>
                   </form>
                   <form action={reject} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={e.id} />
-                    <label htmlFor={`note-${e.id}`} className="sr-only">Reason for rejection</label>
+                    <label htmlFor={`note-${e.id}`} className="sr-only">{L("Reason for rejection", "退回原因")}</label>
                     <input
                       id={`note-${e.id}`}
                       name="note"
-                      placeholder="Reason (optional)"
+                      placeholder={L("Reason (optional)", "原因（選填）")}
                       className="rounded-sm border border-rule bg-paper px-3 py-1.5 text-sm outline-none focus:border-lacquer placeholder:text-inkFaint"
                     />
                     <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
-                      ✕ Reject
+                      {L("✕ Reject", "✕ 退回")}
                     </SubmitButton>
                   </form>
                   <Link
                     href={`/editor/edit/${e.id}`}
                     className="meta text-lacquer hover:underline"
                   >
-                    Edit
+                    {L("Edit", "編輯")}
                   </Link>
                   <DeleteEntry id={e.id} back="/editor" className="ml-auto" />
                 </div>

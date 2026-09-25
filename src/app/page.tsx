@@ -14,12 +14,13 @@ import { getSessionUser } from "@/lib/auth";
 import { searchContributors, type ContributorHit } from "@/lib/contributors";
 import { toTraditional } from "@/lib/chinese";
 import { missionTally, topContributors, contributorCount, type MissionTally, type TopContributor } from "@/lib/public-stats";
-import { translator, samples } from "@/lib/i18n";
+import { translator, samples, pick, type Pick as Lpick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { getSafe } from "@/lib/safe";
 import { isExplicit } from "@/lib/content-filter";
 import Avatar from "@/components/Avatar";
 import InfoTip from "@/components/InfoTip";
+import { romText } from "@/lib/rom";
 
 export const dynamic = "force-dynamic";
 
@@ -46,21 +47,25 @@ function anchored(text: string) {
   );
 }
 
-function ResultRow({ r, recordings }: { r: SearchRow; recordings: number }) {
+function ResultRow({ r, recordings, L }: { r: SearchRow; recordings: number; L: Lpick }) {
   return (
     <Link
       href={`/entry/${r.id}`}
       className="flex items-baseline gap-3.5 border-b border-rule px-1 py-3.5 transition-colors hover:bg-surface2"
     >
       {r.hanzi && <span className="han min-w-[3.4em] text-2xl font-medium">{r.hanzi}</span>}
-      <span className="romanization text-[15px] font-semibold tracking-[-.01em]">{r.romanization || r.headword}</span>
+      <span className="romanization text-[15px] font-semibold tracking-[-.01em]">{romText(r.romanization, r.headword)}</span>
       <span className="min-w-0 flex-1 truncate text-sm text-inkSoft">
         {r.short_gloss}
-        {(r.sense_count ?? 0) > 1 && <span className="text-inkMute"> · {r.sense_count} meanings</span>}
+        {(r.sense_count ?? 0) > 1 && <span className="text-inkMute"> · {L("{n} meanings", "{n} 個義項", { n: r.sense_count ?? 0 })}</span>}
       </span>
       {/* Words, not a ♪ glyph, so a screen reader says what the number is. */}
       <span className="shrink-0 text-xs text-inkMute">
-        {recordings ? (recordings === 1 ? "1 recording" : `${recordings} recordings`) : "no recording"}
+        {recordings
+          ? recordings === 1
+            ? L("1 recording", "1 段錄音")
+            : L("{n} recordings", "{n} 段錄音", { n: recordings })
+          : L("no recording", "尚無錄音")}
       </span>
     </Link>
   );
@@ -77,19 +82,20 @@ export default async function Home({
   const isEditorView = Boolean(profile?.is_editor);
   const lang = getLang();
   const t = translator(lang);
+  const L = pick(lang);
   const safe = getSafe();
 
   const notices = (
     <>
       {searchParams.deleted && (
         <p role="status" className="wrap mb-6 rounded-sm border border-rule bg-surface px-5 py-3 text-sm text-inkSoft">
-          Your account has been deleted. Thank you for everything you added.
+          {L("Your account has been deleted. Thank you for everything you added.", "你的帳號已刪除。感謝你貢獻的一切。")}
         </p>
       )}
       {searchParams.auth_error && (
         <p role="alert" className="mb-6 rounded-sm border border-rule bg-surface px-5 py-3 text-sm text-inkSoft">
-          <span className="font-semibold text-ink">Sign-in did not complete.</span> {searchParams.auth_error}{" "}
-          Please try again, and if it keeps happening let Noah know what it says here.
+          <span className="font-semibold text-ink">{L("Sign-in did not complete.", "登入未完成。")}</span> {searchParams.auth_error}{" "}
+          {L("Please try again, and if it keeps happening let Noah know what it says here.", "請再試一次；如果一直發生，請把這裡顯示的訊息告訴 Noah。")}
         </p>
       )}
     </>
@@ -161,7 +167,7 @@ export default async function Home({
         )}
         <div className="mt-4">
           {rows.map((r) => (
-            <ResultRow key={r.id} r={r} recordings={(r.audio_url ? 1 : 0) + (counts.get(r.id) ?? 0)} />
+            <ResultRow key={r.id} r={r} L={L} recordings={(r.audio_url ? 1 : 0) + (counts.get(r.id) ?? 0)} />
           ))}
         </div>
         {/* Nothing found. Rather than a dead end, the three ways on: the
@@ -248,7 +254,7 @@ export default async function Home({
       wotd = {
         id: w.id, hanzi: w.hanzi, romanization: w.romanization, headword: w.headword,
         audio: take?.audio_url ?? w.audio_url ?? null,
-        credit: take ? audioCredit(by, take.speaker_name ?? null, take.origin_area ?? null) : null,
+        credit: take ? audioCredit(by, take.speaker_name ?? null, take.origin_area ?? null, lang) : null,
         gloss: firstSense<any>(w.senses)?.definition_en ?? null,
         pos: firstSense<any>(w.senses)?.part_of_speech ?? null,
         senses: ((w.senses as any[]) ?? []).filter((x) => x?.definition_en).length,
@@ -454,7 +460,7 @@ export default async function Home({
                 {wotd.hanzi ? (
                   <div className="han text-[72px] font-medium leading-[1.05] transition-colors group-hover:text-lacquer">{wotd.hanzi}</div>
                 ) : (
-                  <div className="text-[44px] font-semibold leading-[1.1] tracking-tight transition-colors group-hover:text-lacquer">{wotd.romanization || wotd.headword}</div>
+                  <div className="text-[44px] font-semibold leading-[1.1] tracking-tight transition-colors group-hover:text-lacquer">{romText(wotd.romanization, wotd.headword)}</div>
                 )}
               </Link>
               <div className="mt-3 flex items-center gap-3">
@@ -463,7 +469,7 @@ export default async function Home({
                     <PlayButton src={wotd.audio} size="sm" label={`${t("mod.play")} ${wotd.hanzi || wotd.headword}`} credit={wotd.credit} />
                   </span>
                 )}
-                {wotd.hanzi && <span className="romanization text-[22px] leading-snug">{wotd.romanization || wotd.headword}</span>}
+                {wotd.hanzi && <span className="romanization text-[22px] leading-snug">{romText(wotd.romanization, wotd.headword)}</span>}
               </div>
               {/* The same size as the romanization above it. With more than one
                   meaning, the first is numbered and the rest are counted. */}
@@ -531,7 +537,7 @@ export default async function Home({
                     <Avatar src={p.avatar_url} name={p.display_name} size={36} className="ring-1 ring-rule" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-semibold group-hover:text-lacquer">
-                        {p.display_name || "A contributor"}
+                        {p.display_name || L("A contributor", "一位貢獻者")}
                       </span>
                       <span className="block text-xs leading-[1.35] text-inkSoft">
                         {p.recordings === 1 ? t("mod.recording") : t("mod.recordings", { n: p.recordings })}

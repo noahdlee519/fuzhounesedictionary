@@ -63,7 +63,7 @@ export default function TakeControls({
               {L("Stop", "停止")}
             </button>
             <span aria-live="polite" className="text-xs tabular-nums text-lacquer">
-              {seconds.toFixed(1)}s
+              {L("{n}s", "{n} 秒", { n: seconds.toFixed(1) })}
             </span>
           </>
         )}

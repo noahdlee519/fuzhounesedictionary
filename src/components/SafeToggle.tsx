@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SAFE_COOKIE } from "@/lib/content-filter";
+import { useL } from "./LangProvider";
 
 /* The content filter switch, in the same labelled-switch shape as the theme
    one. Unlike the theme, this changes what the server sends — the word list
@@ -13,12 +14,14 @@ import { SAFE_COOKIE } from "@/lib/content-filter";
 export default function SafeToggle({
   on,
   className = "",
-  label = "Content filter",
+  label: labelProp,
 }: {
   on: boolean;
   className?: string;
   label?: string;
 }) {
+  const L = useL();
+  const label = labelProp ?? L("Content filter", "內容過濾");
   const router = useRouter();
   const [safe, setSafe] = useState(on);
 
@@ -35,7 +38,10 @@ export default function SafeToggle({
       role="switch"
       aria-checked={safe}
       aria-label={label}
-      title="Hide vulgar and explicit meanings from the word list and search results. Words reached on purpose still show everything."
+      title={L(
+        "Hide vulgar and explicit meanings from the word list and search results. Words reached on purpose still show everything.",
+        "在詞表和搜尋結果中隱藏粗俗和露骨的意思。特地打開的詞條仍會顯示全部內容。"
+      )}
       onClick={toggle}
       className={`inline-flex items-center gap-2 meta text-inkFaint transition-colors hover:text-lacquer ${className}`}
     >

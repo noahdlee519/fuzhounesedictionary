@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { reviewCount } from "@/lib/review";
-import { translator, type Key } from "@/lib/i18n";
+import { translator, pick, type Key } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 
 /* One place to contribute, four ways in.
@@ -32,6 +32,7 @@ const TABS: { key: ContributeTab | "overview"; href: string; label: Key }[] = [
 
 export default async function ContributeTabs({ active }: { active: ContributeTab }) {
   const t = translator(getLang());
+  const L = pick(getLang());
   const { profile } = await getSessionUser();
   const editor = Boolean(profile?.is_editor);
   const waiting = editor ? await reviewCount() : null;
@@ -47,7 +48,7 @@ export default async function ContributeTabs({ active }: { active: ContributeTab
       {/* Wraps on a narrow screen. It used to scroll instead, with nothing to
           show that it did, so at 390px the fourth tab — the one you were on —
           sat cut off at the edge. Five short labels make two tidy rows. */}
-      <nav aria-label="Ways to contribute" className="-mb-px mt-7 flex flex-wrap gap-x-6 gap-y-1">
+      <nav aria-label={L("Ways to contribute", "貢獻的方式")} className="-mb-px mt-7 flex flex-wrap gap-x-6 gap-y-1">
         {tabs.map((tab) => {
           const on = tab.key === active;
           return (

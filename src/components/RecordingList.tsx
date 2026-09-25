@@ -6,6 +6,8 @@ import PlayButton from "./PlayButton";
 import RecordingNoteEditor from "./RecordingNoteEditor";
 import WithdrawRecording from "./WithdrawRecording";
 import VoteButtons, { type VoteState } from "./VoteButtons";
+import { getLang } from "@/lib/lang";
+import { pick } from "@/lib/i18n";
 
 /* One row per recording: a play button, the speaker's note, who recorded it and
    where their Fuzhounese is from, and the thumbs. This is the point of the recordings table: the same word
@@ -52,6 +54,9 @@ export default function RecordingList({
   votes?: Map<string, VoteState>;
 }) {
   if (!recordings.length) return null;
+  const lang = getLang();
+  const zh = lang === "zh";
+  const L = pick(lang);
 
   return (
     <ul className={compact ? "space-y-2" : "space-y-3"}>
@@ -61,7 +66,9 @@ export default function RecordingList({
         const note = (r.note ?? "").trim();
         const mine = Boolean(viewerId && r.contributor?.id === viewerId);
         const speaker = (r.speaker_name ?? "").trim();
-        const label = `${note || (r.kind === "example" ? "example sentence" : "the word")}${speaker ? `, said by ${speaker}` : ""}${who ? `, recorded by ${who}` : ""}`;
+        const label = zh
+          ? `${note || (r.kind === "example" ? "例句" : "這個詞")}${speaker ? `，講者：${speaker}` : ""}${who ? `，${who} 錄音` : ""}`
+          : `${note || (r.kind === "example" ? "example sentence" : "the word")}${speaker ? `, said by ${speaker}` : ""}${who ? `, recorded by ${who}` : ""}`;
         return (
           <li key={r.id} className="flex flex-wrap items-start gap-x-3 gap-y-2">
             <div className="pt-0.5">
@@ -84,16 +91,25 @@ export default function RecordingList({
               <p className="meta text-inkFaint">
                 {/* Someone else speaking comes first: it is their voice and
                     their district; the account holder made the recording. */}
-                {speaker && <span className="text-inkSoft">said by {speaker} · </span>}
+                {speaker && <span className="text-inkSoft">{L("said by {s}", "講者：{s}", { s: speaker })} · </span>}
                 {who && r.contributor?.id ? (
-                  <>
-                    recorded by{" "}
-                    <Link href={`/contributor/${r.contributor.id}`} className="hover:text-lacquer">
-                      {who}
-                    </Link>
-                  </>
+                  zh ? (
+                    <>
+                      <Link href={`/contributor/${r.contributor.id}`} className="hover:text-lacquer">
+                        {who}
+                      </Link>
+                      {" 錄音"}
+                    </>
+                  ) : (
+                    <>
+                      recorded by{" "}
+                      <Link href={`/contributor/${r.contributor.id}`} className="hover:text-lacquer">
+                        {who}
+                      </Link>
+                    </>
+                  )
                 ) : (
-                  "recorded by a contributor"
+                  L("recorded by a contributor", "由一位貢獻者錄音")
                 )}
                 {origin && (
                   <>
@@ -108,7 +124,13 @@ export default function RecordingList({
                 )}
                 {r.status !== "approved" && (
                   <span className="rounded-sm ml-2 inline-block whitespace-nowrap border border-rule px-1.5 py-0.5 text-inkFaint">
-                    {r.status === "pending" ? "awaiting review" : r.status}
+                    {r.status === "pending"
+                      ? L("awaiting review", "待審")
+                      : r.status === "approved"
+                        ? L("approved", "已核准")
+                        : r.status === "rejected"
+                          ? L("rejected", "已退回")
+                          : r.status}
                   </span>
                 )}
               </p>

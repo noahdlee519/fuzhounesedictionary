@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useL } from "./LangProvider";
 
 /* The search pill in the header. A plain GET form to "/", so it works
    before any JavaScript loads and lands on the same results page as the big
@@ -15,9 +16,9 @@ import { usePathname } from "next/navigation";
    in the header moves when it appears. */
 export default function HeaderSearch({
   className = "",
-  placeholder = "Search for a word",
-  placeholderShort = "Search",
-  label = "Search the dictionary",
+  placeholder: placeholder0,
+  placeholderShort: placeholderShort0,
+  label: label0,
 }: {
   className?: string;
   placeholder?: string;
@@ -26,6 +27,10 @@ export default function HeaderSearch({
   placeholderShort?: string;
   label?: string;
 }) {
+  const L = useL();
+  const placeholder = placeholder0 ?? L("Search for a word", "搜尋一個詞");
+  const placeholderShort = placeholderShort0 ?? L("Search", "搜尋");
+  const label = label0 ?? L("Search the dictionary", "搜尋辭典");
   const path = usePathname();
   // Switched in an effect: the placeholder is an attribute, and React keeps
   // the server's value for an attribute that differs at hydration.
