@@ -140,7 +140,7 @@ export default function RecordingList({
               {/* Where this speaker's Fuzhounese is from, as a map. The word
                   is the same word; the point of having several takes is that
                   they come from different places. */}
-              <OriginMap code={r.origin_area} className={compact ? "!h-7 !w-7" : ""} />
+              <OriginMap code={r.origin_area} />
               {votes && (
                 <VoteButtons
                   id={r.id}

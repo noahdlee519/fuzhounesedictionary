@@ -10,9 +10,18 @@ import { ORIGIN_MAPS } from "./origin-maps";
    scripts/make-origin-maps.py; the colours are the page's own, so the map
    follows the theme toggle.
 
+   It stands exactly as tall as the vote buttons beside it (MAP_HEIGHT, the
+   same 26px VoteButtons sets; Noah, 26 Sep 2026), and each map's viewBox is
+   cropped to what is drawn, so the land reaches the top and bottom. The
+   width follows the map's own shape: narrow for the Fuzhou–Ningde frame,
+   wide for the world.
+
    Hovering names the place, in the site's own tooltip panel rather than the
    browser's: a title attribute waits a second, cannot be styled, and would
    show a second tip on top of this one. */
+/** The vote buttons' height (VoteButtons: h-[26px]). */
+export const MAP_HEIGHT = 26;
+
 export default function OriginMap({
   code,
   className = "",
@@ -26,8 +35,10 @@ export default function OriginMap({
   if (!svg || !area) return null;
 
   const label = `${area.label} ${area.hanzi}`;
+  const vb = svg.match(/viewBox="[\d.-]+ [\d.-]+ ([\d.]+) ([\d.]+)"/);
+  const width = vb ? Math.round((MAP_HEIGHT * Number(vb[1])) / Number(vb[2])) : MAP_HEIGHT;
   return (
-    <span className={`has-map block h-9 w-9 shrink-0 ${className}`}>
+    <span className={`has-map block shrink-0 ${className}`} style={{ height: MAP_HEIGHT, width }}>
       <span
         role="img"
         aria-label={label}

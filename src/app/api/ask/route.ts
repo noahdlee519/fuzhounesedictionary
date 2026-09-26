@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
   const { user } = await getSessionUser();
   if (!user) {
-    return NextResponse.json({ message: "Sign in with Google to use the assistant." }, { status: 401 });
+    return NextResponse.json({ message: "Sign in to use the assistant." }, { status: 401 });
   }
   const actor = actorFor(user.id, null);
 

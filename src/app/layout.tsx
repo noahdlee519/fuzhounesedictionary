@@ -1,5 +1,14 @@
 import { Suspense } from "react";
 import { recordingsTrusted } from "@/lib/trust";
+/* Noto Serif TC for Chinese characters, self-hosted (Noah, 26 Sep 2026).
+   It was linked from Google Fonts, which mainland China blocks: there the
+   stylesheet in <head> hung until it timed out, holding up the first paint of
+   every page. These are the same unicode-range slices Google serves, bundled
+   into /_next/static and served from this domain, so a browser still fetches
+   only the slices a page's characters fall in. */
+import "@fontsource/noto-serif-tc/400.css";
+import "@fontsource/noto-serif-tc/500.css";
+import "@fontsource/noto-serif-tc/700.css";
 import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -25,8 +34,8 @@ import { getLang } from "@/lib/lang";
 // none of which the faces before it had. Self-hosted from src/fonts; see the
 // README there. Romanization is never set in italic — the stacked marks sit
 // correctly upright and drift in the italic. Noto Serif TC for Chinese
-// characters is linked from Google Fonts in <head> because its 100-odd
-// unicode-range slices are better fetched on demand than bundled.
+// characters comes from @fontsource (imported above) because its 100-odd
+// unicode-range slices are better fetched on demand than bundled into one file.
 const display = localFont({
   src: [
     { path: "../fonts/CharisSIL-Regular.woff2", weight: "400", style: "normal" },
@@ -52,7 +61,7 @@ const ui = localFont({
 });
 
 
-// Fifteen characters that Noto Serif TC does not have. Its Google subsets stop
+// Fifteen characters that Noto Serif TC does not have. Its web subsets stop
 // at U+FFFF, and Fuzhounese keeps words above it — 𣍐 mâ̤, 𡳞 lâng — so the
 // browser was substituting per character and a Mac picked a sans, leaving one
 // word set in two faces. These glyphs are Hanazono Mincho, a Ming face like
@@ -156,12 +165,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang={lang === "zh" ? "zh-Hant" : "en"} className={`${display.variable} ${ui.variable} ${rareHan.variable}`} style={{ ["--font-han" as string]: "'Noto Serif TC'" }} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap"
-        />
         {/* Stamp the theme before first paint so a chosen dark or light mode
             never flashes the other. Stored choice first, system preference
             otherwise. Tiny and synchronous on purpose. */}

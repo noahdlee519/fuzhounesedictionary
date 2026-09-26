@@ -12,6 +12,7 @@
     "backup": "tsx scripts/backup.ts"
   },
   "dependencies": {
+    "@fontsource/noto-serif-tc": "^5.3.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
     "@vercel/analytics": "^2.0.1",

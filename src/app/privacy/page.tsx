@@ -20,7 +20,7 @@ export function generateMetadata(): Metadata {
 
 /* The English text is authoritative; the Chinese is a courtesy translation
    (LegalPage says so at the top when the language is zh). Change both. */
-const UPDATED = { en: "6 September 2026", zh: "2026年9月6日" };
+const UPDATED = { en: "26 September 2026", zh: "2026年9月26日" };
 
 const A = "text-lacquer hover:underline";
 
@@ -44,8 +44,8 @@ export default function PrivacyPage() {
           </p>
           <p>
             {L(
-              "The short version: you can read everything on the site without giving us anything. If you sign in to contribute, we keep your Google name, email and picture, the profile details you choose to add, and the words and recordings you contribute. Your email is never shown publicly. Your contributions are—that is what a dictionary is.",
-              "簡而言之：你不必提供任何資料，就能閱讀網站上的所有內容。如果你登入參與貢獻，我們會保存你 Google 帳號的名稱、電子郵件地址和大頭貼、你自行選擇新增的個人檔案資料，以及你貢獻的詞和錄音。你的電子郵件地址絕不會公開顯示。你的貢獻則會公開——辭典本來就是如此。",
+              "The short version: you can read everything on the site without giving us anything. If you sign in to contribute, we keep your email address (and, if you use Google, your Google name and picture), the profile details you choose to add, and the words and recordings you contribute. Your email is never shown publicly. Your contributions are—that is what a dictionary is.",
+              "簡而言之：你不必提供任何資料，就能閱讀網站上的所有內容。如果你登入參與貢獻，我們會保存你的電子郵件地址（如果你使用 Google 登入，還有你 Google 帳號的名稱和大頭貼）、你自行選擇新增的個人檔案資料，以及你貢獻的詞和錄音。你的電子郵件地址絕不會公開顯示。你的貢獻則會公開——辭典本來就是如此。",
             )}
           </p>
         </>
@@ -62,8 +62,8 @@ export default function PrivacyPage() {
         <p>
           <b>{L("If you sign in:", "如果你登入：")}</b>
           {L(
-            " sign-in is through Google. Google sends us your name, email address and profile picture, and we store them. We use a cookie to keep you signed in; it exists only for that purpose. We do not see your Google password.",
-            "登入是透過 Google 進行。Google 會把你的名稱、電子郵件地址和大頭貼傳送給我們，我們會加以儲存。我們使用一個 cookie 讓你保持登入；它僅作此用途。我們看不到你的 Google 密碼。",
+            " you can sign in with Google or with a code sent to your email address. With Google, Google sends us your name, email address and profile picture, and we store them; we do not see your Google password. With email, we store only the address, and we send to it only sign-in codes. We use a cookie to keep you signed in; it exists only for that purpose.",
+            "你可以使用 Google 登入，或使用寄到你電子郵件信箱的驗證碼登入。使用 Google 時，Google 會把你的名稱、電子郵件地址和大頭貼傳送給我們，我們會加以儲存；我們看不到你的 Google 密碼。使用電子郵件時，我們只儲存你的電子郵件地址，而且只會寄登入驗證碼給你。我們使用一個 cookie 讓你保持登入；它僅作此用途。",
           )}
         </p>
         <p>
@@ -174,25 +174,25 @@ export default function PrivacyPage() {
       <Section n={4} title={L("Who else sees it", "還有誰會看到這些資料")}>
         {zh ? (
           <p>
-            有四家公司代表我們處理資料，各自適用其隱私權政策：
+            以下幾家公司代表我們處理資料，各自適用其隱私權政策：
             <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noreferrer" className={A}>Vercel</a>{" "}
             代管網站並執行流量分析；
             <a href="https://supabase.com/privacy" target="_blank" rel="noreferrer" className={A}>Supabase</a>{" "}
             儲存資料庫、你的登入工作階段，以及音訊和圖片檔案；
             <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className={A}>Google</a>{" "}
-            負責登入；
+            負責 Google 登入；我們的郵件寄送服務負責寄出電子郵件登入驗證碼；
             <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noreferrer" className={A}>Anthropic</a>{" "}
             回答你向助手提出的問題。它們的伺服器可能位於與你不同的國家，因此使用本網站即表示你的資料可能會被傳輸到那裡。
           </p>
         ) : (
           <p>
-            Four companies process data on our behalf, each under its own privacy policy:{" "}
+            These companies process data on our behalf, each under its own privacy policy:{" "}
             <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noreferrer" className={A}>Vercel</a>{" "}
             hosts the site and runs the analytics;{" "}
             <a href="https://supabase.com/privacy" target="_blank" rel="noreferrer" className={A}>Supabase</a>{" "}
             stores the database, your sign-in session and the audio and picture files;{" "}
             <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className={A}>Google</a>{" "}
-            handles sign-in;{" "}
+            handles Google sign-in; our email delivery service sends email sign-in codes;{" "}
             <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noreferrer" className={A}>Anthropic</a>{" "}
             answers the questions you put to the assistant. Their servers may be in a different country
             from you, so using the site means your data can be transferred there.

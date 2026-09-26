@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { MAX_RECORDING_NOTE } from "@/lib/constants";
 import { saveRecording } from "@/lib/audio-upload";
 import { heldTake, holdTake, releaseTake } from "@/lib/held-take";
-import { startGoogleSignIn } from "@/lib/supabase/sign-in";
+import SignInDialog from "./SignInDialog";
 import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
 import SpeakerFields from "./SpeakerFields";
@@ -23,10 +23,10 @@ import { useL } from "./LangProvider";
 
    Anyone may press record; only saving needs an account. The order matters.
    Every step between arriving and hearing your own voice loses people, and
-   "sign in with Google" was the first step. Now it is the last: a visitor
+   "sign in" was the first step. Now it is the last: a visitor
    records, listens back, chooses the take — and only then, on "Use this",
    is asked to sign in. The take is held in the browser (src/lib/held-take)
-   across the trip to Google, and when the page comes back with a user it
+   across the trip to sign in (Google, or a code by email), and when the page comes back with a user it
    saves the held take by itself and says so. The person does the hard part
    with nothing asked of them, and the sign-in is what finishes it rather
    than what starts it.
@@ -113,7 +113,7 @@ export default function Recorder({
   const [savedNote, setSavedNote] = useState("");
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   // "held": a take from before sign-in is being saved on return; "sending":
-  // the visitor chose a take and is on the way to Google.
+  // the visitor chose a take and the sign-in dialog is open.
   const [resuming, setResuming] = useState<"held" | "sending" | null>(null);
   // Bumped by "Try again" after a failed save on return.
   const [attempt, setAttempt] = useState(0);
@@ -192,13 +192,9 @@ export default function Recorder({
         setSaving(false);
         return;
       }
+      // The dialog signs in (Google or an emailed code) and loads this page
+      // again; closing it instead leaves the take held for next time.
       setResuming("sending");
-      const err = await startGoogleSignIn(`${window.location.pathname}${window.location.search}`);
-      if (err) {
-        setError(err);
-        setResuming(null);
-        setSaving(false);
-      }
       return;
     }
 
@@ -382,6 +378,20 @@ export default function Recorder({
 
   return (
     <div className="space-y-2">
+      {!userId && (
+        <SignInDialog
+          open={resuming === "sending"}
+          onClose={() => {
+            setResuming(null);
+            setSaving(false);
+          }}
+          next={typeof window === "undefined" ? "/" : `${window.location.pathname}${window.location.search}`}
+          intro={L(
+            "Sign in to save your recording. It is kept in this browser and saved as soon as you are signed in.",
+            "登入即可儲存你的錄音。錄音會先保留在這個瀏覽器裡，你一登入就會自動儲存。"
+          )}
+        />
+      )}
       {label && (
         <p className="meta text-inkFaint">{label}</p>
       )}
@@ -419,7 +429,7 @@ export default function Recorder({
             className={`${recBtn} border-lacquer bg-lacquer text-paper hover:bg-transparent hover:text-lacquer`}
           >
             {saving
-              ? resuming === "sending" ? L("Opening Google…", "正在開啟 Google…") : L("Saving…", "儲存中…")
+              ? resuming === "sending" ? L("Signing in…", "登入中…") : L("Saving…", "儲存中…")
               : userId ? L("Use this", "用這段") : L("Use this (sign in required)", "用這段（需要登入）")}
           </button>
         }

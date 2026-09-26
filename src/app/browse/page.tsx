@@ -14,6 +14,7 @@ import { filterTally, hasUpdatedAt } from "@/lib/public-stats";
 import { translator, pick, type Pick as Lpick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
 import { getSafe } from "@/lib/safe";
+import SafeToggle from "@/components/SafeToggle";
 import { withoutExplicit } from "@/lib/content-filter";
 import { ORIGIN_AREAS, originArea, originLabel } from "@/lib/origins";
 import type { Metadata } from "next";
@@ -257,13 +258,20 @@ export default async function BrowsePage({
   // Everything the page needs that does not depend on anything else, at
   // once: the words, the chip tally, the total (both cached for a minute),
   // and who is signed in (for the assistant's sign-in gate under the box).
-  const [list, tally, cachedTotal, { user }] = await Promise.all([
+  const [list, tally, cachedTotal, unfilteredTotal, { user }] = await Promise.all([
     listQuery,
     filterTally(),
     browseTotal(pos, origin, safe).catch(() => null),
+    // The same count without the content filter, so the page can say how
+    // many words the filter is keeping out of the list (Noah, 26 Sep 2026:
+    // the home page counted 3,790 words and this page 3,775, with nothing
+    // saying why).
+    safe ? browseTotal(pos, origin, false).catch(() => null) : Promise.resolve(null),
     getSessionUser(),
   ]);
   total = cachedTotal ?? 0;
+  const hiddenByFilter =
+    safe && cachedTotal != null && unfilteredTotal != null ? Math.max(0, unfilteredTotal - cachedTotal) : 0;
 
   if (lang === "fz") {
     const { data, error } = list;
@@ -359,6 +367,9 @@ export default async function BrowsePage({
   ]
     .filter(Boolean)
     .join(" ");
+  const hiddenLine = hiddenByFilter
+    ? L("{n} hidden by the content filter", "{n} 個被內容過濾隱藏", { n: hiddenByFilter.toLocaleString() })
+    : "";
 
   return (
     <div className="-my-10">
@@ -469,7 +480,13 @@ export default async function BrowsePage({
             <span className="meta text-inkFaint">{L("Romanization", "羅馬字")}</span>
             <RomToggle sys={getRom()} />
           </div>
-          <p className="meta text-inkFaint">{countLine}</p>
+          <p className="meta text-inkFaint">
+            {countLine}
+            {hiddenLine && <> · {hiddenLine}</>}
+          </p>
+          {/* The switch itself, where the difference shows: before, it was
+              only on the account page, out of reach of anyone signed out. */}
+          {(hiddenByFilter > 0 || !safe) && <SafeToggle on={safe} />}
         </div>
       </div>
 

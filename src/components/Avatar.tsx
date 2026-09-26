@@ -1,7 +1,14 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
 /* A round profile picture. Shows the uploaded image if there is one; otherwise
    a generated default — the person's first initial on a lacquer disc, falling
    back to a neutral silhouette when there is no name to take an initial from.
-   Plain <img> (not next/image) so Supabase/Google avatar URLs need no config. */
+   Plain <img> (not next/image) so Supabase/Google avatar URLs need no config.
+   A picture that will not load falls back to the initial too: a Google
+   profile picture is served from Google, which mainland China blocks, and
+   there it was a broken-image icon (Noah, 26 Sep 2026). */
 export default function Avatar({
   src,
   name,
@@ -15,17 +22,27 @@ export default function Avatar({
 }) {
   const box = { width: size, height: size };
   const initial = (name ?? "").trim().charAt(0).toUpperCase();
+  const [broken, setBroken] = useState<string | null>(null);
+  // An image that failed before the page hydrated fired its error event
+  // with no one listening; catch that case on mount.
+  const img = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const el = img.current;
+    if (src && el && el.complete && el.naturalWidth === 0) setBroken(src);
+  }, [src]);
 
-  if (src) {
+  if (src && broken !== src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
+        ref={img}
         src={src}
         alt={name ? `${name}'s profile picture` : "Profile picture"}
         width={size}
         height={size}
         style={box}
         className={`shrink-0 rounded-full object-cover ${className}`}
+        onError={() => setBroken(src)}
       />
     );
   }

@@ -198,6 +198,16 @@ export default async function AccountPage({
               {profile?.display_name || L("My account", "我的帳號")}
             </h1>
             <p className="truncate text-sm text-inkFaint">{user.email}</p>
+            {/* An account made by email sign-in starts with no name
+                (supabase/email_signin.sql): ask for one. */}
+            {!profile?.display_name && (
+              <p className="text-sm text-inkSoft">
+                {L("Your contributions show as “A contributor”. ", "你的貢獻目前顯示為「一位貢獻者」。")}
+                <a href="#display-name" className="text-lacquer underline-offset-2 hover:underline">
+                  {L("Add the name you'd like to be credited with", "填寫你希望署名的名字")}
+                </a>
+              </p>
+            )}
             {since && <p className="text-sm text-inkFaint">{L("Member since {since}", "{since}加入", { since })}</p>}
             <p className="text-sm">
               <Link href={`/contributor/${user.id}`} className="text-lacquer underline-offset-2 hover:underline">
@@ -375,7 +385,7 @@ export default async function AccountPage({
         </div>
 
         <form action={saveProfile} className="rounded-sm space-y-4 border border-rule bg-surface p-5">
-          <label className="block">
+          <label id="display-name" className="block scroll-mt-24">
             <span className={labelCls}>{L("Display name", "顯示名稱")}</span>
             <input
               name="display_name"
