@@ -122,7 +122,12 @@ export default function SpeakerFields({
               onChange={(e) => set({ ...value, area: e.target.value })}
               className="rounded-sm mt-1 w-full border border-rule bg-paper px-2 py-1.5 text-sm text-ink outline-none focus:border-lacquer focus-visible:outline-none"
             >
-              <option value="">{L("Not sure", "不確定")}</option>
+              {/* Required (Noah, 26 Sep 2026), like the account holder's own:
+                  "Fuzhou city (not sure which district)" and "Elsewhere in
+                  Fujian" are there for someone who only knows roughly. */}
+              <option value="" disabled>
+                {L("Choose…", "請選擇…")}
+              </option>
               {ORIGIN_GROUPS.map((g) => (
                 <optgroup key={g} label={L(g, GROUP_ZH[g] ?? g)}>
                   {ORIGIN_AREAS.filter((a) => a.group === g).map((a) => (

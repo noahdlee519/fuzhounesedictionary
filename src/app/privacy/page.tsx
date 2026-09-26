@@ -69,15 +69,15 @@ export default function PrivacyPage() {
         <p>
           <b>{L("Your profile:", "你的個人檔案：")}</b>
           {L(
-            " anything you add on the account page—a display name, a profile picture, and, if you choose, where your Fuzhounese is from (a county or district, and optionally a town or village).",
-            "你在帳號頁面新增的任何資料——顯示名稱、大頭貼，以及（若你選擇提供）你的福州話來自哪裡（縣或區，並可選填鄉鎮或村）。",
+            " where your Fuzhounese is from (a county or district, which is required before you contribute, and optionally a town or village), plus anything else you add on the account page, such as a display name and a profile picture.",
+            "你的福州話來自哪裡（縣或區為貢獻前的必填項目，鄉鎮或村可選填），以及你在帳號頁面新增的其他資料，例如顯示名稱和大頭貼。",
           )}
         </p>
         <p>
           <b>{L("Your contributions:", "你的貢獻：")}</b>
           {L(
-            " the words, meanings, example sentences, pronunciations, requests and votes you submit, and any audio you record or upload. When you contribute, we also record the time and, if you have set it on your profile, where your Fuzhounese is from, so that a recording from Changle stays labeled Changle even if you later change your profile.",
-            "你提交的詞、釋義、例句、發音、請求和投票，以及你錄製或上傳的任何音訊。你貢獻時，我們也會記錄時間；如果你已在個人檔案中設定你的福州話來自哪裡，也會一併記錄，這樣即使你日後修改個人檔案，一段來自長樂的錄音仍會標示為長樂。",
+            " the words, meanings, example sentences, pronunciations, requests and votes you submit, and any audio you record or upload. When you contribute, we also record the time and where your Fuzhounese is from, so that a recording from Changle stays labeled Changle even if you later change your profile.",
+            "你提交的詞、釋義、例句、發音、請求和投票，以及你錄製或上傳的任何音訊。你貢獻時，我們也會記錄時間和你的福州話來自哪裡，這樣即使你日後修改個人檔案，一段來自長樂的錄音仍會標示為長樂。",
           )}
         </p>
         <p>
@@ -112,8 +112,8 @@ export default function PrivacyPage() {
           <li>{L("your display name and profile picture;", "你的顯示名稱和大頭貼；")}</li>
           <li>
             {L(
-              "where your Fuzhounese is from, only to the level you chose—nothing, the county or district, or the county and village;",
-              "你的福州話來自哪裡，僅以你選擇的詳細程度顯示——不顯示、只顯示縣或區，或顯示縣和村；",
+              "where your Fuzhounese is from, to the level you chose—the county or district, or the county and village;",
+              "你的福州話來自哪裡，以你選擇的詳細程度顯示——只顯示縣或區，或顯示縣和村；",
             )}
           </li>
           <li>{L("the month and year you joined;", "你加入的年份和月份；")}</li>
@@ -133,8 +133,8 @@ export default function PrivacyPage() {
         <p>
           <b>{L("Never public:", "絕不公開：")}</b>
           {L(
-            " your email address, the exact time of your contributions, anything an editor rejected, and a village you entered but chose not to show. If you set your origin to “Nothing” or “County only”, the village field is not stored at all.",
-            "你的電子郵件地址、你貢獻的確切時間、任何被編輯退回的內容，以及你填寫了但選擇不顯示的村名。如果你將來源地設為「不顯示」或「只顯示縣或區」，村名欄位根本不會被儲存。",
+            " your email address, the exact time of your contributions, anything an editor rejected, and a village you entered but chose not to show. If you choose to show the county or district only, the village field is not stored at all.",
+            "你的電子郵件地址、你貢獻的確切時間、任何被編輯退回的內容，以及你填寫了但選擇不顯示的村名。如果你選擇只顯示縣或區，村名欄位根本不會被儲存。",
           )}
         </p>
       </Section>

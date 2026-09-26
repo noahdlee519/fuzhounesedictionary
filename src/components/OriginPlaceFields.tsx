@@ -20,9 +20,13 @@ const AREA_ZH: Record<string, string> = {
   overseas: "海外社群",
 };
 
-/* The account page's two "where your Fuzhounese is from" fields. The second
-   one's label follows the first: a town or village for somewhere in Fuzhou,
-   but a city, region or country for someone in an overseas community. */
+/* The two "where your Fuzhounese is from" fields, on the account page and in
+   the prompt that asks for them (OriginGate). The second one's label follows
+   the first: a town or village for somewhere in Fuzhou, but a city, region or
+   country for someone in an overseas community.
+
+   The county or district is required (Noah, 26 Sep 2026): every recording
+   and word says where its Fuzhounese is from. The village stays optional. */
 export default function OriginPlaceFields({
   area,
   locality,
@@ -41,8 +45,10 @@ export default function OriginPlaceFields({
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block">
         <span className={labelCls}>{L("County or district", "縣／區")}</span>
-        <select name="origin_area" value={chosen} onChange={(e) => setChosen(e.target.value)} className={inputCls}>
-          <option value="">{L("Not specified", "未指定")}</option>
+        <select name="origin_area" required value={chosen} onChange={(e) => setChosen(e.target.value)} className={inputCls}>
+          <option value="" disabled>
+            {L("Choose…", "請選擇…")}
+          </option>
           {ORIGIN_GROUPS.map((g) => (
             <optgroup key={g} label={L(g, GROUP_ZH[g] ?? g)}>
               {ORIGIN_AREAS.filter((a) => a.group === g).map((a) => (
@@ -56,7 +62,10 @@ export default function OriginPlaceFields({
       </label>
 
       <label className="block">
-        <span className={labelCls}>{overseas ? L("City, region or country", "城市、地區或國家") : L("Town, village or neighbourhood", "鄉鎮、村或社區")}</span>
+        <span className={labelCls}>
+          {overseas ? L("City, region or country", "城市、地區或國家") : L("Town, village or neighbourhood", "鄉鎮、村或社區")}
+          <span className="font-normal tracking-normal text-inkFaint [font-variant-caps:normal]"> {L("(optional)", "（選填）")}</span>
+        </span>
         <input
           name="origin_locality"
           defaultValue={locality}

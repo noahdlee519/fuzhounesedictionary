@@ -45,7 +45,7 @@ export const getSessionUser = cache(async function getSessionUser() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, is_editor, avatar_url")
+    .select("id, display_name, is_editor, avatar_url, origin_area")
     .eq("id", user.id)
     .maybeSingle();
 

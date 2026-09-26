@@ -5,9 +5,42 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { AUDIO_BUCKET, AVATAR_BUCKET } from "@/lib/constants";
-import { ORIGIN_AREA_CODES, ORIGIN_PRECISIONS } from "@/lib/origins";
+import { ORIGIN_AREA_CODES } from "@/lib/origins";
 import { MAX_RECORDING_NOTE } from "@/lib/constants";
 import { localPath } from "@/lib/local-path";
+
+/* How much of someone's origin is shown. "hidden" is still a value the
+   database accepts, for accounts from before the origin was required, but it
+   is no longer offered: with it, nothing is stored (the scrub trigger in
+   supabase/contributor_origin.sql), and the origin is required. */
+const PUBLIC_PRECISIONS: string[] = ["area", "locality"];
+
+/* The prompt that asks a signed-in person without an origin for one
+   (OriginGate). Returns rather than redirects, so the prompt can close in
+   place and the page underneath carries on — a recording held across the
+   sign-in is saved as soon as this succeeds. */
+export async function saveOrigin(formData: FormData): Promise<{ ok: boolean }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+
+  const areaRaw = String(formData.get("origin_area") ?? "").trim();
+  if (!ORIGIN_AREA_CODES.includes(areaRaw)) return { ok: false };
+  const locality = String(formData.get("origin_locality") ?? "").trim().slice(0, 120);
+  const precisionRaw = String(formData.get("origin_precision") ?? "area");
+  const precision = PUBLIC_PRECISIONS.includes(precisionRaw) ? precisionRaw : "area";
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ origin_area: areaRaw, origin_locality: locality || null, origin_precision: precision })
+    .eq("id", user.id);
+  if (error) return { ok: false };
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
 
 export async function saveProfile(formData: FormData) {
   const supabase = createClient();
@@ -22,17 +55,18 @@ export async function saveProfile(formData: FormData) {
   const area = ORIGIN_AREA_CODES.includes(areaRaw) ? areaRaw : "";
   const locality = String(formData.get("origin_locality") ?? "").trim().slice(0, 120);
 
-  const precisionRaw = String(formData.get("origin_precision") ?? "hidden");
-  const precision = (ORIGIN_PRECISIONS as readonly string[]).includes(precisionRaw)
-    ? precisionRaw
-    : "hidden";
+  // Where their Fuzhounese is from is required (Noah, 26 Sep 2026), so the
+  // choices are how much of it to show: the county, or the county and village.
+  if (!area) redirect("/account?problem=origin#your-fuzhounese");
+  const precisionRaw = String(formData.get("origin_precision") ?? "area");
+  const precision = PUBLIC_PRECISIONS.includes(precisionRaw) ? precisionRaw : "area";
 
   // The database trigger scrubs whatever the chosen precision does not publish.
   const { error } = await supabase
     .from("profiles")
     .update({
       display_name: displayName || null,
-      origin_area: area || null,
+      origin_area: area,
       origin_locality: locality || null,
       origin_precision: precision,
     })

@@ -14,6 +14,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import localFont from "next/font/local";
 import Header from "@/components/Header";
+import OriginGate from "@/components/OriginGate";
+import { getSessionUser } from "@/lib/auth";
 import ReviewBadge from "@/components/ReviewBadge";
 import LangProvider from "@/components/LangProvider";
 import TipFlip from "@/components/TipFlip";
@@ -159,8 +161,12 @@ const siteJsonLd = JSON.stringify({
   url: SITE_URL,
 });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = getLang();
+  // Signed in with no county or district yet: OriginGate asks for one. The
+  // same cached lookup the header makes, so it costs nothing extra.
+  const { user, profile } = await getSessionUser();
+  const needsOrigin = Boolean(user && profile && !profile.origin_area);
   const t = translator(lang);
   return (
     <html lang={lang === "zh" ? "zh-Hant" : "en"} className={`${display.variable} ${ui.variable} ${rareHan.variable}`} style={{ ["--font-han" as string]: "'Noto Serif TC'" }} suppressHydrationWarning>
@@ -201,7 +207,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             the bottom of the page — a related word, an audio credit — hangs
             out of <main> and must sit over the rule, not under it. */}
         <main id="main" className="wrap relative z-20 w-full flex-1 py-10">
-          {children}
+          <OriginGate needsOrigin={needsOrigin}>{children}</OriginGate>
         </main>
         <hr className="rule-bleed relative z-10" />
         <footer className="wrap relative z-10 w-full sec-sm">

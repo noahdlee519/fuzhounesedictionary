@@ -7,6 +7,7 @@ import { MAX_RECORDING_NOTE } from "@/lib/constants";
 import { saveRecording } from "@/lib/audio-upload";
 import { heldTake, holdTake, releaseTake } from "@/lib/held-take";
 import SignInDialog from "./SignInDialog";
+import { useNeedsOrigin } from "./OriginGate";
 import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
 import SpeakerFields from "./SpeakerFields";
@@ -117,6 +118,7 @@ export default function Recorder({
   const [resuming, setResuming] = useState<"held" | "sending" | null>(null);
   // Bumped by "Try again" after a failed save on return.
   const [attempt, setAttempt] = useState(0);
+  const needsOrigin = useNeedsOrigin();
   const [heldFailed, setHeldFailed] = useState(false);
 
   /* On return from sign-in, the held take for this word is saved without
@@ -126,7 +128,10 @@ export default function Recorder({
      double-run of effects cannot save the take twice: the first run is
      cancelled while it is still reading the store. */
   useEffect(() => {
-    if (!userId) return;
+    // Someone who has just signed in for the first time is asked where
+    // their Fuzhounese is from before anything is saved (OriginGate); the
+    // take waits for the answer, which it is stamped with.
+    if (!userId || needsOrigin) return;
     let cancelled = false;
     (async () => {
       const held = await heldTake(entryId);
@@ -168,12 +173,16 @@ export default function Recorder({
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, entryId, kind, senseId, attempt]);
+  }, [userId, entryId, kind, senseId, attempt, needsOrigin]);
 
   async function save() {
     if (!rec.take) return;
     if (speaker && !speaker.name.trim()) {
       setError(L("Add the speaker's name, or choose “Me”.", "請填上講者的名字，或選「我」。"));
+      return;
+    }
+    if (speaker && !speaker.area) {
+      setError(L("Choose where the speaker's Fuzhounese is from.", "請選擇講者的福州話來自哪裡。"));
       return;
     }
     setSaving(true);

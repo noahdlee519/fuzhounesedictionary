@@ -119,7 +119,9 @@ export default async function AccountPage({
     ? new Date(profile.created_at).toLocaleDateString(lang === "zh" ? "zh-TW" : "en-GB", { year: "numeric", month: "long" })
     : null;
 
-  const precision = profile?.origin_precision ?? "hidden";
+  // "hidden" is no longer offered (the origin is required); an account from
+  // before that shows the county-only choice selected.
+  const precision = profile?.origin_precision === "locality" ? "locality" : "area";
   const publicLine = formatOrigin(profile?.origin_area, profile?.origin_locality);
 
   // Anything of theirs an editor has approved since they last looked.
@@ -205,6 +207,15 @@ export default async function AccountPage({
                 {L("Your contributions show as “A contributor”. ", "你的貢獻目前顯示為「一位貢獻者」。")}
                 <a href="#display-name" className="text-lacquer underline-offset-2 hover:underline">
                   {L("Add the name you'd like to be credited with", "填寫你希望署名的名字")}
+                </a>
+              </p>
+            )}
+            {/* The one page that does not put up the origin prompt
+                (OriginGate), since the fields are below: point to them. */}
+            {!profile?.origin_area && (
+              <p className="text-sm font-semibold text-lacquer">
+                <a href="#your-fuzhounese" className="underline-offset-2 hover:underline">
+                  {L("Tell us where your Fuzhounese is from before you contribute", "貢獻內容之前，請先填寫你的福州話來自哪裡")}
                 </a>
               </p>
             )}
@@ -373,13 +384,13 @@ export default async function AccountPage({
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      <section className="space-y-4 border-t border-rule pt-8">
+      <section id="your-fuzhounese" className="scroll-mt-24 space-y-4 border-t border-rule pt-8">
         <div>
           <h2 className="font-display text-lg font-bold tracking-tight">{L("Your Fuzhounese", "你的福州話")}</h2>
           <p className="mt-1 max-w-2xl text-sm text-inkSoft">
             {L(
-              "Fuzhounese changes from county to county and village to village, so knowing where a word comes from is part of the record. Tell us where yours is from and it will be offered as the default when you add a word. This is optional, and nothing appears publicly unless you choose it below.",
-              "福州話每個縣、每個村講法都不一樣，所以一個詞來自哪裡，也是記錄的一部分。告訴我們你的福州話來自哪裡，新增詞條時就會預先填好。這一項可以不填；除非你在下面選擇公開，否則什麼都不會公開顯示。"
+              "Fuzhounese changes from county to county and village to village, so where a word or recording comes from is part of the record. Your county or district is required: it is shown beside your recordings and on your profile, and offered as the default when you add a word. The village is optional, and shown only if you choose.",
+              "福州話每個縣、每個村講法都不一樣，所以一個詞或一段錄音來自哪裡，也是記錄的一部分。縣或區為必填：會顯示在你的錄音旁邊和你的個人頁面上，新增詞條時也會預先填好。鄉鎮或村可以不填，只有在你選擇公開時才會顯示。"
             )}
           </p>
         </div>
@@ -405,7 +416,6 @@ export default async function AccountPage({
           <fieldset className="space-y-2">
             <legend className={labelCls}>{L("What may we show publicly?", "可以公開顯示哪些資訊？")}</legend>
             {[
-              ["hidden", L("Nothing", "不顯示"), L("Your origin is not shown, and the village is not stored.", "不顯示你的來源，也不儲存鄉鎮／村。")],
               ["area", L("County or district only", "只顯示縣或區"), L("e.g. “Changle 長樂”. The village is not stored.", "例如「Changle 長樂」。不儲存鄉鎮／村。")],
               ["locality", L("County and village", "顯示縣／區和鄉鎮／村"), L("e.g. “Jinfeng, Changle 長樂”.", "例如「Jinfeng, Changle 長樂」。")],
             ].map(([value, title, note]) => (
@@ -439,7 +449,12 @@ export default async function AccountPage({
               {L("Save", "儲存")}
             </SubmitButton>
             {searchParams.saved && show !== "recordings" && <SavedNotice message={L("Changes saved", "已儲存變更")} />}
-            {searchParams.problem && searchParams.problem !== "confirm" && show !== "recordings" && (
+            {searchParams.problem === "origin" && show !== "recordings" && (
+              <span role="alert" className="text-sm text-lacquer">
+                {L("Choose the county or district your Fuzhounese is from.", "請選擇你的福州話來自哪個縣或區。")}
+              </span>
+            )}
+            {searchParams.problem && searchParams.problem !== "confirm" && searchParams.problem !== "origin" && show !== "recordings" && (
               <span role="alert" className="text-sm text-lacquer">
                 {L("Your changes could not be saved just now. Please try again.", "目前無法儲存你的變更，請再試一次。")}
               </span>
