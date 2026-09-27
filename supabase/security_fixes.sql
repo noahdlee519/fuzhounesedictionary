@@ -6,6 +6,13 @@
 --  now carry the same fixed function bodies, so whichever file runs last
 --  leaves the fixed version in place.
 --
+--  EXCEPT (noted 26 Sep 2026): recording_speaker.sql later replaced
+--  prepare_recording() with a version that handles "someone else is
+--  speaking". Running this file, or recordings.sql, again after it puts the
+--  older version back, and a take of someone else is then labelled with the
+--  account holder's place. If you ever re-run either, run
+--  recording_speaker.sql again afterwards.
+--
 --  Three things, in order of how much they matter:
 --
 --   1. is_editor could be set by anyone on their own row.

@@ -27,6 +27,8 @@ import { bucToYngping, showRom } from "@/lib/romanization";
 import RomToggle from "@/components/RomToggle";
 import { getLang } from "@/lib/lang";
 import { pick } from "@/lib/i18n";
+import { posText } from "@/lib/pos";
+import HeldTakeCapped from "@/components/HeldTakeCapped";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +36,17 @@ export const dynamic = "force-dynamic";
    calls within one request, so the database is asked once, not twice. */
 const loadEntry = cache(async (id: string) => {
   const supabase = createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("entries")
     .select("*, senses(*), contributor:profiles(id, display_name)")
     .eq("id", id)
     .eq("status", "approved")
     .maybeSingle();
+  /* A database that could not be reached used to read as "no such word":
+     a 404, marked noindex, for every word at once during an outage (audit,
+     26 Sep 2026). Now it is an error (the error page, a 500), and only a
+     real miss is a 404. 22P02 is an id that is not a uuid at all. */
+  if (error && error.code !== "22P02") throw new Error(error.message);
   return data as (EntryWithSenses & { senses: Sense[] }) | null;
 });
 
@@ -133,7 +140,7 @@ export default async function EntryPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { saved?: string; problem?: string; edit?: string; report?: string };
+  searchParams: { saved?: string; problem?: string; edit?: string; report?: string; notice?: string; withdrawn?: string };
 }) {
   const L = pick(getLang());
   const supabase = createClient();
@@ -346,9 +353,19 @@ export default async function EntryPage({
         </div>
       </header>
 
-      {(searchParams.saved || searchParams.problem) && (
+      {/* What a form on this page just did. `notice` is from "Ask for a
+          recording" (request/actions.ts), which used to come back here with
+          no word about whether it worked; `withdrawn` and
+          problem=withdraw are from removing your own recording. */}
+      {(searchParams.saved || searchParams.problem || searchParams.notice || searchParams.withdrawn) && (
         <p className="rounded-sm flex items-center gap-3 border-l-2 border-lacquer bg-surface px-4 py-2 text-sm text-inkSoft">
-          {searchParams.saved ? (
+          {searchParams.notice ? (
+            <span role="status">{searchParams.notice.slice(0, 300)}</span>
+          ) : searchParams.withdrawn ? (
+            <SavedNotice message={L("Recording removed", "錄音已移除")} />
+          ) : searchParams.problem === "withdraw" ? (
+            <span role="alert">{L("That recording could not be removed. It may have been removed already.", "無法移除這段錄音，可能已經被移除了。")}</span>
+          ) : searchParams.saved ? (
             <SavedNotice message={L("Note saved", "附註已儲存")} />
           ) : (
             <span role="alert">{L("The note could not be saved. Please try again.", "附註無法儲存，請再試一次。")}</span>
@@ -360,7 +377,7 @@ export default async function EntryPage({
         {senses.map((s, i) => (
           <li key={s.id} className="border-l-2 border-lacquer pl-5">
             {s.part_of_speech && (
-              <div className="meta italic text-lacquer">{s.part_of_speech}</div>
+              <div className="meta italic text-lacquer">{posText(s.part_of_speech, getLang())}</div>
             )}
             {/* Numbered only when there is more than one, so "1." says at a
                 glance that another meaning follows. */}
@@ -416,7 +433,10 @@ export default async function EntryPage({
             against. */}
         <div className="rounded-sm border border-dashed border-rule p-4">
           {user && capped ? (
-            cappedNote
+            <>
+              {cappedNote}
+              <HeldTakeCapped entryId={entry.id} />
+            </>
           ) : (
             <>
               {!user && !entry.audio_url && publishedHead.length === 0 && (

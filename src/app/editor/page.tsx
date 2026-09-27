@@ -78,7 +78,7 @@ export default async function AdminPage() {
         <ContributeTabs active="add" />
         <div className="max-w-lg space-y-3 rounded-sm border border-rule bg-surface p-8">
           <p className="h3">{t("admin.only.h")}</p>
-          <p className="text-inkSoft">{t("admin.only.p", { name: profile?.display_name ?? "" })}</p>
+          <p className="text-inkSoft">{t("admin.only.p", { name: profile?.display_name || user.email || "" })}</p>
           <Link href="/add" className="link">{t("admin.only.link")}</Link>
         </div>
       </div>

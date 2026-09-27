@@ -42,6 +42,7 @@ export default function QuickRecord({
   words,
   start,
   batch,
+  round = 0,
   nextPage,
   userId,
   isEditor,
@@ -52,6 +53,9 @@ export default function QuickRecord({
   /** The random starting point this batch was drawn from (?qo=), written
    *  into the address so a refresh keeps the same batch. */
   batch: number;
+  /** Which shuffle of the batch (?qr=): the same words in a new order, for
+   *  when the filter has only one batch's worth. Pinned in the address too. */
+  round?: number;
   /** Where "Next word" goes after the last word in this batch. */
   nextPage: string;
   userId: string;
@@ -63,28 +67,29 @@ export default function QuickRecord({
   // The batch, held while it lasts; a new batch (a new ?qo=) replaces it.
   const [list, setList] = useState<Word[]>(words);
   const [i, setI] = useState(() => (words.length ? start % words.length : 0));
-  const heldBatch = useRef(batch);
+  const heldBatch = useRef(`${batch}.${round}`);
   useEffect(() => {
-    if (heldBatch.current === batch) return;
-    heldBatch.current = batch;
+    if (heldBatch.current === `${batch}.${round}`) return;
+    heldBatch.current = `${batch}.${round}`;
     setList(words);
     setI(words.length ? start % words.length : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [batch]);
+  }, [batch, round]);
 
   // Pin the batch in the address on arrival, so the refresh that follows a
   // save draws the same words rather than a new random set.
   useEffect(() => {
     try {
       const url = new URL(window.location.href);
-      if (url.searchParams.get("qo") !== String(batch)) {
+      if (url.searchParams.get("qo") !== String(batch) || (round && url.searchParams.get("qr") !== String(round))) {
         url.searchParams.set("qo", String(batch));
+        if (round) url.searchParams.set("qr", String(round));
         window.history.replaceState(window.history.state, "", url);
       }
     } catch {
       /* the address just stays as it was */
     }
-  }, [batch]);
+  }, [batch, round]);
 
   const word = list[i];
   const last = i + 1 >= list.length;

@@ -56,3 +56,20 @@ export async function isEditor(): Promise<boolean> {
   const { profile } = await getSessionUser();
   return Boolean(profile?.is_editor);
 }
+
+/* For server actions, which change things: who is signed in, asked of
+   Supabase Auth itself every time rather than read from the middleware's
+   header. Slower (a round trip), and only the actions pay it, so a flaw in
+   how the header reaches a page can never become a flaw in who may write.
+   The editor actions use the service role, so this matters most there. */
+export async function verifiedUser(): Promise<User | null> {
+  const { data } = await createClient().auth.getUser();
+  return data.user ?? null;
+}
+
+export async function verifiedEditor(): Promise<boolean> {
+  const user = await verifiedUser();
+  if (!user) return false;
+  const { data } = await createClient().from("profiles").select("is_editor").eq("id", user.id).maybeSingle();
+  return Boolean(data?.is_editor);
+}

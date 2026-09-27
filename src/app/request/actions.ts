@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getSessionUser, isEditor } from "@/lib/auth";
+import { verifiedEditor, verifiedUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { localPath } from "@/lib/local-path";
@@ -11,7 +11,7 @@ import { pick } from "@/lib/i18n";
 
 // Create a request (or, if one already exists for this word/entry, just upvote it).
 export async function requestWord(formData: FormData) {
-  const { user } = await getSessionUser();
+  const user = await verifiedUser();
   const L = pick(getLang());
   // `back` comes from the form, so only a path on this site is honoured —
   // the same guard as auth/callback. "//evil.com" and "https://…" fall back.
@@ -73,38 +73,47 @@ export async function requestWord(formData: FormData) {
       .from("word_requests")
       .insert({ term: term || "(pronunciation)", entry_id: entryId, note, requested_by: user.id })
       .select("id").single();
-    if (error) {
+    if (error?.code === "23505") {
+      // The unique index on open requests: someone (or a double click) got
+      // there first. Find that request and vote for it below, rather than
+      // saying a vote was added without adding one (audit, 26 Sep 2026).
+      const again = entryId
+        ? await supabase.from("word_requests").select("id").eq("entry_id", entryId).eq("status", "open").maybeSingle()
+        : await supabase.from("word_requests").select("id").is("entry_id", null).eq("status", "open").ilike("term", term).maybeSingle();
+      existingId = again.data?.id ?? null;
+    } else if (error) {
       // Rate limits are raised by a database trigger; the message is written for
       // the person reading it. Anything else gets a generic line.
-      // 23505 = the unique index on open requests: someone (or a double click)
-      // got there first. That is not a failure worth alarming anyone about.
-      const message =
-        error.code === "23505"
-          ? L("That word has already been requested—your vote has been added.", "這個詞已經有人請求過了——已替你投上一票。")
-          : /limit|short time/i.test(error.message)
-            ? error.message
-            : L("That request could not be saved. Please try again.", "請求未能儲存，請再試一次。");
-      redirect(`${back}?notice=${encodeURIComponent(message)}`);
+      const message = /limit|short time/i.test(error.message)
+        ? error.message
+        : L("That request could not be saved. Please try again.", "請求未能儲存，請再試一次。");
+      redirect(withNotice(message));
+    } else {
+      existingId = data?.id ?? null;
     }
-    existingId = data?.id ?? null;
   }
 
   if (existingId) {
     const { error } = await supabase
       .from("word_request_votes")
       .upsert({ request_id: existingId, user_id: user.id }, { onConflict: "request_id,user_id", ignoreDuplicates: true });
-    if (error) redirect(`${back}?notice=${encodeURIComponent(L("Your vote could not be saved. Please try again.", "你的投票未能儲存，請再試一次。"))}`);
+    if (error) redirect(withNotice(L("Your vote could not be saved. Please try again.", "你的投票未能儲存，請再試一次。")));
   }
 
   revalidatePath("/request");
   revalidatePath("/");
+  // Asked from a word's own page: say it worked, there, since the page
+  // itself looks the same afterwards.
+  if (entryId) {
+    redirect(withNotice(L("Asked. Anyone who can record this word will see your request.", "已送出請求。會錄這個詞的人都會看到。")));
+  }
   redirect(back);
 }
 
 // Vote for a request, or — pressed again — take the vote back. A request can
 // go down to 0, including the requester's own automatic vote.
 export async function voteRequest(formData: FormData) {
-  const { user } = await getSessionUser();
+  const user = await verifiedUser();
   if (!user) redirect("/request");
   const id = String(formData.get("id"));
   const supabase = createClient();
@@ -139,8 +148,8 @@ export async function voteRequest(formData: FormData) {
 
 // Editor-only: mark a request fulfilled (a recording / entry now exists).
 export async function fulfillRequest(formData: FormData) {
-  if (!(await isEditor())) redirect("/");
-  const { user } = await getSessionUser();
+  if (!(await verifiedEditor())) redirect("/");
+  const user = await verifiedUser();
   const id = String(formData.get("id"));
   const { error } = await adminClient()
     .from("word_requests")
@@ -154,7 +163,7 @@ export async function fulfillRequest(formData: FormData) {
 // Editor-only: remove a request outright (spam, a duplicate, a joke). Its
 // votes go with it (on delete cascade).
 export async function deleteRequest(formData: FormData) {
-  if (!(await isEditor())) redirect("/");
+  if (!(await verifiedEditor())) redirect("/");
   const id = String(formData.get("id") ?? "");
   const back = localPath(String(formData.get("back") ?? "/"), "/");
   if (id) {

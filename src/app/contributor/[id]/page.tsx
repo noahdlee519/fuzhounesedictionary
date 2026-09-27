@@ -53,12 +53,15 @@ export default async function ContributorPage({
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
   const recFrom = (page - 1) * REC_PAGE;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, display_name, avatar_url, origin_area, origin_locality, created_at")
     .eq("id", params.id)
     .maybeSingle();
 
+  // An unreachable database is an error, not "no such person" (the same
+  // fix as the entry page). 22P02: the id is not a uuid at all.
+  if (profileError && profileError.code !== "22P02") throw new Error(profileError.message);
   if (!profile) notFound();
 
   // Words and recordings are independent; fetched together. Recordings are
@@ -106,6 +109,10 @@ export default async function ContributorPage({
   const totalRecs = recCount ?? 0;
   const recPages = Math.max(1, Math.ceil(totalRecs / REC_PAGE));
   // A typed page past the end lands on the last page rather than an empty one.
+  // Well past the end the database refuses the range outright (PGRST103,
+  // with no count to find the last page from), which read as "unavailable":
+  // that goes back to the first page.
+  if (recError?.code === "PGRST103") redirect(`/contributor/${params.id}#recordings`);
   if (!recError && page > recPages) {
     redirect(`/contributor/${params.id}${recPages > 1 ? `?page=${recPages}` : ""}#recordings`);
   }
@@ -170,7 +177,7 @@ export default async function ContributorPage({
       </section>
 
       <p className="border-t border-rule pt-5">
-        <Link href="/learn" className="meta text-inkSoft hover:text-lacquer">
+        <Link href="/browse" className="meta text-inkSoft hover:text-lacquer">
           {L("Browse all words", "瀏覽所有詞條")}
         </Link>
       </p>

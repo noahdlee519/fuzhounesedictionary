@@ -12,6 +12,9 @@ import { localPath } from "@/lib/local-path";
                  (supabase/email_signin.md). Verified on the server, so it
                  works on any device — ask on a computer, open the email on a
                  phone. */
+/** What /?auth_error= can say; the home page has the words (AUTH_ERRORS). */
+type AuthErrorCode = "link_incomplete" | "link_expired" | "other_browser" | "cancelled" | "no_code" | "failed";
+
 const EMAIL_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "invite", "recovery", "email_change"];
 
 export async function GET(request: Request) {
@@ -25,42 +28,39 @@ export async function GET(request: Request) {
   const raw = searchParams.get("next") ?? "/";
   const next = localPath(raw, "/");
 
-  const fail = (why: string) =>
-    NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(why)}`);
+  /* The home page says what went wrong. It gets a short code, never the
+     text itself: the text was shown as given, so a link to
+     /?auth_error=<anything> put anyone's words in the site's own notice, and
+     it was English on the Chinese site (audit, 26 Sep 2026). The detail
+     goes to the server log (Vercel → Logs), where Noah can read it. */
+  const fail = (code: AuthErrorCode, detail?: string) => {
+    if (detail) console.error(`sign-in failed (${code}): ${detail}`);
+    return NextResponse.redirect(`${origin}/?auth_error=${code}`);
+  };
 
   const supabase = createClient();
 
   if (tokenHash) {
-    if (!type || !EMAIL_TYPES.includes(type)) return fail("That sign-in link is not complete.");
+    if (!type || !EMAIL_TYPES.includes(type)) return fail("link_incomplete");
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-    if (error) {
-      return fail(
-        /expired|invalid/i.test(error.message)
-          ? "That sign-in link has expired or has been used already. Ask for a new one."
-          : error.message
-      );
-    }
+    if (error) return fail(/expired|invalid/i.test(error.message) ? "link_expired" : "failed", error.message);
     return NextResponse.redirect(`${origin}${next}`);
   }
 
   if (!code) {
     // Google sends its own reason when the user cancels or the app is blocked.
     const desc = searchParams.get("error_description") ?? searchParams.get("error");
-    return fail(desc ?? "No sign-in code came back.");
+    return fail(searchParams.get("error") === "access_denied" ? "cancelled" : "no_code", desc ?? undefined);
   }
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     // An emailed link opened in a different browser from the one that asked
     // for it has no code verifier here. Say what to do instead.
-    if (/code verifier|code_verifier/i.test(error.message)) {
-      return fail(
-        "That sign-in link only works in the browser you asked for it in. Type the code from the email into the sign-in box instead."
-      );
-    }
+    if (/code verifier|code_verifier/i.test(error.message)) return fail("other_browser", error.message);
     // Was silently swallowed before, which is why a broken sign-in looked like
-    // nothing happening at all. The message is worth showing.
-    return fail(error.message);
+    // nothing happening at all.
+    return fail("failed", error.message);
   }
   return NextResponse.redirect(`${origin}${next}`);
 }

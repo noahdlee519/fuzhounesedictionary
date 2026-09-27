@@ -80,11 +80,21 @@ export function useRecorder() {
     };
   }, [take]);
 
+  /* Set while the microphone is being asked for. The Record button stays
+     pressable during that wait (the browser's permission prompt can take a
+     while), and a second press started a second recorder: Stop then stopped
+     only one, the microphone stayed on, and the take's length doubled
+     (audit, 26 Sep 2026). */
+  const startingRef = useRef(false);
+
   const start = useCallback(async () => {
+    if (startingRef.current || recRef.current?.state === "recording") return;
+    startingRef.current = true;
     setError(null);
     const mime = pickMime();
     if (!mime) {
       setError(L("This browser cannot record audio. Try Chrome, Safari or Firefox.", "這個瀏覽器無法錄音。請改用 Chrome、Safari 或 Firefox。"));
+      startingRef.current = false;
       return;
     }
     try {
@@ -116,6 +126,8 @@ export function useRecorder() {
           ? L("Microphone access was blocked. Allow it in your browser settings and try again.", "麥克風權限被封鎖了。請在瀏覽器設定中允許後再試一次。")
           : L("Could not start recording.", "無法開始錄音。")
       );
+    } finally {
+      startingRef.current = false;
     }
   }, [release]);
 

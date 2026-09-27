@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { verifiedUser } from "@/lib/auth";
 import {
   ask,
   actorFor,
   checkCaps,
   cleanQuestion,
   costMicrocents,
-  record,
+  reserve,
+  unreserve,
+  settle,
   AssistantError,
   CAP_ACTOR_MICROCENTS,
 } from "@/lib/assistant";
@@ -46,33 +48,43 @@ export async function POST(req: Request) {
   const question = cleanQuestion(body?.question);
   if (!question) return NextResponse.json({ message: "Ask something first." }, { status: 400 });
 
-  const { user } = await getSessionUser();
+  // Asked of Supabase Auth itself, not the middleware's header: this route
+  // spends money on the signed-in person's behalf.
+  const user = await verifiedUser();
   if (!user) {
     return NextResponse.json({ message: "Sign in to use the assistant." }, { status: 401 });
   }
   const actor = actorFor(user.id, null);
 
+  let held: number | null = null;
   try {
-    const cap = await checkCaps(actor);
-    if (!cap.ok) return NextResponse.json({ message: CAP_MESSAGES[cap.reason] }, { status: 429 });
+    // A place in the ledger first, then the check, so questions sent at the
+    // same moment each see the others (lib/assistant reserve).
+    held = await reserve(actor, user.id, question);
+    const cap = await checkCaps(actor, true);
+    if (!cap.ok) {
+      await unreserve(held);
+      held = null;
+      return NextResponse.json({ message: CAP_MESSAGES[cap.reason] }, { status: 429 });
+    }
 
     const a = await ask(question, body?.history);
     const cost = costMicrocents(a.usage);
-    // Written after the answer, so the cost is real, not estimated. A person
-    // can therefore overshoot their cap by one question—under a cent.
-    await record({
-      actor,
-      userId: user.id,
-      question,
+    // Settled to the real cost. A person can still overshoot their cap by
+    // one question—under a cent.
+    await settle(held, {
       answer: a.text,
       gap: a.gap,
       model: a.model,
       usage: a.usage,
       cost,
     });
+    held = null;
     const entries = await entryCards(linkedEntryIds(a.text)).catch(() => []);
     return NextResponse.json({ answer: a.text, entries });
   } catch (e: any) {
+    // Never answered: nothing was spent, so the place is given back.
+    if (held !== null) await unreserve(held);
     if (e instanceof AssistantError) return NextResponse.json({ message: e.message }, { status: e.status });
     console.error("assistant", e?.message ?? e);
     return NextResponse.json(

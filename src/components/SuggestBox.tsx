@@ -32,6 +32,7 @@ export default function SuggestBox({
   page,
   origin,
   need,
+  keep,
 }: {
   kind: "ipa" | "example";
   entryId: string;
@@ -41,6 +42,9 @@ export default function SuggestBox({
   page?: number;
   origin?: string;
   need?: string;
+  /** The list's other settings (part of speech, sort, the Quick record
+   *  batch) as a query string, echoed back the same way. */
+  keep?: string;
 }) {
   const isIpa = kind === "ipa";
   const L = pick(getLang());
@@ -70,6 +74,7 @@ export default function SuggestBox({
         {page && page > 1 && <input type="hidden" name="page" value={page} />}
         {origin && <input type="hidden" name="origin" value={origin} />}
         {need && <input type="hidden" name="need" value={need} />}
+        {keep && <input type="hidden" name="keep" value={keep} />}
 
         {isIpa ? (
           <label className="block">

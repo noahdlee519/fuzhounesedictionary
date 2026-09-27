@@ -19,6 +19,7 @@ import { getLang } from "@/lib/lang";
 import { getSafe } from "@/lib/safe";
 import { isExplicit } from "@/lib/content-filter";
 import Avatar from "@/components/Avatar";
+import { posText } from "@/lib/pos";
 import InfoTip from "@/components/InfoTip";
 import { romText } from "@/lib/rom";
 
@@ -94,8 +95,23 @@ export default async function Home({
       )}
       {searchParams.auth_error && (
         <p role="alert" className="mb-6 rounded-sm border border-rule bg-surface px-5 py-3 text-sm text-inkSoft">
-          <span className="font-semibold text-ink">{L("Sign-in did not complete.", "登入未完成。")}</span> {searchParams.auth_error}{" "}
-          {L("Please try again, and if it keeps happening let Noah know what it says here.", "請再試一次；如果一直發生，請把這裡顯示的訊息告訴 Noah。")}
+          <span className="font-semibold text-ink">{L("Sign-in did not complete.", "登入未完成。")}</span>{" "}
+          {/* A code from auth/callback, in the reader's language; anything
+              else in the address is not shown as text. */}
+          {(() => {
+            switch (searchParams.auth_error) {
+              case "link_expired":
+                return L("That sign-in link has expired or has been used already. Ask for a new one.", "這個登入連結已過期或已經用過了，請重新索取。");
+              case "other_browser":
+                return L("That sign-in link only works in the browser you asked for it in. Type the code from the email into the sign-in box instead.", "這個登入連結只能在你索取它的瀏覽器裡使用。請改在登入框輸入郵件裡的驗證碼。");
+              case "link_incomplete":
+                return L("That sign-in link is not complete. Try copying the whole link, or type the code from the email instead.", "這個登入連結不完整。請複製完整的連結，或改輸入郵件裡的驗證碼。");
+              case "cancelled":
+                return L("Sign-in was cancelled.", "登入已取消。");
+              default:
+                return L("Please try again, and if it keeps happening let Noah know.", "請再試一次；如果一直發生，請告訴 Noah。");
+            }
+          })()}
         </p>
       )}
     </>
@@ -476,7 +492,7 @@ export default async function Home({
               {wotd.gloss && (
                 <p className="mt-2 text-[22px] leading-snug text-inkSoft">
                   {wotd.senses > 1 && <span className="tabular-nums text-inkMute">1. </span>}
-                  {wotd.pos && <span className="mr-2 text-[17px] italic text-lacquer">{wotd.pos}</span>}
+                  {wotd.pos && <span className="mr-2 text-[17px] italic text-lacquer">{posText(wotd.pos, getLang())}</span>}
                   {wotd.gloss}
                 </p>
               )}

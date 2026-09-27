@@ -68,6 +68,11 @@ export async function saveRecording(
     .select("id")
     .single();
   if (insErr) {
+    // The file went up first; the row was refused (the per-word cap, a rate
+    // limit, a missing origin). Take the file back down, or every refused
+    // save — and every retry of a held take — left an orphan in the bucket.
+    // The storage policy lets a person remove their own files.
+    await supabase.storage.from(AUDIO_BUCKET).remove([path]).catch(() => null);
     if (speakerName && /speaker_name/.test(insErr.message)) {
       throw new Error(zh() ? "還不能替別人錄音。請選「我」存成你自己的錄音，或稍後再試。" : "Recording someone else is not switched on yet. Choose “Me” to save it as your own, or try again later.");
     }

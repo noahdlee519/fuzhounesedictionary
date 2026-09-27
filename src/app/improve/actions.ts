@@ -35,6 +35,14 @@ export async function suggest(formData: FormData) {
   const page = String(formData.get("page") ?? "").trim();
   const origin = String(formData.get("origin") ?? "").trim();
   const need = String(formData.get("need") ?? "").trim();
+  // The rest of the list's settings (SuggestBox `keep`): only these keys, so
+  // the form cannot put anything else in the address.
+  const keep: Record<string, string> = {};
+  const kept = new URLSearchParams(String(formData.get("keep") ?? ""));
+  for (const k of ["pos", "sort", "dir", "qo", "qr"]) {
+    const v = (kept.get(k) ?? "").trim().slice(0, 40);
+    if (v) keep[k] = v;
+  }
   // Typed `never`: redirect() throws, so nothing after a back() call runs.
   // Without the annotation TypeScript assumes the function falls through.
   const back = (params: Record<string, string>): never => {
@@ -42,6 +50,7 @@ export async function suggest(formData: FormData) {
       ...(origin ? { origin } : {}),
       ...(need ? { need } : {}),
       ...(page && page !== "1" ? { page } : {}),
+      ...keep,
       ...params,
     });
     redirect(`/improve?${qs}#w-${entryId}`);

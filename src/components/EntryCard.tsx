@@ -5,6 +5,7 @@ import type { AudioCredit } from "@/lib/entries";
 import { romText } from "@/lib/rom";
 import { getLang } from "@/lib/lang";
 import { pick } from "@/lib/i18n";
+import { posText } from "@/lib/pos";
 
 export interface CardProps {
   id: string;
@@ -105,7 +106,7 @@ export default function EntryCard({ entry }: { entry: CardProps }) {
       </div>
       <div className="mt-3 flex items-baseline justify-between gap-x-3 text-[11px] font-semibold tracking-[.02em] text-inkMute">
         <span className="flex min-w-0 flex-wrap gap-x-2.5 gap-y-1">
-          {entry.pos && <span>{entry.pos}</span>}
+          {entry.pos && <span>{posText(entry.pos, getLang())}</span>}
           {entry.origin && <span>{entry.origin}</span>}
         </span>
         {!entry.audio && (

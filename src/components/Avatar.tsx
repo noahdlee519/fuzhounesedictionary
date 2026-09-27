@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useL } from "./LangProvider";
 
 /* A round profile picture. Shows the uploaded image if there is one; otherwise
    a generated default — the person's first initial on a lacquer disc, falling
@@ -21,7 +22,10 @@ export default function Avatar({
   className?: string;
 }) {
   const box = { width: size, height: size };
-  const initial = (name ?? "").trim().charAt(0).toUpperCase();
+  // By code point, not UTF-16 unit: a name starting with a character above
+  // U+FFFF (a rare Han character, an emoji) showed half of it as "�".
+  const initial = (Array.from((name ?? "").trim())[0] ?? "").toUpperCase();
+  const L = useL();
   const [broken, setBroken] = useState<string | null>(null);
   // An image that failed before the page hydrated fired its error event
   // with no one listening; catch that case on mount.
@@ -37,7 +41,7 @@ export default function Avatar({
       <img
         ref={img}
         src={src}
-        alt={name ? `${name}'s profile picture` : "Profile picture"}
+        alt={name ? L("{name}'s profile picture", "{name}的頭像", { name }) : L("Profile picture", "頭像")}
         width={size}
         height={size}
         style={box}

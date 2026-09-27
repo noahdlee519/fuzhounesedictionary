@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import SignInGate from "@/components/SignInGate";
 import { translator, pick } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
+import { romText } from "@/lib/rom";
 import ContributeTabs from "@/components/ContributeTabs";
 import { requestWord, fulfillRequest } from "./actions";
 import RequestVote from "@/components/RequestVote";
@@ -150,7 +151,7 @@ export default async function WantedPage({
         <ul className="grid gap-3">
           {requests.map((r) => {
             const voted = votedIds.has(r.id);
-            const display = r.entry_id ? (r.hanzi || r.romanization || r.entry_headword || r.term) : r.term;
+            const display = r.entry_id ? (r.hanzi || (r.romanization ? romText(r.romanization, r.entry_headword ?? r.term) : "") || r.entry_headword || r.term) : r.term;
             const needsVoice = Boolean(r.entry_id);
             return (
               <li key={r.id} className="rounded-sm flex items-stretch gap-4 border border-rule bg-surface p-4">

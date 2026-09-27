@@ -57,6 +57,7 @@ export default function Recorder({
   isEditor = false,
   phraseSenseId,
   phrase = false,
+  refresh = true,
 }: {
   /** Absent when the visitor is signed out: they can still record, and are
       sent to sign in when they choose a take. */
@@ -74,6 +75,12 @@ export default function Recorder({
   phraseSenseId?: string;
   /** This recorder is that follow-up: its note asks for the words said. */
   phrase?: boolean;
+  /** Refresh the page after a save, so its lists and counts include the new
+   *  take. Off where the page would then take this recorder away: on Record
+   *  a word, a saved word no longer "needs a recording", so the refresh
+   *  swapped the recorder (and its sentence follow-up, and "Remove it") for
+   *  "has a recording", or dropped the row (audit, 26 Sep 2026). */
+  refresh?: boolean;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -118,6 +125,7 @@ export default function Recorder({
   const [resuming, setResuming] = useState<"held" | "sending" | null>(null);
   // Bumped by "Try again" after a failed save on return.
   const [attempt, setAttempt] = useState(0);
+  const [removing, setRemoving] = useState(false);
   const needsOrigin = useNeedsOrigin();
   const [heldFailed, setHeldFailed] = useState(false);
 
@@ -159,7 +167,7 @@ export default function Recorder({
         setDone(true);
         onSaved?.();
         announceSaved(kind, entryId);
-        router.refresh();
+        if (refresh) router.refresh();
       } catch (e: any) {
         // The take is still held, so "Try saving it again" can have another go
         // once whatever went wrong — a cap, the network — is past.
@@ -227,7 +235,7 @@ export default function Recorder({
       setNote("");
       onSaved?.();
       announceSaved(kind, entryId);
-      router.refresh();
+      if (refresh) router.refresh();
     } catch (e: any) {
       setError(e?.message ?? L("Could not save that recording.", "無法儲存這段錄音。"));
     } finally {
@@ -252,7 +260,7 @@ export default function Recorder({
       return;
     }
     setNoteState("saved");
-    router.refresh();
+    if (refresh) router.refresh();
   }
 
   if (rec.supported === false) {
@@ -290,22 +298,28 @@ export default function Recorder({
           {savedId && !isEditor && (
             <button
               type="button"
+              disabled={removing}
               onClick={async () => {
+                // Once only: a second click found the take already gone and
+                // said it "could not be removed".
+                if (removing) return;
+                setRemoving(true);
                 const fd = new FormData();
                 fd.set("id", savedId);
-                const { ok } = await withdrawRecording(fd);
+                const { ok } = await withdrawRecording(fd).catch(() => ({ ok: false }));
+                setRemoving(false);
                 if (ok) {
                   setSavedId(null);
                   setDone(false);
                   setError(null);
-                  router.refresh();
+                  if (refresh) router.refresh();
                 } else {
                   setError(L("That recording could not be removed. You can remove it from your account page.", "無法移除這段錄音，可以到你的帳號頁移除。"));
                 }
               }}
               className="text-sm text-inkFaint underline decoration-rule underline-offset-4 transition-colors hover:text-lacquer"
             >
-              {L("Remove it", "移除這段")}
+              {removing ? L("Removing…", "移除中…") : L("Remove it", "移除這段")}
             </button>
           )}
         </p>
@@ -370,6 +384,7 @@ export default function Recorder({
               senseId={phraseSenseId}
               isEditor={isEditor}
               phrase
+              refresh={refresh}
             />
           </div>
         )}

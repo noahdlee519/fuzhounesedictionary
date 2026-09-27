@@ -116,7 +116,7 @@ export default function LangToggle({ lang, className = "" }: { lang: Lang; class
           document.body
         )}
       {/* Wide: both languages, the current one filled. */}
-      <div role="group" aria-label="Language" className={`hidden h-8 overflow-hidden rounded-sm border border-ruleStrong min-[922px]:flex ${className}`}>
+      <div role="group" aria-label={lang === "zh" ? "語言" : "Language"} className={`hidden h-8 overflow-hidden rounded-sm border border-ruleStrong min-[922px]:flex ${className}`}>
         {btn("en", "EN")}
         {btn("zh", "中文")}
       </div>

@@ -46,6 +46,14 @@ begin
   end if;
 
   if v_area is null then
+    -- Nested, not "and": a condition that names new.speaker_name would fail
+    -- on the tables that have no such column.
+    if tg_table_name = 'recordings' then
+      if new.speaker_name is not null then
+        raise exception 'Choose where the speaker''s Fuzhounese is from.'
+          using errcode = 'check_violation', hint = 'speaker_origin_required';
+      end if;
+    end if;
     raise exception 'Tell us where your Fuzhounese is from (on your account page) before contributing.'
       using errcode = 'check_violation', hint = 'origin_required';
   end if;

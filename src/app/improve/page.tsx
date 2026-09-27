@@ -107,7 +107,7 @@ const ORIGIN_CHIPS = [
 export default async function ImprovePage({
   searchParams,
 }: {
-  searchParams: { page?: string; origin?: string; need?: string; pos?: string; sort?: string; dir?: string; sent?: string; problem?: string; n?: string; qo?: string };
+  searchParams: { page?: string; origin?: string; need?: string; pos?: string; sort?: string; dir?: string; sent?: string; problem?: string; n?: string; qo?: string; qr?: string };
 }) {
   const { user, profile } = await getSessionUser();
   const L = pick(getLang());
@@ -196,8 +196,12 @@ export default async function ImprovePage({
   const hasNext = to + 1 < total;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   // A typed page past the end lands on the last page rather than an empty one.
-  if (!error && page > totalPages) {
-    redirect(`/improve?${new URLSearchParams({ ...(origin ? { origin } : {}), ...(need ? { need } : {}), ...(pos ? { pos } : {}), ...(sort !== DEFAULT_SORT ? { sort } : {}), ...(dir !== natural ? { dir } : {}), ...(totalPages > 1 ? { page: String(totalPages) } : {}) })}#worklist`);
+  // Well past the end the database refuses the range (PGRST103) and gives no
+  // count, which read as "the worklist is unavailable": that goes to page 1.
+  const pastEnd = error?.code === "PGRST103";
+  if (pastEnd || (!error && page > totalPages)) {
+    const last = pastEnd ? 1 : totalPages;
+    redirect(`/improve?${new URLSearchParams({ ...(origin ? { origin } : {}), ...(need ? { need } : {}), ...(pos ? { pos } : {}), ...(sort !== DEFAULT_SORT ? { sort } : {}), ...(dir !== natural ? { dir } : {}), ...(last > 1 ? { page: String(last) } : {}) })}#worklist`);
   }
 
   const ids = rows.map((r: any) => r.id);
@@ -209,6 +213,7 @@ export default async function ImprovePage({
   let quickRows: any[] = [];
   let quickOffset = 0;
   let quickTotal = 0;
+  const quickRound = Math.max(0, Math.min(999, parseInt(searchParams.qr ?? "0", 10) || 0));
   if (need === "recording" && !error) {
     const quickQuery = (opts?: { count: "exact"; head: true }) => {
       let q = supabase
@@ -225,7 +230,11 @@ export default async function ImprovePage({
     const { data: qd } = await quickQuery()
       .order("headword", { ascending: true })
       .range(quickOffset, quickOffset + QUICK_BATCH - 1);
-    quickRows = seededShuffle((qd ?? []) as any[], quickOffset);
+    // The order within the batch comes from the round (?qr=) as well as the
+    // offset. With 25 words or fewer the offset is always 0, so "next batch"
+    // was the same address: the card sat on the last word for good (audit,
+    // 26 Sep 2026). A new round is a new order of the same words.
+    quickRows = seededShuffle((qd ?? []) as any[], quickOffset * 1000 + quickRound);
   }
   const allIds = [...new Set([...ids, ...quickRows.map((r) => r.id)])];
 
@@ -309,6 +318,13 @@ export default async function ImprovePage({
     return `${h}${h.endsWith("?") ? "" : "&"}qo=${o}`;
   };
   const n = Math.max(0, parseInt(searchParams.n ?? "0", 10) || 0);
+  // Sent with a suggestion and echoed back, so the list comes back as it was.
+  const keep = new URLSearchParams({
+    ...(pos ? { pos } : {}),
+    ...(sort !== DEFAULT_SORT ? { sort } : {}),
+    ...(dir !== natural ? { dir } : {}),
+    ...(need === "recording" ? { qo: String(quickOffset), ...(quickRound ? { qr: String(quickRound) } : {}) } : {}),
+  }).toString();
 
   const sentLabel =
     searchParams.sent === "ipa"
@@ -397,9 +413,14 @@ export default async function ImprovePage({
             senseId: senses[r.id]?.[0]?.id ?? null,
             recorded: !r.needs_recording,
           }))}
+          // A new filter is a new card from the start (the component keeps
+          // its batch in state, and Next keeps that state across a change
+          // of query string).
+          key={`${origin}|${pos}`}
           start={n}
           batch={quickOffset}
-          nextPage={`${quickHere(randomOffset(quickTotal))}#quick`}
+          round={quickRound}
+          nextPage={`${quickHere(randomOffset(quickTotal))}&qr=${(quickRound % 999) + 1}#quick`}
           userId={user.id}
           isEditor={Boolean(profile?.is_editor)}
         />
@@ -531,7 +552,7 @@ export default async function ImprovePage({
                 {(r.needs_ipa || r.needs_example) && (
                   <div className="mt-2 flex flex-wrap items-start gap-2">
                     {r.needs_ipa && (
-                      <SuggestBox kind="ipa" entryId={r.id} pending={mine[r.id]?.ipa} page={page} origin={origin} need={need} />
+                      <SuggestBox kind="ipa" entryId={r.id} pending={mine[r.id]?.ipa} page={page} origin={origin} need={need} keep={keep} />
                     )}
                     {r.needs_example && (senses[r.id]?.length ?? 0) > 0 && (
                       <SuggestBox
@@ -542,6 +563,7 @@ export default async function ImprovePage({
                         page={page}
                         origin={origin}
                         need={need}
+                        keep={keep}
                       />
                     )}
                   </div>
@@ -554,7 +576,7 @@ export default async function ImprovePage({
                     {L("you have recorded this twice", "你已錄過兩次")}
                   </span>
                 ) : (
-                  <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" phraseSenseId={senses[r.id]?.[0]?.id} label={L("Needs a recording", "需要錄音")} />
+                  <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" phraseSenseId={senses[r.id]?.[0]?.id} label={L("Needs a recording", "需要錄音")} refresh={false} />
                 )
               ) : (
                 <span className="meta text-inkFaint">

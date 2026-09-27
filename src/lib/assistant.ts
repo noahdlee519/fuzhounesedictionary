@@ -102,7 +102,35 @@ export type CapCheck =
   | { ok: true }
   | { ok: false; reason: "actor" | "total" | "burst" };
 
-export async function checkCaps(actor: string): Promise<CapCheck> {
+/* A question's place in the ledger is taken BEFORE the model is asked, at
+   this estimated cost, and settled to the real cost afterwards (settle).
+   Before, the row was written only once the answer came back, so questions
+   sent at the same moment were each checked against a ledger none of the
+   others were in yet: one account could spend past its cap, and a burst
+   from a few could pass the daily total (audit, 26 Sep 2026). Now each
+   check sees every question already on its way. */
+const RESERVE_MICROCENTS = 1_000_000; // one cent, about a large answer
+
+export async function reserve(actor: string, userId: string | null, question: string): Promise<number> {
+  const { data, error } = await adminClient()
+    .from("assistant_usage")
+    .insert({ actor, user_id: userId, question, cost_microcents: RESERVE_MICROCENTS })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id as number;
+}
+
+/** Take a reservation back: the question was refused or never answered. */
+export async function unreserve(id: number) {
+  const { error } = await adminClient().from("assistant_usage").delete().eq("id", id);
+  if (error) console.error("assistant ledger", error.message);
+}
+
+/* `reserved`: this request's own reservation is already in the ledger, so it
+   is left out of what the caps are compared with — the caps still allow the
+   one question that goes over, as before, but no longer several at once. */
+export async function checkCaps(actor: string, reserved = false): Promise<CapCheck> {
   const db = adminClient();
   const [{ data: spend, error }, { count }] = await Promise.all([
     db.rpc("assistant_spend", { p_actor: actor }).single(),
@@ -114,9 +142,10 @@ export async function checkCaps(actor: string): Promise<CapCheck> {
   ]);
   if (error) throw new Error(error.message);
   const s = spend as { actor_microcents: number; total_microcents: number };
-  if (Number(s.total_microcents) >= CAP_TOTAL_MICROCENTS) return { ok: false, reason: "total" };
-  if (Number(s.actor_microcents) >= CAP_ACTOR_MICROCENTS) return { ok: false, reason: "actor" };
-  if ((count ?? 0) >= BURST_PER_MINUTE) return { ok: false, reason: "burst" };
+  const own = reserved ? RESERVE_MICROCENTS : 0;
+  if (Number(s.total_microcents) - own >= CAP_TOTAL_MICROCENTS) return { ok: false, reason: "total" };
+  if (Number(s.actor_microcents) - own >= CAP_ACTOR_MICROCENTS) return { ok: false, reason: "actor" };
+  if ((count ?? 0) - (reserved ? 1 : 0) >= BURST_PER_MINUTE) return { ok: false, reason: "burst" };
   return { ok: true };
 }
 
@@ -452,10 +481,8 @@ export async function ask(question: string, history: unknown): Promise<Answer> {
   return { text, gap, usage: json.usage as Usage, model: json.model ?? ASSISTANT_MODEL };
 }
 
-export async function record(row: {
-  actor: string;
-  userId: string | null;
-  question: string;
+/** Settle a reservation (reserve) to what the answer really cost. */
+export async function settle(id: number, row: {
   answer: string;
   gap: string | null;
   model: string;
@@ -463,10 +490,7 @@ export async function record(row: {
   cost: number;
 }) {
   const db = adminClient();
-  const { error } = await db.from("assistant_usage").insert({
-    actor: row.actor,
-    user_id: row.userId,
-    question: row.question,
+  const { error } = await db.from("assistant_usage").update({
     answer: row.answer,
     gap: row.gap,
     model: row.model,
@@ -474,7 +498,7 @@ export async function record(row: {
     cached_tokens: row.usage.cache_read_input_tokens ?? 0,
     output_tokens: row.usage.output_tokens,
     cost_microcents: row.cost,
-  });
+  }).eq("id", id);
   if (error) console.error("assistant ledger", error.message);
 }
 

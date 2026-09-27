@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isEditor } from "@/lib/auth";
+import { verifiedEditor } from "@/lib/auth";
 /* Every write below throws on failure. supabase-js resolves with { error }
    rather than rejecting, so without this a failed approve looked exactly like
    a successful one: the queue re-rendered with the item still in it and no
@@ -13,7 +13,7 @@ import { AUDIO_BUCKET, PARTS_OF_SPEECH } from "@/lib/constants";
 import { localPath } from "@/lib/local-path";
 
 async function requireEditor() {
-  if (!(await isEditor())) redirect("/");
+  if (!(await verifiedEditor())) redirect("/");
 }
 
 export async function approve(formData: FormData) {

@@ -15,11 +15,36 @@ export const SESSION_HEADER = "x-fz-session";
 // Now the user this check returns goes to the page in a request header, and
 // the page reads that instead of asking again.
 export async function middleware(request: NextRequest) {
+  /* A query parameter given twice (?q=a&q=b) reaches a page as an array,
+     and every page reads its parameters as strings: `.trim()` on an array
+     threw, and /, /browse, /request and others answered 500 (audit, 26 Sep
+     2026). Rather than guard every read, such an address is sent on to the
+     same one with only the first of each. Page loads only; a form post is
+     left alone. */
+  if (request.method === "GET" || request.method === "HEAD") {
+    const params = request.nextUrl.searchParams;
+    const keys = Array.from(params.keys());
+    if (new Set(keys).size !== keys.length) {
+      const url = request.nextUrl.clone();
+      url.search = "";
+      for (const k of new Set(keys)) url.searchParams.set(k, params.get(k) ?? "");
+      return NextResponse.redirect(url, 308);
+    }
+  }
+
   const headers = new Headers(request.headers);
   // Never trust a copy that arrived with the request.
   headers.delete(SESSION_HEADER);
   const forward = () => NextResponse.next({ request: { headers } });
   let response = forward();
+
+  // A static file needs no session. It still passes through here, so that
+  // the header above is removed on every path: the matcher used to skip any
+  // path ending in .png, .svg and so on, and a dynamic route matches those
+  // too (/entry/x.png, /editor/edit/x.png) — a forged header then reached
+  // the page and its server actions as "the signed-in user" (audit, 26 Sep
+  // 2026). No header at all here: nothing on such a path should trust one.
+  if (ASSET.test(request.nextUrl.pathname)) return forward();
 
   // No Supabase session cookie means no session to refresh. Most visitors
   // are signed out, and this skips a network round-trip to Supabase Auth on
@@ -60,11 +85,16 @@ export async function middleware(request: NextRequest) {
   try {
     const {
       data: { user },
+      error,
     } = await supabase.auth.getUser();
     // "none" when the check ran and there is nobody; the page then does not
-    // ask again either. When the check failed outright, no header at all,
-    // and the page makes its own.
-    headers.set(SESSION_HEADER, user ? encodeURIComponent(JSON.stringify({ id: user.id, email: user.email ?? null })) : "none");
+    // ask again either. When the check failed — getUser reports a network
+    // error or an Auth outage in `error` rather than throwing — no header at
+    // all, and the page makes its own, rather than showing a signed-in person
+    // as signed out.
+    const nobody = !user && (!error || error.name === "AuthSessionMissingError" || error.status === 401 || error.status === 403);
+    if (user) headers.set(SESSION_HEADER, encodeURIComponent(JSON.stringify({ id: user.id, email: user.email ?? null })));
+    else if (nobody) headers.set(SESSION_HEADER, "none");
     const cookies = response.cookies.getAll();
     response = forward();
     cookies.forEach((c) => response.cookies.set(c));
@@ -74,7 +104,12 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+/* Paths that are files: answered straight away above, with no Auth call. */
+const ASSET = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|wav|ogg|txt|xml|webmanifest)$/i;
+
 export const config = {
-  // Run on everything except static assets.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp3|wav|ogg)$).*)"],
+  // Everything except Next's own build files. Static files from public/ are
+  // included on purpose (see ASSET above): this is what strips a forged
+  // session header, so no path may skip it.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

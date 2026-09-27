@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PARTS_OF_SPEECH, MAX_RECORDING_NOTE } from "@/lib/constants";
 import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
+import { publishOwnRecording } from "@/app/account/actions";
 import { saveRecording } from "@/lib/audio-upload";
 import { useRecorder } from "@/components/useRecorder";
 import TakeControls from "@/components/TakeControls";
@@ -219,7 +220,7 @@ export default function SubmitForm({
       let recFail: string | null = null;
       if (rec.take) {
         try {
-          await saveRecording(supabase, {
+          const saved = await saveRecording(supabase, {
             userId,
             entryId,
             kind: "headword",
@@ -227,6 +228,14 @@ export default function SubmitForm({
             seconds: rec.take.seconds,
             note: recNote,
           });
+          // Live on save, like every other recording (lib/trust.ts) — the
+          // example takes on this page already were, and this one was left
+          // pending, so an approved word showed its sentences but not the
+          // word itself (audit, 26 Sep 2026). It is still only public once
+          // the word is approved.
+          const fd = new FormData();
+          fd.set("id", saved.id);
+          await publishOwnRecording(fd).catch(() => null);
         } catch (err: any) {
           recFail = err?.message ?? L("The recording could not be saved.", "錄音無法儲存。");
         }

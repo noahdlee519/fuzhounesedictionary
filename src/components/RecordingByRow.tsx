@@ -6,6 +6,7 @@ import PlayButton from "./PlayButton";
 import WithdrawRecording from "./WithdrawRecording";
 import { getLang } from "@/lib/lang";
 import { pick } from "@/lib/i18n";
+import { romText } from "@/lib/rom";
 
 /* One recording in a person's list — on their public profile and on their own
    account page. Reads: word · its first English meaning · the player · (status,
@@ -50,7 +51,8 @@ export default function RecordingByRow({
   const L = pick(getLang());
   const note = (r.note ?? "").trim();
   const w = r.entry;
-  const name = w?.romanization || w?.headword || L("a word", "一個詞");
+  // In the reader's chosen romanization, like everywhere else (RomToggle).
+  const name = w ? romText(w.romanization, w.headword) || L("a word", "一個詞") : L("a word", "一個詞");
   const meaning = sortSenses(w?.senses).find((s) => s.definition_en)?.definition_en;
   const title = (
     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

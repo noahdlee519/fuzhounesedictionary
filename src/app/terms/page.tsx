@@ -21,7 +21,7 @@ export function generateMetadata(): Metadata {
 
 /* The English text is authoritative; the Chinese is a courtesy translation
    (LegalPage says so at the top when the language is zh). Change both. */
-const UPDATED = { en: "3 September 2026", zh: "2026年9月3日" };
+const UPDATED = { en: "26 September 2026", zh: "2026年9月26日" };
 
 /* Governing law: the state the site is run from. Keep the two in step. */
 const GOVERNING_STATE = { en: "New York", zh: "紐約州" };
@@ -91,8 +91,8 @@ export default function TermsPage() {
       <Section n={2} title={L("Accounts", "帳號")}>
         <p>
           {L(
-            "You need a Google account to sign in, and you must be at least 13 years old. Your account is yours: do not share it, and tell us if you think someone else has used it. We may suspend or close an account that breaks these terms, and we may close inactive or abandoned accounts. You can ask us to delete yours at any time; the ",
-            "你需要一個 Google 帳號才能登入，而且必須年滿 13 歲。你的帳號屬於你自己：請勿與他人共用；如果你認為有其他人使用過你的帳號，請告訴我們。我們可以停用或關閉違反本條款的帳號，也可以關閉不活躍或已被棄置的帳號。你隨時可以要求我們刪除你的帳號；",
+            "You sign in with a Google account or with a code sent to your email address, and you must be at least 13 years old. Your account is yours: do not share it, and tell us if you think someone else has used it. We may suspend or close an account that breaks these terms, and we may close inactive or abandoned accounts. You can ask us to delete yours at any time; the ",
+            "你可以使用 Google 帳號，或使用寄到你電子郵件信箱的驗證碼登入，而且必須年滿 13 歲。你的帳號屬於你自己：請勿與他人共用；如果你認為有其他人使用過你的帳號，請告訴我們。我們可以停用或關閉違反本條款的帳號，也可以關閉不活躍或已被棄置的帳號。你隨時可以要求我們刪除你的帳號；",
           )}
           <Link href="/privacy" className={A}>{L("privacy policy", "《隱私權政策》")}</Link>
           {L(" says what happens then.", "說明了屆時會如何處理。")}

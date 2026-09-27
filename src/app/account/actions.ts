@@ -32,11 +32,14 @@ export async function saveOrigin(formData: FormData): Promise<{ ok: boolean }> {
   const precisionRaw = String(formData.get("origin_precision") ?? "area");
   const precision = PUBLIC_PRECISIONS.includes(precisionRaw) ? precisionRaw : "area";
 
-  const { error } = await supabase
+  // .select: an update that matched no row (no profile) is not an error to
+  // supabase-js, and read as saved.
+  const { data, error } = await supabase
     .from("profiles")
     .update({ origin_area: areaRaw, origin_locality: locality || null, origin_precision: precision })
-    .eq("id", user.id);
-  if (error) return { ok: false };
+    .eq("id", user.id)
+    .select("id");
+  if (error || !data?.length) return { ok: false };
 
   revalidatePath("/", "layout");
   return { ok: true };
@@ -62,7 +65,7 @@ export async function saveProfile(formData: FormData) {
   const precision = PUBLIC_PRECISIONS.includes(precisionRaw) ? precisionRaw : "area";
 
   // The database trigger scrubs whatever the chosen precision does not publish.
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("profiles")
     .update({
       display_name: displayName || null,
@@ -70,9 +73,11 @@ export async function saveProfile(formData: FormData) {
       origin_locality: locality || null,
       origin_precision: precision,
     })
-    .eq("id", user.id);
-  // A failed write used to come back as "Changes saved". Say so instead.
-  if (error) redirect("/account?problem=1");
+    .eq("id", user.id)
+    .select("id");
+  // A failed write used to come back as "Changes saved". Say so instead —
+  // including an update that matched no row, which is not an error.
+  if (error || !updated?.length) redirect("/account?problem=1");
 
   revalidatePath("/account");
   revalidatePath(`/contributor/${user.id}`);
