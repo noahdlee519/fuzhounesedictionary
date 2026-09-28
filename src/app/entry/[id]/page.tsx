@@ -9,7 +9,7 @@ import { formatOrigin } from "@/lib/origins";
 import { firstSense, sortSenses, one, entryTitle } from "@/lib/entries";
 import { SITE_NAME } from "@/lib/site";
 import type { Metadata } from "next";
-import Recorder from "@/components/Recorder";
+import Recorder, { NextWord } from "@/components/Recorder";
 import PlayButton from "@/components/PlayButton";
 import LocalTime from "@/components/LocalTime";
 import RecordingList, { type RecordingRow } from "@/components/RecordingList";
@@ -231,13 +231,23 @@ export default async function EntryPage({
     ? recordings.filter((r) => r.contributor?.id === user.id && r.status !== "rejected").length
     : 0;
   const capped = myTakes >= MAX_RECORDINGS_PER_WORD;
+  /* Where "Next word →" goes: Quick record on Record a word, one word
+     after another. Everyone who sees it is signed in (it only appears after
+     a save, or at the per-word limit). */
+  const nextWord = "/improve?need=recording#quick";
+  /* Reached right after someone's second take of this word (the word and a
+     sentence, say) as well as on a later visit, so it thanks them and points
+     on rather than only stating a limit. */
   const cappedNote = (
-    <p className="text-sm text-inkFaint">
-      {L(
-        "You have recorded this word twice, which is the limit per word.",
-        "你已經為這個詞錄了兩次，每個詞最多只能錄兩次。"
-      )}
-    </p>
+    <>
+      <p className="text-sm text-inkSoft">
+        {L(
+          "You have recorded this word twice, the most one person can add to a word.",
+          "你已經為這個詞錄了兩段，每個人每個詞最多錄兩段。"
+        )}
+      </p>
+      <NextWord href={nextWord} done />
+    </>
   );
 
   const senses = sortSenses(entry.senses);
@@ -453,6 +463,7 @@ export default async function EntryPage({
                 isEditor={canDelete}
                 kind="headword"
                 phraseSenseId={senses[0]?.id}
+                nextHref={nextWord}
                 label={
                   publishedHead.length || entry.audio_url
                     ? L("Record this word on its own and/or in a sentence", "單獨錄這個詞，或放在句子裡錄")

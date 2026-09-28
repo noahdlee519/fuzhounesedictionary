@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MAX_RECORDING_NOTE } from "@/lib/constants";
@@ -47,6 +48,24 @@ function announceSaved(kind: Kind, entryId: string) {
   }
 }
 
+/* "Next word →", after a save on a word's page and under the per-word limit
+   note there. Exported for that note, which the entry page renders itself. */
+export function NextWord({ href, done = false }: { href: string; done?: boolean }) {
+  const L = useL();
+  return (
+    <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-rule pt-4">
+      <Link href={href} className="btn btn-primary btn-sm">
+        {L("Next word →", "下一個詞 →")}
+      </Link>
+      <span className="text-sm text-inkSoft">
+        {done
+          ? L("Thank you! Another word is waiting for a voice.", "謝謝你！還有別的詞在等你的聲音。")
+          : L("Record another word that still needs a voice.", "再錄一個還沒有人錄的詞。")}
+      </span>
+    </div>
+  );
+}
+
 export default function Recorder({
   userId,
   entryId,
@@ -58,6 +77,7 @@ export default function Recorder({
   phraseSenseId,
   phrase = false,
   refresh = true,
+  nextHref,
 }: {
   /** Absent when the visitor is signed out: they can still record, and are
       sent to sign in when they choose a take. */
@@ -81,6 +101,9 @@ export default function Recorder({
    *  swapped the recorder (and its sentence follow-up, and "Remove it") for
    *  "has a recording", or dropped the row (audit, 26 Sep 2026). */
   refresh?: boolean;
+  /** Where "Next word →" goes once a take is saved. A word's own page passes
+   *  it (Quick record); without it there is no such button. */
+  nextHref?: string;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -278,19 +301,25 @@ export default function Recorder({
     return (
       <div className="space-y-2 text-sm text-inkSoft">
         <p className="flex flex-wrap items-center gap-3">
-          <span>
+          <span className="font-semibold text-ink">
+            <span aria-hidden className="mr-1.5 text-lacquer">✓</span>
             {isEditor
               ? L("Saved.", "已儲存。")
               : live
                 ? L("Saved, and live on the word's page now. An editor will listen to it afterwards.", "已儲存，現在已在詞條頁上線。編輯之後會再聽一次。")
                 : L("Saved. It will appear once an editor has listened to it.", "已儲存。編輯聽過後就會刊出。")}
           </span>
+          {/* The same word again. This was "Record another", which read as
+              "another word": people pressed it for their next word, recorded
+              this one a second time, reached the two-per-word limit and were
+              told so, and that was the end of their visit (Noah, 28 Sep
+              2026). Another word is "Next word" below. */}
           <button
             type="button"
             onClick={() => setDone(false)}
             className={`${recBtn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}
           >
-            {L("Record another", "再錄一段")}
+            {L("Try this word again", "這個詞重錄一次")}
           </button>
           {/* Changed your mind? A take still waiting for review can be taken
               back from here (and later from your account page). An editor's
@@ -368,7 +397,8 @@ export default function Recorder({
         {kind === "headword" && phraseSenseId && (
           <div className="mt-5 space-y-2 border-l-2 border-lacquer pl-4">
             <p className="text-[15px] font-semibold text-ink">
-              {L("Now say it in a sentence or phrase of your own.", "再用這個詞講一句你自己的話。")}
+              {L("Now say it in a sentence or phrase of your own.", "再用這個詞講一句你自己的話。")}{" "}
+              <span className="font-normal text-inkFaint">{L("(optional)", "（可以跳過）")}</span>
             </p>
             <p className="text-sm text-inkSoft">
               {L(
@@ -388,6 +418,11 @@ export default function Recorder({
             />
           </div>
         )}
+        {/* The way on. A recording made on a word's own page used to end
+            there, with nothing pointing to another word, so most people
+            recorded one word and left. Quick record walks them through one
+            word after another. */}
+        {nextHref && <NextWord href={nextHref} />}
       </div>
     );
   }
