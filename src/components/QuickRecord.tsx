@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import Recorder, { RECORDING_SAVED } from "./Recorder";
+import RecordingTally from "./RecordingTally";
+import { withdrawRecording } from "@/app/account/actions";
 import { useL } from "@/components/LangProvider";
 
 type Word = {
@@ -18,7 +19,6 @@ type Word = {
   recorded?: boolean;
 };
 
-const THANKS_MS = 7000;
 
 /* Quick record: one word at a time, big, so a speaker can say ten words in a
    row without scanning the list.
@@ -68,8 +68,13 @@ export default function QuickRecord({
   const [list, setList] = useState<Word[]>(words);
   const [i, setI] = useState(() => (words.length ? start % words.length : 0));
   const heldBatch = useRef(`${batch}.${round}`);
+  // Set while a word is half done (saved, sentence not yet): a new batch
+  // arriving then waits, rather than taking the card away mid-word. Belt and
+  // braces for the replaceState fix below.
+  const midWord = useRef(false);
   useEffect(() => {
     if (heldBatch.current === `${batch}.${round}`) return;
+    if (midWord.current) return;
     heldBatch.current = `${batch}.${round}`;
     setList(words);
     setI(words.length ? start % words.length : 0);
@@ -84,7 +89,13 @@ export default function QuickRecord({
       if (url.searchParams.get("qo") !== String(batch) || (round && url.searchParams.get("qr") !== String(round))) {
         url.searchParams.set("qo", String(batch));
         if (round) url.searchParams.set("qr", String(round));
-        window.history.replaceState(window.history.state, "", url);
+        // null, not window.history.state: Next 14 treats a call that passes
+        // its own state object as one of its own and does not update the
+        // router's copy of the address. The pinned ?qo= then never reached
+        // the refresh after a save, which drew a new random batch, and the
+        // card jumped to another word just as it asked for a sentence (Noah,
+        // 11 Oct 2026). With null, Next picks the new address up.
+        window.history.replaceState(null, "", url);
       }
     } catch {
       /* the address just stays as it was */
@@ -96,48 +107,79 @@ export default function QuickRecord({
 
   // Which step of the current word: saying it, then using it, then done.
   const [step, setStep] = useState<"word" | "sentence" | "done">("word");
+  midWord.current = step !== "word";
   useEffect(() => setStep("word"), [word?.id]);
   // The listener below is registered once; it reads the current word here.
   const currentWord = useRef<Word | undefined>(word);
   currentWord.current = word;
 
-  /* "Thank you! Record another?" — a red bar under the header, for a word
-     recorded from the list below the card. A save on the card itself moves
-     the card to its next step instead, which says the same thing in place.
-     Styled like the language banner; leaves by itself after a few seconds,
-     or with its ×. */
-  const [thanks, setThanks] = useState<{ top: number } | null>(null);
-  const [shown, setShown] = useState(false);
-  const timer = useRef<number | null>(null);
-  const hideThanks = () => {
-    if (timer.current) window.clearTimeout(timer.current);
-    setShown(false);
-    timer.current = window.setTimeout(() => setThanks(null), 200);
-  };
+  /* The takes saved on this card, latest last, so the latest can be taken
+     back from here: the card swaps its recorder out after a save, which used
+     to leave no "Remove it" for a take made in Quick record. Shown on the
+     sentence step and on the done step (a word with no meaning to hang a
+     sentence on goes straight there). Removing the sentence goes back to the
+     sentence step; removing the word goes back to the start. */
+  const [saved, setSaved] = useState<{ id: string; kind: "headword" | "example" }[]>([]);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  useEffect(() => {
+    setSaved([]);
+    setRemoveError(null);
+  }, [word?.id]);
+
+  /* A save on the card moves it to its next step. Saves from the list below
+     the card say so in their own row (with its own sentence prompt); the red
+     "Thank you! Record another?" bar that used to slide in for those sat on
+     top of that prompt and contradicted it (audit, 11 Oct 2026), so there is
+     no bar any more. */
   useEffect(() => {
     const onSaved = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { kind?: string; entryId?: string } | undefined;
+      const detail = (e as CustomEvent).detail as { kind?: string; entryId?: string; id?: string } | undefined;
       const here = currentWord.current;
-      if (here && detail?.entryId === here.id) {
-        if (detail.kind === "headword") setStep(here.senseId ? "sentence" : "done");
-        else if (detail.kind === "example") setStep("done");
-        return;
-      }
-      if (detail?.kind !== "headword") return;
-      if (timer.current) window.clearTimeout(timer.current);
-      const bottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
-      setThanks({ top: Math.max(0, bottom) });
-      setShown(false);
-      requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
-      timer.current = window.setTimeout(hideThanks, THANKS_MS);
+      if (!here || detail?.entryId !== here.id) return;
+      if (detail.kind !== "headword" && detail.kind !== "example") return;
+      const kind = detail.kind;
+      if (detail.id) setSaved((prev) => [...prev, { id: detail.id!, kind }]);
+      setRemoveError(null);
+      if (kind === "headword") setStep(here.senseId ? "sentence" : "done");
+      else setStep("done");
     };
     window.addEventListener(RECORDING_SAVED, onSaved);
-    return () => {
-      window.removeEventListener(RECORDING_SAVED, onSaved);
-      if (timer.current) window.clearTimeout(timer.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => window.removeEventListener(RECORDING_SAVED, onSaved);
   }, []);
+
+  const latest = saved[saved.length - 1];
+  async function removeTake() {
+    if (!latest || removing) return;
+    setRemoving(true);
+    setRemoveError(null);
+    const fd = new FormData();
+    fd.set("id", latest.id);
+    const res = await withdrawRecording(fd).catch(() => ({ ok: false }));
+    setRemoving(false);
+    if (!res?.ok) {
+      setRemoveError(L("Could not remove it just now. You can remove it from your account page.", "目前無法移除。你可以到帳號頁面移除。"));
+      return;
+    }
+    setSaved((prev) => prev.slice(0, -1));
+    setStep(latest.kind === "example" ? "sentence" : "word");
+  }
+  const removeBtn =
+    latest && !isEditor ? (
+      <button
+        type="button"
+        onClick={removeTake}
+        disabled={removing}
+        className="text-inkFaint underline decoration-rule underline-offset-4 transition-colors hover:text-lacquer"
+      >
+        {removing ? L("Removing…", "移除中…") : L("Remove it", "移除這段")}
+      </button>
+    ) : null;
+  const removeNote = removeError ? (
+    <p role="alert" className="text-sm text-lacquer">
+      {removeError}
+    </p>
+  ) : null;
 
   if (!word) return null;
 
@@ -151,7 +193,7 @@ export default function QuickRecord({
     try {
       const url = new URL(window.location.href);
       url.searchParams.set("n", String(to));
-      window.history.replaceState(window.history.state, "", url);
+      window.history.replaceState(null, "", url);
     } catch {
       /* the address just stays as it was */
     }
@@ -171,45 +213,6 @@ export default function QuickRecord({
 
   return (
     <section id="quick" className="scroll-mt-24 rounded-sm border border-rule bg-surface p-6 sm:p-8">
-      {thanks &&
-        createPortal(
-          <div className="pointer-events-none fixed inset-x-0 z-[45]" style={{ top: thanks.top }}>
-            <div className="wrap pt-3">
-              <div
-                role="status"
-                className={
-                  "pointer-events-auto flex flex-wrap items-center gap-x-4 gap-y-2 rounded-sm bg-lacquer px-5 py-3 text-paper transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none " +
-                  (shown ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0")
-                }
-              >
-                <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">
-                  {L("Thank you! Record another?", "謝謝你！再錄一個？")}
-                </p>
-                {/* The word just saved was from the list, not the card, so
-                    the card's word is still waiting: bring it into view. */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    hideThanks();
-                    document.getElementById("quick")?.scrollIntoView({ block: "start", behavior: "smooth" });
-                  }}
-                  className="rounded-sm border border-paper/70 px-3 py-1 text-sm font-semibold transition-colors hover:bg-white/15"
-                >
-                  {L("Next word", "下一個詞")}
-                </button>
-                <button
-                  type="button"
-                  onClick={hideThanks}
-                  aria-label={L("Dismiss", "關閉")}
-                  className="-m-1 inline-flex h-8 w-8 items-center justify-center rounded-sm text-lg leading-none transition-colors hover:bg-white/15"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
 
       <p className="eyebrow">{L("Quick record", "快速錄音")}</p>
       <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -236,6 +239,12 @@ export default function QuickRecord({
             isEditor={isEditor}
             kind="headword"
             label={L("Say the word once or twice", "把這個詞講一兩次")}
+            // No page refresh after a save: this card keeps its own list, and
+            // the refresh re-ran the page, which drew a new random batch and
+            // swapped the card for another word just as it asked for the
+            // sentence (Noah, 11 Oct 2026). The list below catches up on the
+            // next page load.
+            refresh={false}
           />
         </div>
       )}
@@ -243,7 +252,14 @@ export default function QuickRecord({
       {/* 2. The word in use: a prompt that arrives once the word is saved. */}
       {step === "sentence" && word.senseId && (
         <div className="mt-5 space-y-4">
-          <p className="text-sm font-semibold text-ink">✓ {L("Word saved. Thank you!", "詞已儲存，謝謝你！")}</p>
+          <div className="space-y-1">
+            <p className="flex flex-wrap items-baseline gap-x-3 text-sm">
+              <span className="font-semibold text-ink">✓ {L("Word saved.", "詞已儲存。")}</span>
+              {removeBtn}
+            </p>
+            {removeNote}
+            <RecordingTally userId={userId} isEditor={isEditor} />
+          </div>
           <div className="animate-[page-fade_.25s_ease-out] space-y-2 rounded-sm border border-lacquer/40 bg-paper p-4 motion-reduce:animate-none sm:p-5">
             <p className="text-[17px] font-semibold text-ink">
               {L("Now try it in a phrase or sentence", "再用這個詞講一句話")}
@@ -262,6 +278,7 @@ export default function QuickRecord({
               senseId={word.senseId}
               isEditor={isEditor}
               phrase
+              refresh={false}
             />
           </div>
         </div>
@@ -269,7 +286,14 @@ export default function QuickRecord({
 
       {/* 3. Both in. */}
       {step === "done" && (
-        <p className="mt-5 text-sm font-semibold text-ink">✓ {L("Saved. Thank you!", "已儲存，謝謝你！")}</p>
+        <div className="mt-5 space-y-1">
+          <p className="flex flex-wrap items-baseline gap-x-3 text-sm">
+            <span className="font-semibold text-ink">✓ {L("Saved.", "已儲存。")}</span>
+            {removeBtn}
+          </p>
+          {removeNote}
+          <RecordingTally userId={userId} isEditor={isEditor} />
+        </div>
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-rule pt-4">

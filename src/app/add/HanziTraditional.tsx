@@ -94,7 +94,11 @@ export default function HanziTraditional({ value, onResolved }: { value: string;
           <p>
             {L("Saved in traditional characters:", "會以繁體字儲存：")}{" "}
             <span className="han text-base text-ink">{result}</span>{" "}
-            <button type="button" onClick={() => setKeep(true)} className="whitespace-nowrap text-inkFaint hover:text-lacquer hover:underline">
+            <button
+              type="button"
+              onClick={() => setKeep(true)}
+              className="ml-1 whitespace-nowrap rounded-sm border border-ruleStrong px-2 py-0.5 text-xs text-inkSoft transition-colors hover:border-ink hover:text-ink"
+            >
               {L("Keep what I typed", "保留我輸入的")}
             </button>
           </p>
@@ -107,7 +111,20 @@ export default function HanziTraditional({ value, onResolved }: { value: string;
                 const chosen = picks[c.at] ?? c.options[0];
                 return (
                   <div key={c.at} className="flex flex-wrap items-center gap-1.5">
-                    <span className="han w-6 text-base text-inkFaint">{c.typed}</span>
+                    {/* The whole word, with this character marked: when the
+                        same character comes twice (发头发) the two rows
+                        looked identical, with nothing saying which was which. */}
+                    <span className="han min-w-[2rem] text-base text-inkFaint" aria-label={L("character {n}", "第 {n} 個字", { n: c.at + 1 })}>
+                      {Array.from(typed).map((ch, k) =>
+                        k === c.at ? (
+                          <span key={k} className="font-semibold text-ink underline decoration-lacquer decoration-2 underline-offset-4">
+                            {ch}
+                          </span>
+                        ) : (
+                          <span key={k}>{ch}</span>
+                        )
+                      )}
+                    </span>
                     <span aria-hidden className="text-inkFaint">→</span>
                     {c.options.map((o) => pickBtn(c.at, o, o === chosen))}
                   </div>

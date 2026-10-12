@@ -462,7 +462,12 @@ export default async function EntryPage({
                 entryId={entry.id}
                 isEditor={canDelete}
                 kind="headword"
-                phraseSenseId={senses[0]?.id}
+                // The "say it in a sentence" take goes on a meaning that has
+                // no written example yet. On one that has, it was listed under
+                // that sentence and labelled with its translation, as if it
+                // were a reading of it (audit, 11 Oct 2026). None free: no
+                // prompt.
+                phraseSenseId={senses.find((s) => !(s.example ?? "").trim())?.id}
                 nextHref={nextWord}
                 label={
                   publishedHead.length || entry.audio_url

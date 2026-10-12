@@ -9,12 +9,14 @@ import { saveRecording } from "@/lib/audio-upload";
 import { heldTake, holdTake, releaseTake } from "@/lib/held-take";
 import SignInDialog from "./SignInDialog";
 import { useNeedsOrigin } from "./OriginGate";
+import RecordingTally from "./RecordingTally";
 import { useRecorder } from "./useRecorder";
 import TakeControls, { recBtn } from "./TakeControls";
 import SpeakerFields from "./SpeakerFields";
 import { withdrawRecording, publishOwnRecording } from "@/app/account/actions";
 import type { Speaker } from "@/lib/audio-upload";
-import { useL } from "./LangProvider";
+import { useL, useLang } from "./LangProvider";
+import { friendlyError } from "@/lib/friendly-error";
 
 /* ---------------------------------------------------------------------------
    Record a word that already exists and save it straight away: the entry
@@ -40,9 +42,9 @@ type Kind = "headword" | "example";
    recorder can react: the Record-a-word page's thank-you banner (QuickRecord)
    listens for it. detail: { kind, entryId }. */
 export const RECORDING_SAVED = "fz:recording-saved";
-function announceSaved(kind: Kind, entryId: string) {
+function announceSaved(kind: Kind, entryId: string, id?: string, senseId?: string | null) {
   try {
-    window.dispatchEvent(new CustomEvent(RECORDING_SAVED, { detail: { kind, entryId } }));
+    window.dispatchEvent(new CustomEvent(RECORDING_SAVED, { detail: { kind, entryId, id, senseId } }));
   } catch {
     /* nothing listening, or no CustomEvent: nothing lost */
   }
@@ -109,6 +111,7 @@ export default function Recorder({
   const supabase = createClient();
   const rec = useRecorder();
   const L = useL();
+  const lang = useLang();
 
   // A line to go with the take: the sentence being read, or how the speaker
   // would put it. Optional; shown beside the play button once approved.
@@ -127,6 +130,8 @@ export default function Recorder({
   // During the trust window (lib/trust) a saved take goes live at once;
   // this says whether the last one did, for the line after saving.
   const [live, setLive] = useState(false);
+  // Approved, but its word is not live yet (publishOwnRecording).
+  const [wordPending, setWordPending] = useState(false);
   /* Straight after a save: ask for it to go live. The server decides (the
      window, and that the take is the caller's own and still pending); an
      editor's take is live already. */
@@ -135,8 +140,9 @@ export default function Recorder({
     try {
       const fd = new FormData();
       fd.set("id", id);
-      const { live: now } = await publishOwnRecording(fd);
+      const { live: now, wordPending: waiting } = await publishOwnRecording(fd);
       setLive(now);
+      setWordPending(Boolean(waiting));
     } catch {
       setLive(false);
     }
@@ -189,13 +195,13 @@ export default function Recorder({
         setNoteState("idle");
         setDone(true);
         onSaved?.();
-        announceSaved(kind, entryId);
+        announceSaved(kind, entryId, saved.id, senseId ?? null);
         if (refresh) router.refresh();
       } catch (e: any) {
         // The take is still held, so "Try saving it again" can have another go
         // once whatever went wrong — a cap, the network — is past.
         if (!cancelled) {
-          setError(e?.message ?? L("Could not save the recording you made before signing in.", "無法儲存你登入前錄的錄音。"));
+          setError(e?.message ? friendlyError(e, lang) : L("Could not save the recording you made before signing in.", "無法儲存你登入前錄的錄音。"));
           setHeldFailed(true);
         }
       } finally {
@@ -257,10 +263,10 @@ export default function Recorder({
       rec.discard();
       setNote("");
       onSaved?.();
-      announceSaved(kind, entryId);
+      announceSaved(kind, entryId, saved.id, senseId ?? null);
       if (refresh) router.refresh();
     } catch (e: any) {
-      setError(e?.message ?? L("Could not save that recording.", "無法儲存這段錄音。"));
+      setError(e?.message ? friendlyError(e, lang) : L("Could not save that recording.", "無法儲存這段錄音。"));
     } finally {
       setSaving(false);
     }
@@ -303,11 +309,15 @@ export default function Recorder({
         <p className="flex flex-wrap items-center gap-3">
           <span className="font-semibold text-ink">
             <span aria-hidden className="mr-1.5 text-lacquer">✓</span>
-            {isEditor
+            {phrase
+              ? L("Sentence saved.", "句子已儲存。")
+              : isEditor
               ? L("Saved.", "已儲存。")
               : live
                 ? L("Saved, and live on the word's page now. An editor will listen to it afterwards.", "已儲存，現在已在詞條頁上線。編輯之後會再聽一次。")
-                : L("Saved. It will appear once an editor has listened to it.", "已儲存。編輯聽過後就會刊出。")}
+                : wordPending
+                  ? L("Saved. It will be heard on the word's page as soon as the word itself is approved.", "已儲存。詞條本身一經核准，這段錄音就會在詞條頁上播放。")
+                  : L("Saved. It will appear once an editor has listened to it.", "已儲存。編輯聽過後就會刊出。")}
           </span>
           {/* The same word again. This was "Record another", which read as
               "another word": people pressed it for their next word, recorded
@@ -319,11 +329,11 @@ export default function Recorder({
             onClick={() => setDone(false)}
             className={`${recBtn} border-rule text-inkSoft hover:border-lacquer hover:text-lacquer`}
           >
-            {L("Try this word again", "這個詞重錄一次")}
+            {phrase || kind === "example" ? L("Record the sentence again", "重錄這個句子") : L("Try this word again", "這個詞重錄一次")}
           </button>
-          {/* Changed your mind? A take still waiting for review can be taken
-              back from here (and later from your account page). An editor's
-              is published at once, so this is not offered to them. */}
+          {/* Changed your mind? Any of your own takes can be taken back,
+              from here or later from your account page (lib withdraw). Not
+              offered to editors, whose takes go out as they are. */}
           {savedId && !isEditor && (
             <button
               type="button"
@@ -352,6 +362,9 @@ export default function Recorder({
             </button>
           )}
         </p>
+        {/* How many they have added now. Not under the sentence recorder,
+            which sits inside this one and would say it a second time. */}
+        {!phrase && userId && <RecordingTally key={savedId ?? "tally"} userId={userId} isEditor={isEditor} />}
         {error && <p className="text-sm text-lacquer">{error}</p>}
         {savedId && (
           <form
@@ -414,7 +427,12 @@ export default function Recorder({
               senseId={phraseSenseId}
               isEditor={isEditor}
               phrase
-              refresh={refresh}
+              // Never refreshes the page: on a word's page the sentence is
+              // often the person's second take, and the refresh swapped the
+              // whole recorder for the "recorded twice" note a second later,
+              // taking both confirmations and any half-typed note with it
+              // (audit, 11 Oct 2026). The take is in the list on next visit.
+              refresh={false}
             />
           </div>
         )}

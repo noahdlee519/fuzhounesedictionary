@@ -241,6 +241,7 @@ export default async function ImprovePage({
   // The senses of the words on this page, so an example can say which meaning
   // it belongs to. Only fetched for the 25 rows on screen.
   const senses: Record<string, SenseOption[]> = {};
+  const phraseSense: Record<string, string> = {};
   // What this user already has in the queue, so we show "awaiting review"
   // instead of inviting them to send the same thing again. RLS means this only
   // ever returns their own rows.
@@ -252,7 +253,7 @@ export default async function ImprovePage({
 
   if (allIds.length) {
     const [{ data: senseRows }, { data: pendingRows }, { data: takeRows }] = await Promise.all([
-      supabase.from("senses").select("id, entry_id, definition_en, sort").in("entry_id", allIds),
+      supabase.from("senses").select("id, entry_id, definition_en, sort, example").in("entry_id", allIds),
       supabase
         .from("suggestions")
         .select("entry_id, kind")
@@ -272,6 +273,9 @@ export default async function ImprovePage({
     // example form matches what the person sees there.
     for (const s of sortSenses<any>(senseRows)) {
       (senses[s.entry_id] ??= []).push({ id: s.id, definition_en: s.definition_en });
+      // Where a "say it in a sentence" take can go: the first meaning with
+      // no written example (see the entry page).
+      if (!(s.example ?? "").trim() && !phraseSense[s.entry_id]) phraseSense[s.entry_id] = s.id;
     }
     for (const s of (pendingRows ?? []) as any[]) {
       mine[s.entry_id] ??= { ipa: false, example: false };
@@ -410,7 +414,7 @@ export default async function ImprovePage({
             romanization: romText(r.romanization, r.headword),
             headword: r.headword,
             gloss: r.short_gloss ?? null,
-            senseId: senses[r.id]?.[0]?.id ?? null,
+            senseId: phraseSense[r.id] ?? null,
             recorded: !r.needs_recording,
           }))}
           // A new filter is a new card from the start (the component keeps
@@ -576,7 +580,7 @@ export default async function ImprovePage({
                     {L("you have recorded this twice", "你已錄過兩次")}
                   </span>
                 ) : (
-                  <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" phraseSenseId={senses[r.id]?.[0]?.id} label={L("Needs a recording", "需要錄音")} refresh={false} />
+                  <Recorder userId={user.id} entryId={r.id} isEditor={Boolean(profile?.is_editor)} kind="headword" phraseSenseId={phraseSense[r.id]} label={L("Needs a recording", "需要錄音")} refresh={false} />
                 )
               ) : (
                 <span className="meta text-inkFaint">

@@ -1,4 +1,4 @@
-import { newApprovals, editorWelcome, editorInvite } from "@/lib/approvals";
+import { newApprovals, editorWelcome, editorInvite, countSum, noticeWord, type Counts } from "@/lib/approvals";
 import EditorInviteBanner from "@/components/EditorInviteBanner";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
@@ -18,6 +18,8 @@ import type { Metadata } from "next";
 import { STATUS_STYLE, statusLabel } from "@/lib/status";
 import { firstSense, one, sortSenses } from "@/lib/entries";
 import { getSafe } from "@/lib/safe";
+import { romText } from "@/lib/rom";
+import LocalTime from "@/components/LocalTime";
 import { getLang } from "@/lib/lang";
 import { pick, type Pick } from "@/lib/i18n";
 
@@ -32,6 +34,11 @@ export function generateMetadata(): Metadata {
 }
 
 const labelCls = "field-label";
+/* The lists of words, meanings, recordings and suggestions. One column whose
+   items may shrink, and long unbroken text (a URL in an editor's note, a long
+   romanization) breaks anywhere: one such string used to widen every card
+   past a phone screen and push the status chips off it (audit, 11 Oct 2026). */
+const listCls = "grid grid-cols-1 gap-3 [&>*]:min-w-0 [&>*]:[overflow-wrap:anywhere]";
 const inputCls = "field-input";
 
 /* Part of speech is stored in English; Chinese readers get a label. */
@@ -72,7 +79,7 @@ export default async function AccountPage({
   const supabase = createClient();
 
   // Profile, words and recordings are independent; fetched together.
-  const [{ data: profile }, { data, error: entriesError }, { data: recData }] = await Promise.all([
+  const [{ data: profile }, { data, error: entriesError }, { data: recData }, { data: sugData }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, display_name, avatar_url, origin_area, origin_locality, origin_precision, created_at")
@@ -86,10 +93,19 @@ export default async function AccountPage({
     // Everything else this person has contributed, not just their first word.
     supabase
       .from("recordings")
-      .select("id, kind, audio_url, status, note, created_at, reviewed_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))")
+      .select("id, kind, audio_url, status, note, created_at, reviewed_at, review_notes, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))")
       .eq("contributor_id", user.id)
       .order("created_at", { ascending: false }),
+    // Suggested IPA and example sentences (Improve a word). They count in
+    // the "accepted" banner, and nowhere listed them (audit, 11 Oct 2026).
+    supabase
+      .from("suggestions")
+      .select("id, kind, value, value_gloss, status, review_notes, created_at, entry:entries(id, headword, hanzi, romanization, status)")
+      .eq("contributor_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
+  const suggestions = ((sugData ?? []) as any[]).map((s) => ({ ...s, entry: one(s.entry) }));
 
   const entries = data ?? [];
   const recordings: RecordingByRowProps[] = (recData ?? []).map((r: any) => ({
@@ -105,7 +121,12 @@ export default async function AccountPage({
 
   // Which list the tiles are showing. The tiles are links, so this survives a
   // refresh and needs no JavaScript.
-  const show = (["words", "meanings", "recordings"] as const).find((k) => k === searchParams.show) ?? "words";
+  const show = (["words", "meanings", "recordings", "suggestions"] as const).find((k) => k === searchParams.show) ?? "words";
+  /* The recordings tile counts what is not rejected — the same as "That's
+     your Nth recording" (RecordingTally) and the editor invitation — so the
+     numbers on the site agree. Rejected takes are still listed below, with
+     the editor's note. */
+  const recCount = recordings.filter((r) => r.status !== "rejected").length;
 
   // The recordings tab is paged in memory: the rows are already here for the
   // tile count, and a person's own list is bounded by the recording caps.
@@ -115,9 +136,9 @@ export default async function AccountPage({
   const recRows = recordings.slice((recPage - 1) * REC_PAGE, recPage * REC_PAGE);
   const recBack = `/account?show=recordings${recPage > 1 ? `&page=${recPage}` : ""}`;
 
-  const since = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString(lang === "zh" ? "zh-TW" : "en-GB", { year: "numeric", month: "long" })
-    : null;
+  // In the reader's own timezone (LocalTime): on the server it is UTC, and
+  // an evening sign-up on the last day of a month read as the next month.
+  const since = profile?.created_at ? <LocalTime iso={profile.created_at} month /> : null;
 
   // "hidden" is no longer offered (the origin is required); an account from
   // before that shows the county-only choice selected.
@@ -126,8 +147,67 @@ export default async function AccountPage({
 
   // Anything of theirs an editor has approved since they last looked.
   const [news, welcome, invite] = await Promise.all([newApprovals(user.id), editorWelcome(user.id), editorInvite(user.id)]);
-  // Where the banner's link goes: the list with the most news in it.
-  const newsShow = news.words ? "words" : news.recordings ? "recordings" : "words";
+  /* The banner's sentences, one per kind of news. Its link goes to the list
+     most worth looking at: anything sent back first (it has an editor's note
+     to read), then what was accepted, then recordings for thumbs-up. */
+  const accepted = countSum(news.accepted);
+  const sentBack = countSum(news.sentBack);
+  const pickShow = (c: Counts) =>
+    c.words ? "words" : c.recordings ? "recordings" : c.suggestions ? "suggestions" : null;
+  const newsShow =
+    pickShow(news.sentBack) ?? pickShow(news.accepted) ?? (news.thumbs ? "recordings" : "words");
+  // Good news first, then thanks; what was sent back or removed after it.
+  const newsLines: string[] = [];
+  const hardLines: string[] = [];
+  if (accepted)
+    newsLines.push(
+      accepted === 1
+        ? L("1 of your contributions was accepted.", "你有 1 項貢獻已獲核准。")
+        : L("{n} of your contributions were accepted.", "你有 {n} 項貢獻已獲核准。", { n: accepted })
+    );
+  if (news.thumbs)
+    newsLines.push(
+      news.thumbs === 1
+        ? L("Someone gave your recording a thumbs-up.", "有人給你的錄音按了讚。")
+        : L("Your recordings got {k} thumbs-up.", "你的錄音得到 {k} 個讚。", { k: news.thumbs })
+    );
+  if (news.requests)
+    newsLines.push(
+      news.requests === 1
+        ? L("A word you asked for now has a recording.", "你請求的一個詞現在有錄音了。")
+        : L("{k} words you asked for have been recorded or added.", "你請求的 {k} 個詞已經有人錄音或新增。", { k: news.requests })
+    );
+  if (sentBack)
+    hardLines.push(
+      sentBack === 1
+        ? L("1 of your contributions was sent back by an editor. If they left a note on why, it is beside it below.", "你有 1 項貢獻被編輯退回。如果編輯留了原因，會寫在下方那一項旁邊。")
+        : L("{n} of your contributions were sent back by an editor. Any notes on why are beside them below.", "你有 {n} 項貢獻被編輯退回。編輯留的原因會寫在下方各項旁邊。", { n: sentBack })
+    );
+  // A removed word as the reader would see it elsewhere: characters, then
+  // the romanization in their chosen system.
+  const shownWord = (detail: string) => {
+    const w = noticeWord(detail);
+    return [w.hanzi, w.romanization || w.headword ? romText(w.romanization || null, w.headword) : ""].filter(Boolean).join(" ");
+  };
+  const firstRemoved = news.removed[0] ? shownWord(news.removed[0]) : "";
+  const firstRemovedTake = news.removedTakes[0] ? shownWord(news.removedTakes[0]) : "";
+  if (news.removed.length)
+    hardLines.push(
+      news.removed.length === 1
+        ? L("An editor removed a word you had added or recorded{w}.", "編輯移除了一個你新增或錄過的詞{w}。", {
+            w: firstRemoved ? L(" ({x})", "（{x}）", { x: firstRemoved }) : "",
+          })
+        : L("An editor removed {n} words you had added or recorded.", "編輯移除了 {n} 個你新增或錄過的詞。", { n: news.removed.length })
+    );
+  if (news.removedTakes.length)
+    hardLines.push(
+      news.removedTakes.length === 1
+        ? L("An editor removed one of your recordings{w}.", "編輯移除了你的一段錄音{w}。", {
+            w: firstRemovedTake ? L(" ({x})", "（{x}）", { x: firstRemovedTake }) : "",
+          })
+        : L("An editor removed {n} of your recordings.", "編輯移除了你的 {n} 段錄音。", { n: news.removedTakes.length })
+    );
+  const goodNews = accepted + news.thumbs + news.requests > 0;
 
   return (
     <div className="space-y-10">
@@ -143,6 +223,7 @@ export default async function AccountPage({
             {L(".", "審核大家的貢獻。")}
           </p>
           <form action={dismissEditorWelcome}>
+            <input type="hidden" name="show" value={show} />
             <button
               type="submit"
               aria-label={L("Dismiss", "關閉")}
@@ -155,22 +236,27 @@ export default async function AccountPage({
       )}
 
       {/* 25 recordings or 10 words: would they like to be an editor? */}
-      {invite && <EditorInviteBanner recordings={invite.recordings} words={invite.words} dismiss={dismissEditorInvite} />}
+      {invite && <EditorInviteBanner recordings={invite.recordings} words={invite.words} dismiss={dismissEditorInvite} show={show} />}
 
       {news.total > 0 && (
         <div role="status" className="flex items-start gap-4 rounded-sm bg-lacquer px-5 py-4 text-paper">
-          <p className="min-w-0 flex-1 text-[15px] leading-snug">
-            <span className="font-semibold">
-              {news.total === 1
-                ? L("1 of your edits was accepted", "你有 1 項修改已獲核准")
-                : L("{n} of your edits were accepted", "你有 {n} 項修改已獲核准", { n: news.total })}
-            </span>
-            {L(" — thank you. ", "——謝謝你！")}
-            <Link href={`/account?show=${newsShow}#contributions`} className="whitespace-nowrap underline underline-offset-2 hover:opacity-80">
-              {L("See your contributions", "查看你的貢獻")}
-            </Link>
+          <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-[15px] leading-snug">
+            <span className="font-semibold">{newsLines.join(L(" ", ""))}</span>
+            {goodNews && L(" Thank you!", "謝謝你！")}
+            {hardLines.length > 0 && <span className="font-semibold">{L(newsLines.length ? " " : "", "")}{hardLines.join(L(" ", ""))}</span>}
           </p>
+          {/* Goes to the list and clears the notice in one go: the link used
+              to leave the red dot on until the × was pressed as well. */}
           <form action={dismissApprovals}>
+            <input type="hidden" name="show" value={newsShow} />
+            <button type="submit" className="text-[15px] underline underline-offset-2 hover:opacity-80">
+              {sentBack || news.removed.length || news.removedTakes.length ? L("See what changed", "查看有什麼變化") : L("See your contributions", "查看你的貢獻")}
+            </button>
+          </form>
+          </div>
+          <form action={dismissApprovals}>
+            <input type="hidden" name="show" value={show} />
             <button
               type="submit"
               aria-label={L("Dismiss", "關閉")}
@@ -219,7 +305,11 @@ export default async function AccountPage({
                 </a>
               </p>
             )}
-            {since && <p className="text-sm text-inkFaint">{L("Member since {since}", "{since}加入", { since })}</p>}
+            {since && (
+              <p className="text-sm text-inkFaint">
+                {lang === "zh" ? <>{since}加入</> : <>Member since {since}</>}
+              </p>
+            )}
             <p className="text-sm">
               <Link href={`/contributor/${user.id}`} className="text-lacquer underline-offset-2 hover:underline">
                 {L("View profile", "查看個人頁面")}
@@ -243,11 +333,12 @@ export default async function AccountPage({
 
       {/* ---- contributions: three tiles that double as tabs ---------------- */}
       <section id="contributions" className="scroll-mt-20 space-y-4">
-        <nav aria-label={L("Your contributions", "你的貢獻")} className="grid grid-cols-3 gap-3">
+        <nav aria-label={L("Your contributions", "你的貢獻")} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { key: "words", n: entries.length, label: entries.length === 1 ? L("word added", "個新增的詞") : L("words added", "個新增的詞") },
             { key: "meanings", n: meanings.length, label: meanings.length === 1 ? L("meaning", "個意思") : L("meanings", "個意思") },
-            { key: "recordings", n: recordings.length, label: recordings.length === 1 ? L("recording", "段錄音") : L("recordings", "段錄音") },
+            { key: "recordings", n: recCount, label: recCount === 1 ? L("recording", "段錄音") : L("recordings", "段錄音") },
+            { key: "suggestions", n: suggestions.length, label: suggestions.length === 1 ? L("suggestion", "個建議") : L("suggestions", "個建議") },
           ].map((t) => {
             const active = show === t.key;
             return (
@@ -283,13 +374,13 @@ export default async function AccountPage({
               <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">{L("Add your first word", "新增你的第一個詞")}</Link>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className={listCls}>
               {entries.map((e: any) => {
                 const first = firstSense<any>(e.senses);
                 const body = (
-                  <div className="flex items-baseline gap-3">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
-                    <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
+                    <span className="romanization font-display font-semibold text-lacquer">{romText(e.romanization, e.headword)}</span>
                     <span className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[e.status]}`}>
                       {statusLabel(e.status, lang)}
                     </span>
@@ -300,7 +391,9 @@ export default async function AccountPage({
                     {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
                     {first && <p className="mt-1 text-sm text-inkSoft">{first.definition_en}</p>}
                     {e.status === "rejected" && e.review_notes && (
-                      <p className="mt-2 text-sm text-inkFaint">{L("Editor note: ", "編輯附註：")}{e.review_notes}</p>
+                      <p className="mt-2 text-sm text-inkSoft">
+                        <span className="font-semibold text-ink">{L("Editor's note:", "編輯附註：")}</span> {e.review_notes}
+                      </p>
                     )}
                   </div>
                 );
@@ -316,13 +409,13 @@ export default async function AccountPage({
               <Link href="/add" className="mt-2 inline-block font-medium text-lacquer hover:underline">{L("Add a word", "新增詞條")}</Link>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className={listCls}>
               {meanings.map((m: any) => {
                 const e = m.entry;
                 const body = (
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     {e.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
-                    <span className="romanization font-display font-semibold text-lacquer">{e.romanization || e.headword}</span>
+                    <span className="romanization font-display font-semibold text-lacquer">{romText(e.romanization, e.headword)}</span>
                     {m.part_of_speech && (
                       <span className="meta text-inkFaint">{posLabel(L, m.part_of_speech)}</span>
                     )}
@@ -335,6 +428,11 @@ export default async function AccountPage({
                   <div key={m.id} className="rounded-sm border border-rule bg-surface p-4">
                     {e.status === "approved" ? <Link href={`/entry/${e.id}`}>{body}</Link> : body}
                     <p className="mt-1 text-sm text-inkSoft">{m.definition_en}</p>
+                    {e.status === "rejected" && e.review_notes && (
+                      <p className="mt-2 text-sm text-inkSoft">
+                        <span className="font-semibold text-ink">{L("Editor's note:", "編輯附註：")}</span> {e.review_notes}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -366,7 +464,7 @@ export default async function AccountPage({
             </div>
           ) : (
             <div id="recordings" className="scroll-mt-3 space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className={`${listCls} sm:grid-cols-2`}>
                 {recRows.map((r) => (
                   <RecordingByRow key={r.id} recording={r} showStatus editableNote back={recBack} />
                 ))}
@@ -378,6 +476,58 @@ export default async function AccountPage({
                 params={{ show: "recordings" }}
                 anchor="recordings"
               />
+            </div>
+          )
+        )}
+
+        {show === "suggestions" && (
+          suggestions.length === 0 ? (
+            <div className="rounded-sm border border-rule bg-surface p-8">
+              <p className="text-inkSoft">
+                {L("You haven't sent a suggestion yet: a pronunciation, an example sentence, an edit or a report.", "你還沒有提出過任何建議：發音、例句、修改或檢舉都算。")}
+              </p>
+              <Link href="/improve" className="mt-2 inline-block font-medium text-lacquer hover:underline">
+                {L("Improve a word →", "完善詞條 →")}
+              </Link>
+            </div>
+          ) : (
+            <div className={listCls}>
+              {suggestions.map((s: any) => {
+                const e = s.entry;
+                const head = (
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
+                    {e && <span className="romanization font-display font-semibold text-lacquer">{romText(e.romanization, e.headword)}</span>}
+                    <span className="meta text-inkFaint">
+                      {s.kind === "ipa"
+                        ? L("pronunciation (IPA)", "發音（IPA）")
+                        : s.kind === "example"
+                          ? L("example sentence", "例句")
+                          : s.kind === "edit"
+                            ? L("suggested edit", "建議修改")
+                            : s.kind === "report"
+                              ? L("report", "檢舉")
+                              : s.kind}
+                    </span>
+                    <span className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[s.status] ?? STATUS_STYLE.pending}`}>
+                      {statusLabel(s.status, lang)}
+                    </span>
+                  </div>
+                );
+                return (
+                  <div key={s.id} className="rounded-sm border border-rule bg-surface p-4">
+                    {e && e.status === "approved" ? <Link href={`/entry/${e.id}`}>{head}</Link> : head}
+                    {/* Edits and reports are plain prose, with the lines they were written in. */}
+                    <p className={`mt-1 text-[15px] text-ink ${s.kind === "edit" || s.kind === "report" ? "whitespace-pre-line" : "romanization"}`}>{s.value}</p>
+                    {s.value_gloss && <p className="text-sm text-inkSoft">{s.value_gloss}</p>}
+                    {s.status === "rejected" && s.review_notes && (
+                      <p className="mt-2 text-sm text-inkSoft">
+                        <span className="font-semibold text-ink">{L("Editor's note:", "編輯附註：")}</span> {s.review_notes}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )
         )}

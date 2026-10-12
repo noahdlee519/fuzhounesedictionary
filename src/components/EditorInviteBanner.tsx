@@ -9,11 +9,14 @@ export default function EditorInviteBanner({
   recordings,
   words,
   dismiss,
+  show,
 }: {
   recordings: number;
   words: number;
   /** The server action behind the ×. */
   dismiss?: (formData: FormData) => void | Promise<void>;
+  /** The account tab to come back to after dismissing. */
+  show?: string;
 }) {
   const L = pick(getLang());
   // What they have done, in their terms: whichever crossed the line, or both.
@@ -25,7 +28,9 @@ export default function EditorInviteBanner({
       : null,
     words >= 1 ? (words === 1 ? L("1 word", "1 個詞") : L("{n} words", "{n} 個詞", { n: words })) : null,
   ].filter(Boolean);
-  const done = parts.join(L(" and ", "和"));
+  // "26 段錄音和 3 個詞": a space before each number in Chinese too, which the
+  // template's "的{done}" ran together ("貢獻的26 段").
+  const done = parts.join(L(" and ", "和 "));
   const mail = `mailto:${EDITOR_CONTACT}?subject=${encodeURIComponent("Becoming an editor")}`;
 
   return (
@@ -33,7 +38,7 @@ export default function EditorInviteBanner({
       <div className="min-w-0 flex-1 space-y-1.5 text-[15px] leading-snug">
         <p className="font-semibold">
           {done
-            ? L("Thank you for your {done}. Would you like to become an editor?", "謝謝你貢獻的{done}。你想成為編輯嗎？", { done })
+            ? L("Thank you for your {done}. Would you like to become an editor?", "謝謝你貢獻的 {done}。你想成為編輯嗎？", { done })
             : L("Thank you for all you have added. Would you like to become an editor?", "謝謝你貢獻的一切。你想成為編輯嗎？")}
         </p>
         <p>
@@ -48,6 +53,7 @@ export default function EditorInviteBanner({
         </p>
       </div>
       <form action={dismiss}>
+        {show && <input type="hidden" name="show" value={show} />}
         <button
           type="submit"
           aria-label={L("Dismiss", "關閉")}

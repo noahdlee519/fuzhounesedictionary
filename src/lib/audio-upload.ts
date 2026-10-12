@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AUDIO_BUCKET, MAX_AUDIO_BYTES, MAX_RECORDING_NOTE } from "@/lib/constants";
 import { baseMime, extFor } from "@/components/useRecorder";
+import { ShownError } from "@/lib/friendly-error";
 
 /* The page's language, for the messages thrown below (this runs in the
    browser; the root layout sets <html lang>). */
@@ -35,7 +36,7 @@ export async function saveRecording(
 ): Promise<{ id: string; note: string }> {
   const { userId, entryId, kind, senseId, blob, seconds } = args;
   if (blob.size > MAX_AUDIO_BYTES) {
-    throw new Error(zh() ? "錄音太長了，請控制在 5 MB 以內。" : "That recording is too long. Keep it under 5 MB.");
+    throw new ShownError(zh() ? "錄音太長了，請控制在 5 MB 以內。" : "That recording is too long. Keep it under 5 MB.");
   }
   const mime = baseMime(blob.type || "audio/webm");
   const path = `${userId}/${entryId}-${kind}-${Date.now()}.${extFor(mime)}`;
@@ -74,7 +75,7 @@ export async function saveRecording(
     // The storage policy lets a person remove their own files.
     await supabase.storage.from(AUDIO_BUCKET).remove([path]).catch(() => null);
     if (speakerName && /speaker_name/.test(insErr.message)) {
-      throw new Error(zh() ? "還不能替別人錄音。請選「我」存成你自己的錄音，或稍後再試。" : "Recording someone else is not switched on yet. Choose “Me” to save it as your own, or try again later.");
+      throw new ShownError(zh() ? "還不能替別人錄音。請選「我」存成你自己的錄音，或稍後再試。" : "Recording someone else is not switched on yet. Choose “Me” to save it as your own, or try again later.");
     }
     throw new Error(insErr.message);
   }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import EntryCard, { type CardProps } from "@/components/EntryCard";
 import Avatar from "@/components/Avatar";
+import LocalTime from "@/components/LocalTime";
 import { createClient } from "@/lib/supabase/server";
 import { formatOrigin } from "@/lib/origins";
 import { one, toCards } from "@/lib/entries";
@@ -83,11 +84,15 @@ export default async function ContributorPage({
       .limit(60),
     supabase
       .from("recordings")
-      .select("id, kind, audio_url, status, note, created_at, entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, sort))", {
+      .select("id, kind, audio_url, status, note, created_at, entry:entries!inner(id, headword, hanzi, romanization, status, senses(definition_en, sort))", {
         count: "exact",
       })
       .eq("contributor_id", params.id)
       .eq("status", "approved")
+      // Only takes on live words, said in so many words: the owner's own
+      // read policy also lets them see their takes on words still pending,
+      // so their public page showed them more than anyone else saw.
+      .eq("entry.status", "approved")
       .order("created_at", { ascending: false })
       .range(recFrom, recFrom + REC_PAGE - 1),
   ]);
@@ -116,10 +121,8 @@ export default async function ContributorPage({
   if (!recError && page > recPages) {
     redirect(`/contributor/${params.id}${recPages > 1 ? `?page=${recPages}` : ""}#recordings`);
   }
-  const since = new Date(profile.created_at).toLocaleDateString(lang === "zh" ? "zh-TW" : "en-GB", {
-    year: "numeric",
-    month: "long",
-  });
+  // In the reader's own timezone, like the account page (LocalTime).
+  const since = <LocalTime iso={profile.created_at} month />;
 
   return (
     <div className="space-y-8">
@@ -136,7 +139,7 @@ export default async function ContributorPage({
             </p>
           )}
           <p className="mt-2 meta text-inkFaint">
-            {L("Member since {since}", "{since}加入", { since })}
+            {lang === "zh" ? <>{since}加入</> : <>Member since {since}</>}
           </p>
           <p className="mt-1 meta text-inkFaint">
             {total === 1 ? L("{n} word", "{n} 個詞", { n: total.toLocaleString() }) : L("{n} words", "{n} 個詞", { n: total.toLocaleString() })} ·{" "}

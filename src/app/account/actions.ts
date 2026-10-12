@@ -211,7 +211,16 @@ function audioPath(url: string | null): string | null {
 
 /* The × on "N of your edits were accepted": mark them seen, which clears the
    banner and the red dot on the avatar (supabase/approval_notices.sql). */
-export async function dismissApprovals() {
+/* Where a dismissed notice returns to: the tab the person was on (or, from
+   the banner's link, the tab with the news), not the bare account page. */
+function accountTab(formData?: FormData): string {
+  const show = String(formData?.get("show") ?? "");
+  return ["words", "meanings", "recordings", "suggestions"].includes(show)
+    ? `/account?show=${show}#contributions`
+    : "/account";
+}
+
+export async function dismissApprovals(formData?: FormData) {
   const supabase = createClient();
   const {
     data: { user },
@@ -219,11 +228,11 @@ export async function dismissApprovals() {
   if (!user) redirect("/account");
   await supabase.from("profiles").update({ approvals_seen_at: new Date().toISOString() }).eq("id", user.id);
   revalidatePath("/", "layout");
-  redirect("/account");
+  redirect(accountTab(formData));
 }
 
 /* The × on "Congratulations, you are now an editor": shown once. */
-export async function dismissEditorWelcome() {
+export async function dismissEditorWelcome(formData?: FormData) {
   const supabase = createClient();
   const {
     data: { user },
@@ -231,11 +240,11 @@ export async function dismissEditorWelcome() {
   if (!user) redirect("/account");
   await supabase.from("profiles").update({ editor_welcomed_at: new Date().toISOString() }).eq("id", user.id);
   revalidatePath("/", "layout");
-  redirect("/account");
+  redirect(accountTab(formData));
 }
 
 /* The × on the editor invitation: shown once (editor_invite.sql). */
-export async function dismissEditorInvite() {
+export async function dismissEditorInvite(formData?: FormData) {
   const supabase = createClient();
   const {
     data: { user },
@@ -243,14 +252,13 @@ export async function dismissEditorInvite() {
   if (!user) redirect("/account");
   await supabase.from("profiles").update({ editor_invite_seen_at: new Date().toISOString() }).eq("id", user.id);
   revalidatePath("/", "layout");
-  redirect("/account");
+  redirect(accountTab(formData));
 }
 
-/* Take back one of your own recordings while it is still waiting for an
-   editor: you recorded it, listened again, and would rather it did not go
-   out. The delete runs as you, so RLS ("recordings own delete",
-   supabase/recordings.sql) allows it only for your own rows that are still
-   pending; a published recording is an editor's to remove. The file goes
+/* Take back one of your own recordings, at any stage: you recorded it,
+   listened again, and would rather it were not there. A pending one is
+   deleted as you (RLS, "recordings own delete"); anything past pending goes
+   through the service role, still only for your own row. The file goes
    after the row, with the service role, and only once the row is confirmed
    gone. Two doors: the form on the account page (withdrawRecordingForm,
    which redirects back with a notice) and the recorder's "Remove it"
@@ -317,7 +325,7 @@ export async function withdrawRecordingForm(formData: FormData) {
    recording, only while it is still pending, and only while the window is
    open. reviewed_at stays empty: that is what keeps it in the editors' queue
    as "live, not yet checked" until one of them keeps it or takes it down. */
-export async function publishOwnRecording(formData: FormData): Promise<{ live: boolean }> {
+export async function publishOwnRecording(formData: FormData): Promise<{ live: boolean; wordPending?: boolean }> {
   const { recordingsTrusted } = await import("@/lib/trust");
   if (!recordingsTrusted()) return { live: false };
   const supabase = createClient();
@@ -335,10 +343,16 @@ export async function publishOwnRecording(formData: FormData): Promise<{ live: b
     .select("entry_id");
   const row = data?.[0];
   if (error || !row) return { live: false };
+  /* The take is approved, but it is heard only once its word is live: on a
+     word still waiting for an editor (one just added, say) the recorder must
+     not say "live on the word's page now" about a page that does not exist
+     yet (audit, 11 Oct 2026). */
+  const { data: word } = await adminClient().from("entries").select("status").eq("id", row.entry_id).maybeSingle();
+  const wordLive = (word as any)?.status === "approved";
   revalidatePath(`/entry/${row.entry_id}`);
   revalidatePath("/");
   revalidatePath("/browse");
   revalidatePath("/improve");
   revalidatePath("/editor");
-  return { live: true };
+  return wordLive ? { live: true } : { live: false, wordPending: true };
 }

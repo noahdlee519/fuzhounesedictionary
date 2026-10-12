@@ -48,6 +48,39 @@ function anchored(text: string) {
   );
 }
 
+/* Which word is the word of the day. It was ids[day % ids.length], but the
+   list of recorded words comes back in no fixed order and grows with every
+   new recording, so the same day picked a different word whenever the list
+   changed — several times a day (Noah, 11 Oct 2026). Now each word gets a
+   score from its own id and the date, and the lowest wins: the pick depends
+   only on the word and the day, not on the order or length of the list. A
+   newly recorded word takes over only if it happens to score lower (about
+   one chance in the number of words). The day turns at midnight New York
+   time, not UTC, which was eight in the evening there. */
+function wordOfTheDay(ids: string[]): string | null {
+  if (!ids.length) return null;
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  const score = (s: string) => {
+    // FNV-1a, 32-bit: small, fast and spreads well enough for this.
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h;
+  };
+  let best: string | null = null;
+  let bestScore = Infinity;
+  for (const id of ids) {
+    const sc = score(`${day}|${id}`);
+    if (sc < bestScore) {
+      bestScore = sc;
+      best = id;
+    }
+  }
+  return best;
+}
+
 function ResultRow({ r, recordings, L }: { r: SearchRow; recordings: number; L: Lpick }) {
   return (
     <Link
@@ -248,9 +281,7 @@ export default async function Home({
     }
 
     // Word of the day: one voiced entry, the same for everyone all day.
-    const ids = numbers?.voicedIds ?? [];
-    const day = Math.floor(Date.now() / 86_400_000);
-    const wotdId = ids.length ? ids[day % ids.length] : null;
+    const wotdId = wordOfTheDay(numbers?.voicedIds ?? []);
     const [{ data: w }, { data: wRec }] = await Promise.all([
       wotdId
         ? supabase.from("entries").select("id, hanzi, romanization, headword, audio_url, senses(definition_en, part_of_speech, sort)").eq("id", wotdId).maybeSingle()

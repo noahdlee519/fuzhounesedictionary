@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PARTS_OF_SPEECH, MAX_RECORDING_NOTE } from "@/lib/constants";
+import { PARTS_OF_SPEECH, MAX_RECORDING_NOTE, MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
+import { friendlyError } from "@/lib/friendly-error";
 import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
 import { publishOwnRecording } from "@/app/account/actions";
 import { saveRecording } from "@/lib/audio-upload";
 import { useRecorder } from "@/components/useRecorder";
 import TakeControls from "@/components/TakeControls";
-import Recorder from "@/components/Recorder";
-import { useL } from "@/components/LangProvider";
+import Recorder, { RECORDING_SAVED } from "@/components/Recorder";
+import { useL, useLang } from "@/components/LangProvider";
 import DuplicateWarning from "./DuplicateWarning";
 import HanziTraditional from "./HanziTraditional";
 
@@ -147,6 +148,7 @@ export default function SubmitForm({
   const supabase = createClient();
   const rec = useRecorder();
   const L = useL();
+  const lang = useLang();
 
   const [hanzi, setHanzi] = useState("");
   // What is saved: the traditional form when the characters were typed in
@@ -169,6 +171,43 @@ export default function SubmitForm({
   const [savedEntryId, setSavedEntryId] = useState<string | null>(null);
   const [savedSenses, setSavedSenses] = useState<SavedSense[]>([]);
   const [recordingFailed, setRecordingFailed] = useState<string | null>(null);
+  // Whether a recording of the word itself came with it (saved or to retry):
+  // that takes one of the person's two recordings of this word.
+  const [hadTake, setHadTake] = useState(false);
+  // Which example sentences have been recorded in the step after saving, and
+  // how many takes that came to: the limit counts takes, not sentences, so a
+  // sentence said twice uses both places.
+  const [doneSenses, setDoneSenses] = useState<string[]>([]);
+  const [exampleSaves, setExampleSaves] = useState(0);
+  useEffect(() => {
+    if (!savedEntryId) return;
+    const onSaved = (e: Event) => {
+      const d = (e as CustomEvent).detail as { kind?: string; entryId?: string; senseId?: string | null } | undefined;
+      if (d?.entryId === savedEntryId && d.kind === "example" && d.senseId) {
+        setDoneSenses((prev) => (prev.includes(d.senseId!) ? prev : [...prev, d.senseId!]));
+        setExampleSaves((n) => n + 1);
+      }
+    };
+    window.addEventListener(RECORDING_SAVED, onSaved);
+    return () => window.removeEventListener(RECORDING_SAVED, onSaved);
+  }, [savedEntryId]);
+
+  /* The alert sits at the top of a long form and Submit at the bottom: on a
+     phone a failed submit put the message a screen and a half out of view,
+     and the tap looked like it did nothing (audit, 11 Oct 2026). Bring it
+     into view whenever it changes; it clears as soon as the form is edited
+     (onChange on the form, below). */
+  const alertRef = useRef<HTMLDivElement>(null);
+  // Bumped on every failed submit, so the same message twice in a row
+  // (Submit pressed again without an edit) still scrolls back to it.
+  const [errorTick, setErrorTick] = useState(0);
+  const fail = (msg: string) => {
+    setError(msg);
+    setErrorTick((t) => t + 1);
+  };
+  useEffect(() => {
+    if (error) alertRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [error, errorTick]);
 
   function updateSense(i: number, patch: Partial<SenseDraft>) {
     setSenses((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -187,15 +226,15 @@ export default function SubmitForm({
     setError(null);
 
     if (!romanization.trim() && !hanzi.trim()) {
-      setError(L("Please give the word, as characters or in romanization.", "請填寫這個詞，漢字或羅馬字都可以。"));
+      fail(L("Please give the word, as characters or in romanization.", "請填寫這個詞，漢字或羅馬字都可以。"));
       return;
     }
     if (!senses.some((s) => s.definition_en.trim())) {
-      setError(L("Please give at least one English meaning.", "請至少填寫一個英文意思。"));
+      fail(L("Please give at least one English meaning.", "請至少填寫一個英文意思。"));
       return;
     }
     if (rec.recording) {
-      setError(L("Stop the recording first, then submit.", "請先停止錄音，再送出。"));
+      fail(L("Stop the recording first, then submit.", "請先停止錄音，再送出。"));
       return;
     }
 
@@ -213,6 +252,7 @@ export default function SubmitForm({
         p_origin_area: originArea,
         p_origin_locality: originLocality,
       });
+      // Raw: the catch below puts it in the reader's words, once.
       if (rpcErr) throw new Error(rpcErr.message);
       const entryId = newId as string;
 
@@ -237,7 +277,7 @@ export default function SubmitForm({
           fd.set("id", saved.id);
           await publishOwnRecording(fd).catch(() => null);
         } catch (err: any) {
-          recFail = err?.message ?? L("The recording could not be saved.", "錄音無法儲存。");
+          recFail = err?.message ? friendlyError(err, lang) : L("The recording could not be saved.", "錄音無法儲存。");
         }
       }
 
@@ -254,15 +294,17 @@ export default function SubmitForm({
         return;
       }
       setSavedSenses(withExamples);
+      setHadTake(Boolean(rec.take));
       setRecordingFailed(recFail);
       setSavedEntryId(entryId);
     } catch (err: any) {
-      setError(err.message ?? L("Something went wrong. Please try again.", "出了點問題，請再試一次。"));
+      fail(err?.message ? friendlyError(err, lang) : L("Something went wrong. Please try again.", "出了點問題，請再試一次。"));
       setSubmitting(false);
     }
   }
 
   // ---- After saving: example sentences to read, or a failed upload to retry. ----
+  const examplesAllowed = Math.max(0, MAX_RECORDINGS_PER_WORD - (hadTake ? 1 : 0));
   if (savedEntryId) {
     return (
       <div className="space-y-6">
@@ -270,7 +312,9 @@ export default function SubmitForm({
           <p className="font-display text-lg font-semibold">
             {L("", "「")}
             <span className="romanization">{wordShown}</span>
-            {L(" is saved and waiting for an editor.", "」已儲存，正在等編輯審閱。")}
+            {isEditor
+              ? L(" is saved and published.", "」已儲存並刊出。")
+              : L(" is saved and waiting for an editor.", "」已儲存，正在等編輯審閱。")}
           </p>
           <p className="mt-1 text-sm text-inkSoft">
             {recordingFailed
@@ -288,12 +332,38 @@ export default function SubmitForm({
           </div>
         )}
 
-        {savedSenses.length > 0 && (
+        {/* Each person can add two recordings to a word, the word itself
+            included. Offering a recorder for every example sentence meant
+            the third one failed with the limit message, in English on the
+            Chinese page (audit, 11 Oct 2026); now only as many are offered
+            as there is room for, and the rest are said so. */}
+        {savedSenses.length > examplesAllowed && (
+          <p className="text-sm text-inkSoft">
+            {examplesAllowed === 1
+              ? L(
+                  "Each person can add two recordings to a word, the word itself included, so there is room for one sentence. Choose the one you like.",
+                  "每個人每個詞最多錄兩段（詞本身也算一段），所以還可以錄一個例句。挑你喜歡的那句。"
+                )
+              : L(
+                  "Each person can add two recordings to a word, so there is room for two of the sentences.",
+                  "每個人每個詞最多錄兩段，所以可以錄其中兩個例句。"
+                )}
+          </p>
+        )}
+        {savedSenses.length > 0 && examplesAllowed > 0 && (
           <div className="space-y-4">
             {savedSenses.map((s) => (
               <div key={s.id} className="rounded-sm space-y-2 border border-rule p-4">
                 <p className="romanization text-inkSoft">{s.example}</p>
-                <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="example" senseId={s.id} />
+                {/* Once the room is used up, the sentences not recorded say so
+                    instead of offering a recorder the limit would refuse. */}
+                {doneSenses.includes(s.id) || exampleSaves < examplesAllowed ? (
+                  <Recorder userId={userId} entryId={savedEntryId} isEditor={isEditor} kind="example" senseId={s.id} />
+                ) : (
+                  <p className="text-sm text-inkFaint">
+                    {L("No room for this one: you have recorded this word twice.", "這句沒辦法再錄了：這個詞你已經錄了兩段。")}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -315,9 +385,9 @@ export default function SubmitForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onChange={() => error && setError(null)} className="space-y-6">
       {error && (
-        <div role="alert" className="rounded-sm border-l-2 border-lacquer bg-surface p-3 text-sm text-inkSoft">
+        <div ref={alertRef} role="alert" className="scroll-mt-24 rounded-sm border-l-2 border-lacquer bg-surface p-3 text-sm text-inkSoft">
           {error}
         </div>
       )}

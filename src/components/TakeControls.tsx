@@ -62,7 +62,7 @@ export default function TakeControls({
               <span aria-hidden="true" className="inline-block h-2 w-2 animate-pulse bg-current" />
               {L("Stop", "停止")}
             </button>
-            <span aria-live="polite" className="text-xs tabular-nums text-lacquer">
+            <span aria-live="off" className="text-xs tabular-nums text-lacquer">
               {L("{n}s", "{n} 秒", { n: seconds.toFixed(1) })}
             </span>
           </>

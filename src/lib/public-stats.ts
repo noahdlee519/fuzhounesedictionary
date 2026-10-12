@@ -149,8 +149,13 @@ export const missionTally = unstable_cache(
     for (let from = 0; ; from += 1000) {
       const { data, error } = await db
         .from("recordings")
-        .select("entry_id, origin_area, origin_locality, created_at")
+        // Only takes on live words: a take now goes live on save, before its
+        // word is approved, and counting those put unpublished words in the
+        // tally and in the word of the day's pool, where the home page then
+        // had nothing to show (review, 11 Oct 2026).
+        .select("entry_id, origin_area, origin_locality, created_at, entry:entries!inner(status)")
         .eq("status", "approved")
+        .eq("entry.status", "approved")
         .range(from, from + 999);
       if (error) return null;
       for (const r of (data ?? []) as any[]) {

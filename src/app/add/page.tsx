@@ -41,6 +41,21 @@ export default async function SubmitPage({
               ? L("Your word is published—as an editor, what you add goes live straight away.", "你的詞已經刊出——你是編輯，新增的內容會直接上線。")
               : L("Your word is in the review queue. An editor will read it before it goes live, and it will show on your account page meanwhile.", "你的詞已進入審核佇列。編輯看過後才會上線，在此之前可以在你的帳號頁看到它。")}
           </p>
+          {/* The way on (Noah, 11 Oct 2026). Someone who has just added a word
+              is a speaker, and recording words that are already here is the
+              quicker thing to do next, so it comes first; adding another word
+              is the second choice. */}
+          <div className="space-y-3 border-t border-rule pt-4">
+            <p className="text-sm text-inkSoft">
+              {L(
+                "While you're here: many words still have no recording. Say a few, one after another.",
+                "順便一提：還有很多詞沒有人錄過。可以一個接一個錄幾個。"
+              )}
+            </p>
+            <Link href="/improve?need=recording#quick" className="btn btn-primary btn-sm">
+              {L("Record words that need a voice →", "錄幾個還沒有聲音的詞 →")}
+            </Link>
+          </div>
           <div className="flex flex-wrap gap-5 text-sm">
             <Link href="/add" className="link">{L("Add another word", "再新增一個詞")}</Link>
             <Link href="/account" className="link">{L("My submissions", "我的投稿")}</Link>

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { verifiedEditor } from "@/lib/auth";
+import { verifiedEditor, verifiedUser } from "@/lib/auth";
 /* Every write below throws on failure. supabase-js resolves with { error }
    rather than rejecting, so without this a failed approve looked exactly like
    a successful one: the queue re-rendered with the item still in it and no
@@ -187,7 +187,7 @@ export async function deleteRecording(formData: FormData) {
   const supabase = adminClient();
   const { data: row, error: readErr } = await supabase
     .from("recordings")
-    .select("id, entry_id, audio_url, contributor_id")
+    .select("id, entry_id, audio_url, contributor_id, entry:entries(hanzi, romanization, headword)")
     .eq("id", id)
     .maybeSingle();
   if (readErr) throw new Error(readErr.message);
@@ -195,6 +195,20 @@ export async function deleteRecording(formData: FormData) {
 
   const { error: delErr } = await supabase.from("recordings").delete().eq("id", id);
   if (delErr) throw new Error(delErr.message);
+
+  // The same notice as for a deleted word (deleteEntry), for the person whose
+  // take this was, unless it was the editor's own.
+  const editorId = (await verifiedUser())?.id;
+  if (row.contributor_id && row.contributor_id !== editorId) {
+    const w = (Array.isArray((row as any).entry) ? (row as any).entry[0] : (row as any).entry) ?? {};
+    // Tab-separated, so the account page can show the romanization in the
+    // reader's own system (noticeWord, lib/approvals.ts).
+    const detail = [w.hanzi ?? "", w.romanization ?? "", w.headword ?? ""].join("\t");
+    const { error: noteErr } = await supabase
+      .from("contributor_notices")
+      .insert({ user_id: row.contributor_id, kind: "recording_removed", detail });
+    if (noteErr) console.error(`recording ${id} deleted; notice not written: ${noteErr.message}`);
+  }
 
   // Only files in our own bucket are removed; a pasted external link is not ours.
   const path = storagePath(row.audio_url);
@@ -243,7 +257,7 @@ export async function deleteEntry(formData: FormData) {
 
   const supabase = adminClient();
   const [{ data: entry, error: readErr }, { data: recs }] = await Promise.all([
-    supabase.from("entries").select("id, audio_url, contributor_id").eq("id", id).maybeSingle(),
+    supabase.from("entries").select("id, audio_url, contributor_id, hanzi, romanization, headword").eq("id", id).maybeSingle(),
     supabase.from("recordings").select("audio_url, contributor_id").eq("entry_id", id),
   ]);
   if (readErr) throw new Error(readErr.message);
@@ -251,6 +265,23 @@ export async function deleteEntry(formData: FormData) {
 
   const { error: delErr } = await supabase.from("entries").delete().eq("id", id);
   if (delErr) throw new Error(delErr.message);
+
+  /* Tell the people whose word, or whose recordings, just went: the delete
+     leaves nothing behind for their account page to show (thumbs_notices.sql,
+     contributor_notices). Not the editor doing it. A notice that cannot be
+     written (table not there yet) does not stop the delete. */
+  const editorId = (await verifiedUser())?.id;
+  const told = new Set<string>();
+  if (entry.contributor_id) told.add(entry.contributor_id);
+  for (const r of recs ?? []) if (r.contributor_id) told.add(r.contributor_id);
+  if (editorId) told.delete(editorId);
+  if (told.size) {
+    const detail = [entry.hanzi ?? "", entry.romanization ?? "", entry.headword ?? ""].join("\t");
+    const { error: noteErr } = await supabase
+      .from("contributor_notices")
+      .insert([...told].map((user_id) => ({ user_id, kind: "word_removed", detail })));
+    if (noteErr) console.error(`entry ${id} deleted; notices not written: ${noteErr.message}`);
+  }
 
   // Files second, so a storage hiccup never leaves a half-deleted word on the site.
   const paths = [entry.audio_url, ...(recs ?? []).map((r) => r.audio_url)]

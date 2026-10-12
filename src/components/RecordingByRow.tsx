@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { STATUS_STYLE } from "@/lib/status";
+import { STATUS_STYLE, statusLabel } from "@/lib/status";
 import { sortSenses } from "@/lib/entries";
 import RecordingNoteEditor from "./RecordingNoteEditor";
 import PlayButton from "./PlayButton";
@@ -24,6 +24,8 @@ export interface RecordingByRowProps {
   /** Empty on a take that went live in the trust window and has not been
    *  checked by an editor yet (lib/trust); its contributor may still take it back. */
   reviewed_at?: string | null;
+  /** The editor's reason, on a rejected take (shown only to its owner). */
+  review_notes?: string | null;
   entry: {
     id: string;
     headword: string;
@@ -48,11 +50,16 @@ export default function RecordingByRow({
   /** Where the note form returns to; the page (and list page) it sits on. */
   back?: string;
 }) {
-  const L = pick(getLang());
+  const lang = getLang();
+  const L = pick(lang);
   const note = (r.note ?? "").trim();
   const w = r.entry;
   // In the reader's chosen romanization, like everywhere else (RomToggle).
   const name = w ? romText(w.romanization, w.headword) || L("a word", "一個詞") : L("a word", "一個詞");
+  /* A take that is approved on a word that is not live yet is not heard
+     anywhere: it waits for the word. Saying "approved" there was the account
+     page contradicting itself, beside the word's own "pending". */
+  const shown = r.status === "approved" && w?.status === "pending" ? "waiting" : r.status;
   const meaning = sortSenses(w?.senses).find((s) => s.definition_en)?.definition_en;
   const title = (
     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -66,7 +73,7 @@ export default function RecordingByRow({
   );
 
   return (
-    <div className="rounded-sm border border-rule bg-surface p-4">
+    <div className="min-w-0 rounded-sm border border-rule bg-surface p-4 [overflow-wrap:anywhere]">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {w && w.status === "approved" ? (
           <Link href={`/entry/${w.id}`} className="hover:underline">
@@ -77,18 +84,19 @@ export default function RecordingByRow({
         )}
         {showStatus && (
           <span
-            className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[r.status] ?? STATUS_STYLE.pending}`}
+            className={`ml-auto meta ring-1 px-2 py-0.5 ${STATUS_STYLE[shown] ?? STATUS_STYLE.pending}`}
           >
-            {r.status === "pending"
-              ? L("pending", "待審")
-              : r.status === "approved"
-                ? L("approved", "已核准")
-                : r.status === "rejected"
-                  ? L("rejected", "已退回")
-                  : r.status}
+            {statusLabel(shown, lang)}
           </span>
         )}
       </div>
+      {/* Why an editor sent it back, so a rejection is something to act on
+          rather than a bare grey chip (audit, 11 Oct 2026). */}
+      {showStatus && r.status === "rejected" && (r.review_notes ?? "").trim() && (
+        <p className="mt-2 text-sm text-inkSoft">
+          <span className="font-semibold text-ink">{L("Editor's note:", "編輯附註：")}</span> {r.review_notes}
+        </p>
+      )}
       <div className="mt-3 flex items-start gap-3">
         <PlayButton src={r.audio_url} label={`${name}${note ? `: ${note}` : ""}`} />
         <div className="min-w-0 flex-1">

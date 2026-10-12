@@ -11,10 +11,25 @@ import { useLang } from "@/components/LangProvider";
    their zone ("22 Sept 2026, 11:18 pm GMT-4"; in Chinese "2026年9月22日
    下午11:18 (GMT-4)"). A date alone is redone the same way, since a
    late-evening upload falls on a different day in UTC. */
-export default function LocalTime({ iso, time = false, className }: { iso: string; time?: boolean; className?: string }) {
+export default function LocalTime({
+  iso,
+  time = false,
+  month = false,
+  className,
+}: {
+  iso: string;
+  time?: boolean;
+  /** Month and year only ("October 2026", "2026年10月"): "Member since". */
+  month?: boolean;
+  className?: string;
+}) {
   const lang = useLang();
+  const monthText = (tz?: string) =>
+    new Date(iso).toLocaleDateString(lang === "zh" ? "zh-TW" : "en-GB", { year: "numeric", month: "long", timeZone: tz });
   const [text, setText] = useState(() =>
-    time
+    month
+      ? monthText("UTC")
+      : time
       ? lang === "zh"
         ? `${formatDateTime(iso, "UTC", lang)} (UTC)`
         : `${formatDateTime(iso, "UTC", lang)} UTC`
@@ -22,11 +37,12 @@ export default function LocalTime({ iso, time = false, className }: { iso: strin
   );
   useEffect(() => {
     try {
-      setText(time ? formatLocalDateTime(iso, lang) : formatDate(iso, undefined, lang));
+      setText(month ? monthText() : time ? formatLocalDateTime(iso, lang) : formatDate(iso, undefined, lang));
     } catch {
       /* the UTC text stays */
     }
-  }, [iso, time, lang]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iso, time, month, lang]);
   return (
     <time dateTime={iso} className={className}>
       {text}

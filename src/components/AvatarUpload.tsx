@@ -129,7 +129,7 @@ export default function AvatarUpload({
         }}
         className="text-xs font-medium text-inkFaint transition-colors hover:text-lacquer"
       >
-        {L("Edit", "編輯")}
+        {L("Edit", "更換")}
       </button>
       <dialog
         ref={dialog}
