@@ -94,6 +94,16 @@ body {
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
+/* Nothing should ever make the page scroll sideways on a phone. A closed
+   tooltip still takes up room off to the right, and iOS Safari ignores
+   overflow-x: hidden on body for touch scrolling, so the home page could be
+   dragged sideways by the hero's "i" tip (Noah, 14 Oct 2026). clip (unlike
+   hidden) makes no scroll container, so the sticky header is unaffected.
+   TipFlip also keeps closed tips inside the screen; this is the safety net. */
+html,
+body {
+  overflow-x: clip;
+}
 @media (max-width: 760px) {
   body { font-size: 16px; }
 }
