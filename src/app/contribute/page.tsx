@@ -88,7 +88,6 @@ export default async function ContributePage() {
   let wanted: { id: string; term: string; votes: number; entry_id: string | null }[] = [];
   let recent: Recent[] = [];
   let inReview: number | null = null;
-  let reviewDays: number | null = null;
   let people: TopContributor[] = [];
   const myVotes = new Set<string>();
 
@@ -99,7 +98,7 @@ export default async function ContributePage() {
     const admin = adminClient();
     const pending = (table: string) =>
       admin.from(table).select("id", { count: "exact", head: true }).eq("status", "pending");
-    const [{ data: wants }, { data: recs }, { data: added }, { data: reviewed }, top, ...queues] = await Promise.all([
+    const [{ data: wants }, { data: recs }, { data: added }, top, ...queues] = await Promise.all([
       supabase
         .from("word_requests_ranked")
         .select("id, term, votes, entry_id")
@@ -124,16 +123,6 @@ export default async function ContributePage() {
         .or("notes.is.null,notes.not.ilike.*wiktionary.org*")
         .order("created_at", { ascending: false })
         .limit(6),
-      // How long the last fifty reviews of people's words took, for the footnote.
-      supabase
-        .from("entries")
-        .select("created_at, reviewed_at")
-        .eq("status", "approved")
-        .not("reviewed_at", "is", null)
-        .not("contributor_id", "is", null)
-        .or("notes.is.null,notes.not.ilike.*wiktionary.org*")
-        .order("reviewed_at", { ascending: false })
-        .limit(50),
       topContributors(6).catch(() => [] as TopContributor[]),
       pending("entries"),
       pending("recordings"),
@@ -190,13 +179,6 @@ export default async function ContributePage() {
     }
     recent.sort((a, b) => b.at.localeCompare(a.at));
     recent = recent.slice(0, 6);
-
-    // Median review time in days; only shown when there is something to measure.
-    const spans = ((reviewed ?? []) as any[])
-      .map((r) => (new Date(r.reviewed_at).getTime() - new Date(r.created_at).getTime()) / 86_400_000)
-      .filter((d) => d >= 0)
-      .sort((a, b) => a - b);
-    if (spans.length >= 3) reviewDays = Math.max(1, Math.round(spans[Math.floor(spans.length / 2)]));
 
     // A queue whose table is missing (a migration not yet run) counts as empty.
     inReview = queues.reduce((n, q: any) => n + (q?.error ? 0 : q?.count ?? 0), 0);
@@ -344,12 +326,6 @@ export default async function ContributePage() {
                   </Link>
                 ) : (
                   t("hub.review.n", { n: inReview })
-                )}
-                {reviewDays !== null && (
-                  <>
-                    {" · "}
-                    {reviewDays <= 1 ? t("hub.review.day") : t("hub.review.days", { d: reviewDays })}
-                  </>
                 )}
               </p>
             )}
