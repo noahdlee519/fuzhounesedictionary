@@ -266,28 +266,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   );
 }
 
-/* "Supported by Fuzhou America", with their logo. A link once there is an
-   address for them in SUPPORTER.url; plain text until then. The logo's
-   inside is transparent, so it sits on the paper in either theme. */
-const SUPPORTER = { name: "Fuzhou America", logo: "/partners/fuzhou-america.png", url: "" };
+/* "Supported by" over Fuzhou America's logo (their wordmark, which carries
+   the name), linking to their site. The logo's inside is transparent, so it
+   sits on the paper in either theme. */
+const SUPPORTER = { name: "Fuzhou America", logo: "/partners/fuzhou-america.png", url: "https://www.fuzhouamerica.org/" };
 
 function Supporter({ label }: { label: string }) {
-  const body = (
-    <>
+  return (
+    <a
+      href={SUPPORTER.url}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-8 inline-flex shrink-0 flex-col items-start gap-2 transition-opacity hover:opacity-80 md:mt-0"
+    >
+      <span className="footnote">{label}</span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={SUPPORTER.logo} alt="" width={48} height={48} className="h-12 w-12 shrink-0" />
-      <span className="leading-tight">
-        <span className="block footnote">{label}</span>
-        <span className="block text-[15px] font-semibold text-ink">{SUPPORTER.name}</span>
-      </span>
-    </>
-  );
-  const cls = "mt-8 inline-flex items-center gap-3 md:mt-0";
-  return SUPPORTER.url ? (
-    <a href={SUPPORTER.url} target="_blank" rel="noreferrer" className={`${cls} group hover:opacity-80`}>
-      {body}
+      <img src={SUPPORTER.logo} alt={SUPPORTER.name} width={218} height={40} className="h-10 w-auto" />
     </a>
-  ) : (
-    <div className={cls}>{body}</div>
   );
 }
