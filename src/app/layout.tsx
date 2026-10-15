@@ -210,7 +210,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <OriginGate needsOrigin={needsOrigin}>{children}</OriginGate>
         </main>
         <hr className="rule-bleed relative z-10" />
-        <footer className="wrap relative z-10 w-full sec-sm">
+        <footer className="wrap relative z-10 w-full sec-sm md:flex md:items-center md:justify-between md:gap-10">
+          <div className="min-w-0">
           {/* Wordmark on its own line, then the four links in a row that
               wraps cleanly on a phone; the small print underneath in two
               lines rather than one run-on. */}
@@ -249,6 +250,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <span className="mx-2">·</span>
             <Link href="/editor" className="hover:text-ink">{t("footer.editors")}</Link>
           </p>
+          </div>
+          {/* Fuzhou America endorsed the dictionary and allowed their logo
+              here (Noah, 14 Oct 2026). Beside the footer's text on a wide
+              screen, in the open space on the right; under it on a phone. */}
+          <Supporter label={t("footer.supported")} />
         </footer>
         </PageFade>
         <TipFlip />
@@ -257,5 +263,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </LangProvider>
       </body>
     </html>
+  );
+}
+
+/* "Supported by Fuzhou America", with their logo. A link once there is an
+   address for them in SUPPORTER.url; plain text until then. The logo's
+   inside is transparent, so it sits on the paper in either theme. */
+const SUPPORTER = { name: "Fuzhou America", logo: "/partners/fuzhou-america.png", url: "" };
+
+function Supporter({ label }: { label: string }) {
+  const body = (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={SUPPORTER.logo} alt="" width={48} height={48} className="h-12 w-12 shrink-0" />
+      <span className="leading-tight">
+        <span className="block footnote">{label}</span>
+        <span className="block text-[15px] font-semibold text-ink">{SUPPORTER.name}</span>
+      </span>
+    </>
+  );
+  const cls = "mt-8 inline-flex items-center gap-3 md:mt-0";
+  return SUPPORTER.url ? (
+    <a href={SUPPORTER.url} target="_blank" rel="noreferrer" className={`${cls} group hover:opacity-80`}>
+      {body}
+    </a>
+  ) : (
+    <div className={cls}>{body}</div>
   );
 }
