@@ -110,7 +110,10 @@ export default async function Home({
 }: {
   searchParams: { q?: string; auth_error?: string; deleted?: string };
 }) {
-  const q = (searchParams.q ?? "").trim();
+  // Capped: no word or question needs more, and an address carrying a
+  // multi-kilobyte ?q= would otherwise go whole into the fuzzy search on
+  // every load, a cheap way to make the database work hard (audit, 26 Oct 2026).
+  const q = (searchParams.q ?? "").trim().slice(0, 100);
   const supabase = createClient();
   const { user, profile } = await getSessionUser();
   const isEditorView = Boolean(profile?.is_editor);

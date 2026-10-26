@@ -339,7 +339,10 @@ export default async function BrowsePage({
           (active ? "chip-on" : "") +
           // Chips that carry an explanation are never dimmed, entries or not —
           // the tooltip is the point of them, and a faded "i" reads as broken.
-          (empty && !active && !info ? " opacity-40" : "")
+          // A dashed border and the muted ink rather than fading the whole chip:
+          // a faded chip fell to 1.7:1 contrast (WCAG 1.4.3, audit 26 Oct 2026),
+          // and it is still a working link.
+          (empty && !active && !info ? " border-dashed text-inkMute" : "")
         }
       >
         {label}
