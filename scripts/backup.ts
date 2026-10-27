@@ -43,7 +43,11 @@ import { dirname, join, relative } from "path";
 
 /* Tables, in the order a restore has to write them: nothing before the
    table it points at. Each with its primary key, for the upsert. */
-const TABLES: { name: string; key: string }[] = [
+/* `identity`: the id is "generated always", so the database refuses one
+   supplied from outside. Those rows are restored as new rows (their old ids
+   dropped), and only into an empty table, so a second restore does not
+   copy them twice. Both are logs that nothing else points at. */
+const TABLES: { name: string; key: string; identity?: boolean }[] = [
   { name: "profiles", key: "id" },
   { name: "entries", key: "id" },
   { name: "senses", key: "id" },
@@ -52,7 +56,9 @@ const TABLES: { name: string; key: string }[] = [
   { name: "word_request_votes", key: "request_id,user_id" },
   { name: "suggestions", key: "id" },
   { name: "recording_votes", key: "recording_id,user_id" },
-  { name: "assistant_usage", key: "id" },
+  { name: "assistant_usage", key: "id", identity: true },
+  // Added 11 Oct 2026 (thumbs_notices.sql): "an editor removed your word".
+  { name: "contributor_notices", key: "id", identity: true },
 ];
 const BUCKETS = ["audio", "avatars"];
 const PAGE = 1000; // PostgREST returns at most this many rows per request
@@ -189,9 +195,21 @@ async function restore(dir: string) {
   for (const t of TABLES) {
     const p = join(dir, "tables", `${t.name}.json`);
     if (!existsSync(p)) continue;
-    const rows: any[] = JSON.parse(readFileSync(p, "utf8"));
+    let rows: any[] = JSON.parse(readFileSync(p, "utf8"));
+    if (t.identity) {
+      const { count, error: ce } = await db.from(t.name).select("*", { count: "exact", head: true });
+      if (ce) throw new Error(`${t.name}: ${ce.message}`);
+      if (count) {
+        console.log(`  ${t.name}: already has ${count} rows, left as it is`);
+        continue;
+      }
+      rows = rows.map(({ id, ...rest }) => rest);
+    }
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await db.from(t.name).upsert(rows.slice(i, i + 500), { onConflict: t.key });
+      const batch = rows.slice(i, i + 500);
+      const { error } = t.identity
+        ? await db.from(t.name).insert(batch)
+        : await db.from(t.name).upsert(batch, { onConflict: t.key });
       if (error) throw new Error(`${t.name}: ${error.message}`);
     }
     console.log(`  ${t.name}: ${rows.length} rows`);
