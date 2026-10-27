@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Assistant from "./Assistant";
 import { useL } from "./LangProvider";
 
@@ -70,6 +70,21 @@ export default function SearchBar({
   // rendered it and is switched in an effect.
   const [narrow, setNarrow] = useState(false);
   const [askOpen, setAskOpen] = useState(askOpen0);
+  /* "Ask the assistant" used to only unfold the panel, with an empty box of
+     its own: people who had typed a question in the search box and pressed
+     it expected it to be asked, and saw it seemingly thrown away (Noah,
+     27 Oct 2026). Now whatever is in the search box is asked. */
+  const box = useRef<HTMLInputElement>(null);
+  const [handOver, setHandOver] = useState<{ q: string; n: number } | null>(null);
+  function askAssistant() {
+    const q = (box.current?.value ?? "").trim();
+    if (q && q !== handOver?.q) {
+      setAskOpen(true);
+      setHandOver({ q, n: Date.now() });
+      return;
+    }
+    setAskOpen((o) => !o);
+  }
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -88,6 +103,7 @@ export default function SearchBar({
         <Magnifier className="pointer-events-none absolute left-[18px] top-1/2 h-4 w-4 -translate-y-1/2 opacity-45" />
         <input
           id={id}
+          ref={box}
           type="search"
           name="q"
           autoComplete="off"
@@ -107,7 +123,7 @@ export default function SearchBar({
           {assistant && (
             <button
               type="button"
-              onClick={() => setAskOpen((o) => !o)}
+              onClick={askAssistant}
               aria-expanded={askOpen}
               aria-controls={`${id}-ask`}
               className={"btn btn-sm " + (askOpen ? "btn-primary" : "btn-ghost")}
@@ -124,7 +140,7 @@ export default function SearchBar({
         <div id={`${id}-ask`} className={askOpen ? "mt-4" : ""}>
           {/* onHeld: back from signing in with a question held, the panel
               opens to show it being asked. */}
-          <Assistant open={askOpen} signedIn={signedIn} onHeld={() => setAskOpen(true)} />
+          <Assistant open={askOpen} signedIn={signedIn} onHeld={() => setAskOpen(true)} ask={handOver} />
         </div>
       )}
     </div>

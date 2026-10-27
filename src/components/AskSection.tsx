@@ -9,6 +9,8 @@ import SignInButton from "./SignInButton";
 import PlayButton from "./PlayButton";
 import { useL } from "./LangProvider";
 
+export const ASK_EVENT = "fz-ask";
+
 export interface AskStrings {
   /** The field's accessible name, since it has no visible label. */
   label: string;
@@ -104,6 +106,18 @@ export default function AskSection({
     // Once, on arrival.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // "Or ask the assistant ↓" under the search box hands over what was typed
+  // there (AskJump), so it is asked rather than left behind.
+  useEffect(() => {
+    const on = (e: Event) => {
+      const q = String((e as CustomEvent).detail ?? "").trim();
+      if (q) ask(q);
+      else box.current?.focus();
+    };
+    window.addEventListener(ASK_EVENT, on);
+    return () => window.removeEventListener(ASK_EVENT, on);
+  });
 
   // The box grows with what is typed, from two lines to about five.
   useEffect(() => {

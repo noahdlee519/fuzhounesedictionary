@@ -268,8 +268,8 @@ export default function SignInDialog({
               </button>
               <p className="text-xs leading-snug text-inkFaint">
                 {L(
-                  "Works without Google, including in mainland China. A new address gets a new account.",
-                  "不需要 Google，在中國大陸也能使用。新的電子郵件地址會自動建立帳號。"
+                  "Works without Google, including in mainland China.",
+                  "不需要 Google，在中國大陸也能使用。"
                 )}
               </p>
             </form>

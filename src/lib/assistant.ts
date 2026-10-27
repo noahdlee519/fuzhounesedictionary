@@ -305,9 +305,13 @@ function relevant(entries: Entry[], question: string): Entry[] {
     }
     const rom = fold(e.romanization ?? "");
     const head = fold(e.headword);
+    // The Mandarin reading, from the import note ("Mandarin: dǐngbiānhú."),
+    // run together: people often type a word the way they know it from
+    // Mandarin, as in "dingbianhu", and that matched nothing (27 Oct 2026).
+    const pin = fold((e.notes?.match(/Mandarin: ([^.]+)\./)?.[1] ?? "").split(",")[0]).replace(/[^a-z]/g, "");
     for (const w of words) {
       const st = stem(w);
-      if (rom === w || head === w || rom.split(" ").includes(w)) score += 6;
+      if (rom === w || head === w || rom.split(" ").includes(w) || (pin.length >= 4 && pin === w)) score += 6;
       else if (new RegExp(`\\b${st}`).test(folded)) score += 3;
       else if (folded.includes(st)) score += 1;
     }

@@ -3,6 +3,7 @@ import HeroMark from "@/components/HeroMark";
 import SearchBar from "@/components/SearchBar";
 import PlayButton from "@/components/PlayButton";
 import AskSection, { type AskSample } from "@/components/AskSection";
+import AskJump from "@/components/AskJump";
 import { entryCards, linkedEntryIds } from "@/lib/entry-cards";
 import DeleteRequest from "@/components/DeleteRequest";
 import RequestVote from "@/components/RequestVote";
@@ -374,9 +375,7 @@ export default async function Home({
             /* The other way to find something: the assistant, just below.
                At the right end of the line, under the box's right edge
                (Noah, 22 Sep 2026); ml-auto keeps it there when it wraps. */
-            <a href="#ask" className="footnote ml-auto whitespace-nowrap px-1 text-lacquer underline-offset-2 hover:underline">
-              {t("hint.ask")}
-            </a>
+            <AskJump label={t("hint.ask")} />
           }
         />
       </section>

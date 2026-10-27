@@ -8,6 +8,7 @@ import { PARTS_OF_SPEECH, MAX_RECORDING_NOTE, MAX_RECORDINGS_PER_WORD } from "@/
 import { friendlyError } from "@/lib/friendly-error";
 import { ORIGIN_AREAS, ORIGIN_GROUPS } from "@/lib/origins";
 import { publishOwnRecording } from "@/app/account/actions";
+import { readMandarin } from "./actions";
 import { saveRecording } from "@/lib/audio-upload";
 import { useRecorder } from "@/components/useRecorder";
 import TakeControls from "@/components/TakeControls";
@@ -255,6 +256,8 @@ export default function SubmitForm({
       // Raw: the catch below puts it in the reader's words, once.
       if (rpcErr) throw new Error(rpcErr.message);
       const entryId = newId as string;
+      // Its Mandarin reading, for search by pinyin. Not waited on.
+      readMandarin(entryId).catch(() => null);
 
       // The word exists; now the take made above goes with it.
       let recFail: string | null = null;

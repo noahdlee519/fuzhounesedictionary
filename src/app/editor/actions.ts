@@ -11,6 +11,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { ORIGIN_AREA_CODES } from "@/lib/origins";
 import { AUDIO_BUCKET, PARTS_OF_SPEECH } from "@/lib/constants";
 import { localPath } from "@/lib/local-path";
+import { storeReading } from "@/lib/pinyin";
 
 async function requireEditor() {
   if (!(await verifiedEditor())) redirect("/");
@@ -24,6 +25,7 @@ export async function approve(formData: FormData) {
     .update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: null })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  await storeReading(adminClient(), id);
   revalidatePath("/editor");
   revalidatePath("/");
   revalidatePath("/learn");
@@ -76,6 +78,9 @@ export async function saveEdit(formData: FormData) {
     })
     .eq("id", id);
   if (entryErr) throw new Error(entryErr.message);
+  // New characters clear the old Mandarin reading (in the database); this
+  // writes the reading of the new ones.
+  await storeReading(supabase, id);
 
   // Update each existing sense (fields arrive as pos_<id>, def_<id>, …). The
   // senses are independent rows, so the updates go out together. A blank

@@ -52,11 +52,16 @@ export default function Assistant({
   open,
   signedIn,
   onHeld,
+  ask,
 }: {
   open: boolean;
   signedIn: boolean;
   /** Called when a question held from before a sign-in is about to be asked. */
   onHeld?: () => void;
+  /** A question to ask now, from outside the panel: what was typed in the
+   *  search box when "Ask the assistant" was pressed. `n` changes for each
+   *  new request, so the same words can be asked again. */
+  ask?: { q: string; n: number } | null;
 }) {
   const L = useL();
   const starters = useLang() === "zh" ? STARTERS_ZH : STARTERS;
@@ -118,6 +123,13 @@ export default function Assistant({
     send(held);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [held]);
+
+  // A question handed over from the search box (SearchBar).
+  useEffect(() => {
+    if (!open || !ask?.q) return;
+    send(ask.q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ask?.n, open]);
 
   if (!open) return null;
 
@@ -183,7 +195,7 @@ export default function Assistant({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           maxLength={500}
-          placeholder={narrow ? L("Ask any question", "隨便問個問題") : L("Ask anything—e.g. how do I say “I love eating dingbianhu”?", "隨便問——例如：「我很愛吃鼎邊糊」怎麼講？")}
+          placeholder={narrow ? L("Ask any question", "隨便問個問題") : L("Ask anything—e.g. what is 鼎邊糊?", "隨便問——例如：鼎邊糊是什麼？")}
           autoComplete="off"
           disabled={busy}
           className="ui h-14 w-full min-w-0 rounded-sm border border-ink bg-paper px-5 text-[17px] tracking-[-.01em] text-ink outline-none transition-colors placeholder:text-inkMute focus:border-lacquer focus-visible:outline-none disabled:cursor-not-allowed"
