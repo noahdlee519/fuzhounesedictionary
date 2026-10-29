@@ -708,8 +708,8 @@ const READING: { href: string; title: string; titleZh?: string; note: string; no
     href: "https://en.wiktionary.org/",
     title: "Wiktionary",
     titleZh: "維基詞典",
-    note: "thousands of words with Fuzhou readings in Bàng-uâ-cê and IPA, CC BY-SA. Many entries in this dictionary were imported from here and say so in their notes",
-    noteZh: "收錄數千個附平話字與國際音標福州讀音的詞，採 CC BY-SA 授權。本辭典有許多詞條是從這裡匯入的，並在附註中註明",
+    note: "a free dictionary that gives Fuzhou readings for thousands of words, in Bàng-uâ-cê and IPA, under CC BY-SA. Many entries in this dictionary were imported from here and say so in their notes",
+    noteZh: "免費辭典，收錄數千個附平話字與國際音標福州讀音的詞，採 CC BY-SA 授權。本辭典有許多詞條是從這裡匯入的，並在附註中註明",
   },
   {
     href: "https://github.com/zingzeu/yngdieng",
@@ -717,12 +717,12 @@ const READING: { href: string; title: string; titleZh?: string; note: string; no
     note: "an online Fuzhounese dictionary and the home of Yngping. Its tables (MIT licence) are what this site uses to show words in Yngping",
     noteZh: "線上福州話辭典，也是榕拼的家。本站用它的對照表（MIT 授權）把詞轉成榕拼顯示",
   },
-  { href: "https://www.fulingo.com/", title: "Fulingo", note: "Duolingo-style Fuzhounese lessons with native audio", noteZh: "類似 Duolingo 的福州話課程，附母語者錄音" },
-  { href: "https://seedict.com/", title: "Seedict", note: "Fuzhounese word list", noteZh: "福州話詞表" },
-  { href: "https://en.wiktionary.org/wiki/Fuzhounese", title: "Wiktionary: Fuzhounese", titleZh: "維基詞典：福州話", note: "Dictionary entry for Fuzhounese", noteZh: "「福州話」的詞典條目" },
-  { href: "https://en.wikipedia.org/wiki/Fuzhou_dialect", title: "Wikipedia: Fuzhou dialect", titleZh: "維基百科：福州話", note: "Sounds, tones, sandhi and grammar", noteZh: "語音、聲調、變調與語法" },
+  { href: "https://www.fulingo.com/", title: "Fulingo", note: "a Duolingo-style course in Fuzhounese, with native-speaker audio", noteZh: "類似 Duolingo 的福州話課程，附母語者錄音" },
+  { href: "https://seedict.com/", title: "Seedict", note: "A comprehensive Fuzhounese-Mandarin dictionary online", noteZh: "內容全面的線上福州話—普通話辭典" },
+  { href: "https://en.wiktionary.org/wiki/Fuzhounese", title: "Wiktionary: Fuzhounese", titleZh: "維基詞典：福州話", note: "The dictionary entry for Fuzhounese", noteZh: "「福州話」的詞典條目" },
+  { href: "https://en.wikipedia.org/wiki/Fuzhou_dialect", title: "Wikipedia: Fuzhou dialect", titleZh: "維基百科：福州話", note: "An overview of the sounds, tones, sandhi and grammar", noteZh: "語音、聲調、變調與語法" },
   { href: "https://en.wikipedia.org/wiki/B%C3%A0ng-u%C3%A2-c%C3%AA", title: "Wikipedia: Bàng-uâ-cê", titleZh: "維基百科：平話字", note: "The background and rules for a popular romanization method", noteZh: "一套通行羅馬字方案的背景與規則" },
-  { href: "https://cdo.wikipedia.org/", title: "Mìng-dĕ̤ng-ngṳ̄ Wikipedia", titleZh: "閩東語維基百科", note: "A Wiki written in Bàng-uâ-cê", noteZh: "用平話字寫成的維基百科" },
+  { href: "https://cdo.wikipedia.org/", title: "Mìng-dĕ̤ng-ngṳ̄ Wikipedia", titleZh: "閩東語維基百科", note: "A wiki written in Bàng-uâ-cê", noteZh: "用平話字寫成的維基百科" },
 ];
 
 function reading(lang: Lang) {
