@@ -701,8 +701,8 @@ const READING: { href: string; title: string; titleZh?: string; note: string; no
   {
     href: "https://en.wikisource.org/wiki/Dictionary_of_the_Foochow_Dialect",
     title: "Dictionary of the Foochow Dialect (Maclay, Baldwin & Leger, 3rd ed., 1929)",
-    note: "the missionary dictionary that fixed Bàng-uâ-cê; public domain. It records Fuzhou speech as heard a century ago, and some sounds have shifted since, so the recordings here are the better guide to how a word is said today",
-    noteZh: "奠定平話字的傳教士辭典，屬公有領域。它記錄的是一百年前的福州話，有些音此後已經改變，所以一個詞今天怎麼說，本站的錄音是更好的參考",
+    note: "An English-Fuzhounese missionary dictionary from 1929",
+    noteZh: "1929 年的英文—福州話傳教士辭典",
   },
   {
     href: "https://en.wiktionary.org/",

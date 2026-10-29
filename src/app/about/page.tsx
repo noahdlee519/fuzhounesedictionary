@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { recordingsTrusted } from "@/lib/trust";
 import HeroMark from "@/components/HeroMark";
+import HoverDetails from "@/components/HoverDetails";
 import SiniticTree from "@/components/SiniticTree";
 import type { Metadata } from "next";
 import ZoomMap from "@/components/ZoomMap";
@@ -91,15 +92,21 @@ export default async function AboutPage() {
   ];
 
   /* The last item on the help list folds open rather than linking out, on the
-     same <details> idiom as the guide sections, so it needs no JavaScript. */
+     same <details> idiom as the guide sections. With a mouse it also opens on
+     hover (HoverDetails); everywhere else it is a plain <details>. */
   const involved = split(t("about.help.5"));
   const community = (
-    <details className="group">
-      <summary className="cursor-pointer list-none marker:content-none [&::-webkit-details-marker]:hidden">
-        {involved.before}
-        <span className="link group-hover:underline">{involved.label}</span>
-        {involved.after}
-      </summary>
+    <HoverDetails
+      className="group"
+      summaryClassName="cursor-pointer list-none marker:content-none [&::-webkit-details-marker]:hidden"
+      summary={
+        <>
+          {involved.before}
+          <span className="link group-hover:underline">{involved.label}</span>
+          {involved.after}
+        </>
+      }
+    >
       <ul className="mt-2 space-y-1.5 border-l border-rule pl-4">
         {COMMUNITY.map((c) => (
           <li key={c.href}>
@@ -109,7 +116,7 @@ export default async function AboutPage() {
           </li>
         ))}
       </ul>
-    </details>
+    </HoverDetails>
   );
 
   return (
