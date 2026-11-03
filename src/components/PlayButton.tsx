@@ -44,6 +44,10 @@ export default function PlayButton({
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+  /* Set on a press, cleared once the clip is heard to move: a first play
+     that ends at the very start without having moved is retried once. */
+  const pressedAt = useRef(0);
+  const retried = useRef(false);
 
   useEffect(() => {
     const a = new Audio();
@@ -51,13 +55,35 @@ export default function PlayButton({
     a.src = src;
     audio.current = a;
     const onMeta = () => setDuration(isFinite(a.duration) ? a.duration : null);
-    const onEnd = () => setPlaying(false);
-    const onPause = () => setPlaying(false);
+    /* A clip that stops within a moment of the press without having moved
+       played nothing: Safari can report a just-made recording as already
+       over before it has read it. Once, it is started again; the second
+       start finds it read. */
+    const hollow = () =>
+      pressedAt.current > 0 && Date.now() - pressedAt.current < 1500 && a.currentTime < 0.05 && !retried.current;
+    const onEnd = () => {
+      if (hollow()) {
+        retried.current = true;
+        a.currentTime = 0;
+        start(a);
+        return;
+      }
+      pressedAt.current = 0;
+      setPlaying(false);
+    };
+    const onPause = () => {
+      if (a.ended) return; // "ended" (above) decides
+      setPlaying(false);
+    };
+    const onTime = () => {
+      if (a.currentTime >= 0.05) pressedAt.current = 0;
+    };
     const onPlay = () => setPlaying(true);
     const onErr = () => setFailed(true);
     a.addEventListener("loadedmetadata", onMeta);
     a.addEventListener("durationchange", onMeta);
     a.addEventListener("ended", onEnd);
+    a.addEventListener("timeupdate", onTime);
     a.addEventListener("pause", onPause);
     a.addEventListener("play", onPlay);
     a.addEventListener("error", onErr);
@@ -78,6 +104,15 @@ export default function PlayButton({
     return () => window.removeEventListener("fz:play", onOther);
   }, []);
 
+  function start(a: HTMLAudioElement) {
+    pressedAt.current = Date.now();
+    a.play().catch((e: DOMException) => {
+      // AbortError is a play() cut short by a pause or a reload — another
+      // clip starting, or the retry below — and says nothing about the file.
+      if (e?.name !== "AbortError") setFailed(true);
+    });
+  }
+
   function toggle() {
     const a = audio.current;
     if (!a) return;
@@ -86,8 +121,15 @@ export default function PlayButton({
       return;
     }
     window.dispatchEvent(new CustomEvent("fz:play", { detail: a }));
-    a.currentTime = 0;
-    a.play().catch(() => setFailed(true));
+    /* On a phone, a recording just made played only on the second press
+       (Noah, 2 Nov 2026). Two guards against that: here, a clip with nothing
+       loaded yet — Safari on iPhones and iPads ignores preload — is loaded
+       inside the tap rather than seeked while empty; and a first play that
+       ends without moving is started again once (onEnd, above). */
+    if (a.readyState === HTMLMediaElement.HAVE_NOTHING) a.load();
+    else if (a.currentTime > 0) a.currentTime = 0;
+    retried.current = false;
+    start(a);
   }
 
   const s = size;
