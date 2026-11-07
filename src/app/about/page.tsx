@@ -209,6 +209,16 @@ export default async function AboutPage() {
       </section>
       <hr className="rule-bleed" />
 
+      {/* Partner projects. SeeDict (米时典), the Fuzhou-based dictionary, is
+          a collaborator rather than only a source: it also leads the Sources
+          list on Learn. */}
+      <section className="sec">
+        <h2 className="h2">{t("about.seedict.h")}</h2>
+        <p className="read mt-4 text-[17px] leading-relaxed text-inkSoft">{rich(t("about.seedict.p"))}</p>
+        <div className="max-w-[40rem]">{list(["about.seedict.1", "about.seedict.2"])}</div>
+      </section>
+      <hr className="rule-bleed" />
+
       {/* The developer */}
       <section className="sec-sm">
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">

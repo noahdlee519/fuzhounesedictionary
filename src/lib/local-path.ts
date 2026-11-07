@@ -11,5 +11,9 @@ export function localPath(raw: string | null | undefined, fallback: string): str
   const s = (raw ?? "").trim();
   if (!s.startsWith("/")) return fallback;
   if (s.startsWith("//") || s.startsWith("/\\")) return fallback;
+  // Nor a backslash or a control character anywhere: browsers drop tabs and
+  // newlines from a URL before reading it, so "/\t/evil.com" arrived as
+  // "//evil.com" (audit, 5 Nov 2026). A path on this site never has either.
+  if (/[\\\u0000-\u001f\u007f]/.test(s)) return fallback;
   return s;
 }

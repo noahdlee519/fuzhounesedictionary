@@ -304,8 +304,11 @@ export function Answer({ text }: { text: string }) {
 
 function linkify(s: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
-  // "/x" and nothing else: a protocol-relative "//host" would leave the site.
-  const re = /\[([^\]]+)\]\((\/(?!\/)[^\s)]*)\)/g;
+  // "/x" and nothing else: a protocol-relative "//host" would leave the site,
+  // and so would "/\\host" — browsers read a backslash there as a slash
+  // (audit, 5 Nov 2026). No backslash anywhere, and no whitespace (a tab or
+  // newline inside a URL is dropped by the browser before it is read).
+  const re = /\[([^\]]+)\]\((\/(?![\/\\])[^\s)\\]*)\)/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let k = 0;

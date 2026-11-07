@@ -211,6 +211,10 @@ const en = {
   "about.help.5.fza": "FuzhouAmerica.org",
   "about.help.5.reddit": "r/ChineseLanguage on Reddit",
   "about.help.5.fuzhounese": "r/fuzhounese on Reddit",
+  "about.seedict.h": "Collaboration with SeeDict (米时典)",
+  "about.seedict.p": "Fuzhounese.org collaborates with [SeeDict](https://seedict.com/) on Fuzhounese language preservation and digital resources. This collaboration includes:",
+  "about.seedict.1": "Dictionary data shared by SeeDict",
+  "about.seedict.2": "Text-to-speech and audio resources",
   "about.dev": "Developer",
   "about.dev.p": "Noah started this dictionary in 2021 to help preserve the dialect his family speaks. Interested in collaborating or becoming an editor? Don't hesitate to reach out.",
 } as const;
@@ -421,6 +425,10 @@ const zh: Record<Key, string> = {
   "about.help.5.fza": "FuzhouAmerica.org",
   "about.help.5.reddit": "Reddit 的 r/ChineseLanguage",
   "about.help.5.fuzhounese": "Reddit 的 r/fuzhounese",
+  "about.seedict.h": "與米时典（SeeDict）合作",
+  "about.seedict.p": "Fuzhounese.org 與[米时典](https://seedict.com/)合作，共同推動福州話的保育與數位資源。合作內容包括：",
+  "about.seedict.1": "米时典分享的辭典資料",
+  "about.seedict.2": "語音合成（TTS）與音訊資源",
   "about.dev": "開發者",
   "about.dev.p": "Noah 在 2021 年開始編這部辭典，希望保存家人講的方言。有興趣合作或想當編輯？歡迎聯絡。",
 };

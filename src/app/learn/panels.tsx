@@ -698,6 +698,8 @@ function orthography(lang: Lang) {
 /* title stays as published; titleZh, where given, is a Chinese gloss shown
    after it in the zh view. */
 const READING: { href: string; title: string; titleZh?: string; note: string; noteZh: string }[] = [
+  // First: a collaborator, not only a source (see the About page).
+  { href: "https://seedict.com/", title: "SeeDict", titleZh: "米时典", note: "A comprehensive Fuzhounese-Mandarin dictionary online", noteZh: "內容全面的線上福州話—普通話辭典" },
   {
     href: "https://en.wikisource.org/wiki/Dictionary_of_the_Foochow_Dialect",
     title: "Dictionary of the Foochow Dialect (Maclay, Baldwin & Leger, 3rd ed., 1929)",
@@ -718,7 +720,6 @@ const READING: { href: string; title: string; titleZh?: string; note: string; no
     noteZh: "線上福州話辭典，也是榕拼的家。本站用它的對照表（MIT 授權）把詞轉成榕拼顯示",
   },
   { href: "https://www.fulingo.com/", title: "Fulingo", note: "a Duolingo-style course in Fuzhounese, with native-speaker audio", noteZh: "類似 Duolingo 的福州話課程，附母語者錄音" },
-  { href: "https://seedict.com/", title: "Seedict", note: "A comprehensive Fuzhounese-Mandarin dictionary online", noteZh: "內容全面的線上福州話—普通話辭典" },
   { href: "https://en.wiktionary.org/wiki/Fuzhounese", title: "Wiktionary: Fuzhounese", titleZh: "維基詞典：福州話", note: "The dictionary entry for Fuzhounese", noteZh: "「福州話」的詞典條目" },
   { href: "https://en.wikipedia.org/wiki/Fuzhou_dialect", title: "Wikipedia: Fuzhou dialect", titleZh: "維基百科：福州話", note: "An overview of the sounds, tones, sandhi and grammar", noteZh: "語音、聲調、變調與語法" },
   { href: "https://en.wikipedia.org/wiki/B%C3%A0ng-u%C3%A2-c%C3%AA", title: "Wikipedia: Bàng-uâ-cê", titleZh: "維基百科：平話字", note: "The background and rules for a popular romanization method", noteZh: "一套通行羅馬字方案的背景與規則" },
