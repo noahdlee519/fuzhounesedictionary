@@ -26,6 +26,7 @@
   --surface2:     #FAFAFC;
   --ink:          #1D1D1F;
   --ink-soft:     #6E6E73;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236E6E73' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --ink-faint:    #6E6E73;
   --ink-mute:     #76767B;
   --rule:         rgba(0, 0, 0, .08);
@@ -50,6 +51,7 @@
     --surface2:     #121214;
     --ink:          #F5F5F7;
     --ink-soft:     #9C9CA3;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%239C9CA3' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --ink-faint:    #9C9CA3;
     --ink-mute:     #7A7A80;
     --rule:         rgba(255, 255, 255, .10);
@@ -70,6 +72,7 @@
   --surface2:     #121214;
   --ink:          #F5F5F7;
   --ink-soft:     #9C9CA3;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%239C9CA3' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --ink-faint:    #9C9CA3;
   --ink-mute:     #7A7A80;
   --rule:         rgba(255, 255, 255, .10);
@@ -550,4 +553,20 @@ textarea::placeholder {
 }
 :where(p, li, dd, td, figcaption, blockquote) > a:not([class*="btn"]):not(.chip):hover {
   text-decoration-color: currentColor;
+}
+
+/* Drop-down lists draw their own arrow, in from the right edge like the
+   padding on the text, instead of the browser's, which Safari and Chrome put
+   hard against the border (Noah, 9 Nov 2026). The arrow is an SVG in the
+   ink-soft colour of each theme (--select-arrow, above). "html" and
+   :not([multiple]) lift this above the padding utilities (px-3, px-4) on
+   each field, which would otherwise cancel the room left for the arrow. */
+html select:not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 2.75rem;
+  background-image: var(--select-arrow);
+  background-position: right 1rem center;
+  background-size: 12px 8px;
+  background-repeat: no-repeat;
 }

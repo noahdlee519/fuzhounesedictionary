@@ -1,0 +1,239 @@
+import { createClient } from "@supabase/supabase-js";
+import { NextResponse, type NextRequest } from "next/server";
+import { formatOrigin, originArea } from "@/lib/origins";
+import { bucToYngping } from "@/lib/romanization";
+import { SITE_URL } from "@/lib/site";
+
+/* The recordings feed: every published recording, with what a partner
+   project needs to use it — the word, the audio file, who said it and where
+   their Fuzhounese is from, and the licence. Set up for SeeDict (米时典),
+   Nov 2026; open to anyone, like the recordings themselves. How to use it is
+   on /data.
+
+   Always the whole list, never "what changed since": a partner compares it
+   with their copy, downloads what is new, and removes what is gone. A take
+   an editor deletes, or a contributor asks to have removed, then drops out
+   of every copy at the next sync without a record of deletions having to be
+   kept anywhere.
+
+   Only what the site already shows anyone: the public (anon) key, no
+   cookies, so the database's own row rules decide what is visible, and only
+   takes an editor has listened to (reviewed_at set) — one that went live a
+   minute ago and has not been checked yet waits for the next sync.
+
+   Cached at Vercel's edge for an hour, so a feed polled by many is still at
+   most one database read an hour per format. */
+
+export const dynamic = "force-dynamic";
+
+const LICENSE = "CC BY-SA 4.0";
+const LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/";
+const PAGE = 1000;
+
+type Row = {
+  id: string;
+  kind: string;
+  audio_url: string;
+  seconds: number | null;
+  note: string | null;
+  speaker_name?: string | null;
+  origin_area: string | null;
+  origin_locality: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  contributor: { id: string; display_name: string | null } | null;
+  entry: {
+    id: string;
+    headword: string;
+    hanzi: string | null;
+    romanization: string | null;
+    status: string;
+    senses: { definition_en: string | null; gloss_zh: string | null; sort: number | null }[] | null;
+  } | null;
+  sense: { id: string; definition_en: string | null; example: string | null; example_gloss: string | null } | null;
+};
+
+export interface FeedRecording {
+  id: string;
+  kind: "headword" | "example";
+  audio_url: string;
+  /** File type, from the file name (the site records webm/Opus). */
+  format: string;
+  seconds: number | null;
+  word: {
+    id: string;
+    url: string;
+    hanzi: string | null;
+    /** As the dictionary writes it (Bàng-uâ-cê for almost every word). */
+    romanization: string | null;
+    /** The same converted to Yngping 榕拼; null where it cannot be. */
+    yngping: string | null;
+    /** The first English meaning. */
+    meaning_en: string | null;
+    /** The first Mandarin gloss, where there is one. */
+    meaning_zh: string | null;
+  };
+  /** For an example-sentence recording: the sentence being read. */
+  sentence: { text: string | null; translation: string | null; meaning_en: string | null } | null;
+  /** The speaker's own line about the take, if they wrote one. */
+  note: string | null;
+  /** Who is speaking, when it is not the account holder (a grandparent, say). */
+  speaker: string | null;
+  /** The account that recorded it, as credited on the site. */
+  recorded_by: { name: string; url: string | null };
+  /** Where the speaker's Fuzhounese is from, as the site labels it. */
+  origin: { code: string; label: string; locality: string | null } | null;
+  /** Credit line to show with the audio (the licence requires one). */
+  attribution: string;
+  published_at: string;
+  checked_at: string;
+}
+
+async function load(): Promise<FeedRecording[]> {
+  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const rows: Row[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await db
+      .from("recordings")
+      .select(
+        "id, kind, audio_url, seconds, note, speaker_name, origin_area, origin_locality, created_at, reviewed_at," +
+          " contributor:profiles!recordings_contributor_id_fkey(id, display_name)," +
+          " entry:entries(id, headword, hanzi, romanization, status, senses(definition_en, gloss_zh, sort))," +
+          " sense:senses(id, definition_en, example, example_gloss)"
+      )
+      .eq("status", "approved")
+      .not("reviewed_at", "is", null)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...((data ?? []) as unknown as Row[]));
+    if (!data || data.length < PAGE) break;
+  }
+
+  return rows
+    .filter((r) => r.entry && r.entry.status === "approved")
+    .map((r) => {
+      const e = r.entry!;
+      const first = [...(e.senses ?? [])].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+      const area = originArea(r.origin_area);
+      const who = (r.contributor?.display_name ?? "").trim() || "a contributor";
+      const speaker = (r.speaker_name ?? "").trim() || null;
+      const place = formatOrigin(r.origin_area, r.origin_locality);
+      const word = e.hanzi || e.romanization || e.headword;
+      return {
+        id: r.id,
+        kind: r.kind === "example" ? "example" : "headword",
+        audio_url: r.audio_url,
+        format: (r.audio_url.split("?")[0].split(".").pop() ?? "").toLowerCase(),
+        seconds: r.seconds == null ? null : Number(r.seconds),
+        word: {
+          id: e.id,
+          url: `${SITE_URL}/entry/${e.id}`,
+          hanzi: e.hanzi,
+          romanization: e.romanization,
+          yngping: e.romanization ? bucToYngping(e.romanization) : null,
+          meaning_en: first.find((s) => s.definition_en)?.definition_en ?? null,
+          meaning_zh: first.find((s) => s.gloss_zh)?.gloss_zh ?? null,
+        },
+        sentence:
+          r.kind === "example" && r.sense
+            ? { text: r.sense.example, translation: r.sense.example_gloss, meaning_en: r.sense.definition_en }
+            : null,
+        note: (r.note ?? "").trim() || null,
+        speaker,
+        recorded_by: { name: who, url: r.contributor ? `${SITE_URL}/contributor/${r.contributor.id}` : null },
+        origin: area ? { code: area.code, label: `${area.label} ${area.hanzi}`, locality: (r.origin_locality ?? "").trim() || null } : null,
+        attribution: `${word}${speaker ? `, said by ${speaker}` : ""}, recorded by ${who}${place ? ` (${place})` : ""}. fuzhounese.org, ${LICENSE}.`,
+        published_at: r.created_at,
+        checked_at: r.reviewed_at!,
+      };
+    });
+}
+
+const COLUMNS: [string, (r: FeedRecording) => string | number | null][] = [
+  ["id", (r) => r.id],
+  ["kind", (r) => r.kind],
+  ["audio_url", (r) => r.audio_url],
+  ["format", (r) => r.format],
+  ["seconds", (r) => r.seconds],
+  ["word_id", (r) => r.word.id],
+  ["word_url", (r) => r.word.url],
+  ["hanzi", (r) => r.word.hanzi],
+  ["romanization", (r) => r.word.romanization],
+  ["yngping", (r) => r.word.yngping],
+  ["meaning_en", (r) => r.word.meaning_en],
+  ["meaning_zh", (r) => r.word.meaning_zh],
+  ["sentence", (r) => r.sentence?.text ?? null],
+  ["sentence_translation", (r) => r.sentence?.translation ?? null],
+  ["note", (r) => r.note],
+  ["speaker", (r) => r.speaker],
+  ["recorded_by", (r) => r.recorded_by.name],
+  ["recorded_by_url", (r) => r.recorded_by.url],
+  ["origin_code", (r) => r.origin?.code ?? null],
+  ["origin", (r) => r.origin?.label ?? null],
+  ["origin_locality", (r) => r.origin?.locality ?? null],
+  ["attribution", (r) => r.attribution],
+  ["published_at", (r) => r.published_at],
+  ["checked_at", (r) => r.checked_at],
+];
+
+/* RFC 4180, plus a guard against spreadsheet formulas: a cell a contributor
+   wrote (a note, a name) that starts with = + - @ would run as a formula when
+   the file is opened in Excel or Sheets, so it gets a leading apostrophe. */
+function cell(v: string | number | null): string {
+  if (v == null) return "";
+  let s = String(v);
+  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+export async function GET(request: NextRequest) {
+  const format = request.nextUrl.searchParams.get("format") === "csv" ? "csv" : "json";
+  let recordings: FeedRecording[];
+  try {
+    recordings = await load();
+  } catch (e: any) {
+    console.error(`recordings feed: ${e?.message ?? e}`);
+    return NextResponse.json(
+      { error: "The feed is not available just now. Try again later." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  const headers: Record<string, string> = {
+    // An hour at the edge; up to a day of the last good copy while a new one
+    // is fetched. Anyone may read it from a browser too.
+    "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+    "Access-Control-Allow-Origin": "*",
+  };
+
+  if (format === "csv") {
+    const lines = [COLUMNS.map(([k]) => k).join(",")];
+    for (const r of recordings) lines.push(COLUMNS.map(([, f]) => cell(f(r))).join(","));
+    return new NextResponse("﻿" + lines.join("\r\n") + "\r\n", {
+      headers: {
+        ...headers,
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": 'attachment; filename="fuzhounese-recordings.csv"',
+      },
+    });
+  }
+
+  return NextResponse.json(
+    {
+      source: SITE_URL,
+      documentation: `${SITE_URL}/data`,
+      license: LICENSE,
+      license_url: LICENSE_URL,
+      terms:
+        "Each recording is CC BY-SA 4.0. Credit the speaker and fuzhounese.org (the attribution field is a ready-made line), and share adaptations under the same licence. This is the complete current list: remove any recording you hold that is no longer in it.",
+      generated_at: new Date().toISOString(),
+      count: recordings.length,
+      recordings,
+    },
+    { headers }
+  );
+}
