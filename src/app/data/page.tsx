@@ -100,7 +100,15 @@ export default function DataPage() {
                 "：漢字、辭典使用的羅馬字（平話字）、可轉換時的榕拼、第一個英文意思與華語釋義，以及詞條頁連結",
               )}
             </li>
-            <li><Code>sentence</Code>{L(": for an example recording, the sentence read and its translation", "：例句錄音所念的句子及其翻譯")}</li>
+            <li>
+              <Code>sentence</Code>
+              {L(
+                ": for an example recording, the sentence read and its English. Where the sentence was never written down, the English is the speaker's own note on the take (",
+                "：例句錄音所念的句子及其英文。句子本身沒有寫下來的，英文取自講者對錄音的附註（",
+              )}
+              <Code>translation_from</Code>: <Code>speaker_note</Code>
+              {L(")", "）")}
+            </li>
             <li>
               <Code>speaker</Code>, <Code>recorded_by</Code>, <Code>origin</Code>
               {L(
@@ -110,7 +118,31 @@ export default function DataPage() {
             </li>
             <li><Code>attribution</Code>{L(": a ready-made credit line", "：現成的署名文字")}</li>
             <li><Code>published_at</Code>, <Code>checked_at</Code></li>
+            <li>
+              <Code>tts_ready</Code>, <Code>flags</Code>
+              {L(
+                ": whether the audio comes with a written form of exactly what is said, and if not, why",
+                "：錄音是否附有所說內容的完整文字；若沒有，原因為何",
+              )}
+            </li>
           </Ul>
+          <p>
+            {L(
+              "For text-to-speech or any work that pairs audio with text, use only recordings with tts_ready true. The others are still good recordings of the language, but the words in them have not been written down yet: ",
+              "做語音合成或任何需要把聲音和文字配對的工作，請只用 tts_ready 為 true 的錄音。其他錄音仍是很好的語料，只是內容還沒有寫成文字：",
+            )}
+            <Code>sentence_not_transcribed</Code>
+            {L(" (an example sentence with no text), ", "（例句沒有文字）、")}
+            <Code>no_romanization</Code>
+            {L(" (the word has no pronunciation written), ", "（詞沒有標音）、")}
+            <Code>romanization_not_standard</Code>
+            {L(" (written in a system that does not convert to Yngping), or ", "（標音系統無法轉成榕拼），或 ")}
+            <Code>longer_than_word</Code>
+            {L(
+              " (a word recording over 8 seconds: the speaker says the word, then uses it in a sentence). As the words are written down, the first three turn true in the feed by themselves.",
+              "（超過 8 秒的詞錄音：講者先說這個詞，再用它造一個句子）。前三種補上文字之後，資料源裡會自動變成 true。",
+            )}
+          </p>
         </Section>
 
         <Section n={4} title={L("Licence and credit", "授權與署名")}>

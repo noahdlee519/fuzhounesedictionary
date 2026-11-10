@@ -25,10 +25,18 @@ import { SITE_URL } from "@/lib/site";
    most one database read an hour per format. */
 
 export const dynamic = "force-dynamic";
+// Never Next's Data Cache: without this the database read itself was cached
+// for a year (seen in .next/cache/fetch-cache), so the feed would have kept
+// serving its first snapshot. Freshness is the edge cache's job (an hour,
+// Cache-Control below).
+export const fetchCache = "force-no-store";
 
 const LICENSE = "CC BY-SA 4.0";
 const LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/";
 const PAGE = 1000;
+/* A word said on its own takes about 2 seconds (median 1.8 over 457 takes,
+   Nov 2026). Every take over 8 was the word followed by a sentence. */
+const LONG_TAKE = 8;
 
 type Row = {
   id: string;
@@ -73,8 +81,29 @@ export interface FeedRecording {
     /** The first Mandarin gloss, where there is one. */
     meaning_zh: string | null;
   };
-  /** For an example-sentence recording: the sentence being read. */
-  sentence: { text: string | null; translation: string | null; meaning_en: string | null } | null;
+  /** For an example-sentence recording: the sentence being read (text,
+   *  Fuzhounese as written in the dictionary) and its English. Where the
+   *  sentence itself was never written down, the English is the speaker's
+   *  own note on the take, and translation_from says so. */
+  sentence: {
+    text: string | null;
+    translation: string | null;
+    translation_from: "dictionary" | "speaker_note" | null;
+    meaning_en: string | null;
+  } | null;
+  /** True when the audio comes with a written form of exactly what is
+   *  said — what text-to-speech and alignment work needs. See flags. */
+  tts_ready: boolean;
+  /** Why tts_ready is false, if it is:
+   *  "sentence_not_transcribed" — an example sentence with no written text;
+   *  "no_romanization" — the word has no pronunciation written down;
+   *  "romanization_not_standard" — written in another system (tone numbers,
+   *  say) that does not convert to Yngping.
+   *  "longer_than_word" — a word recording over LONG_TAKE seconds, which
+   *  here means the speaker said the word and then used it in a sentence
+   *  (ten takes, Nov 2026; a word alone is under 2 seconds as a rule).
+   */
+  flags: string[];
   /** The speaker's own line about the take, if they wrote one. */
   note: string | null;
   /** Who is speaking, when it is not the account holder (a grandparent, say). */
@@ -92,6 +121,7 @@ export interface FeedRecording {
 async function load(): Promise<FeedRecording[]> {
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
   });
   const rows: Row[] = [];
   for (let from = 0; ; from += PAGE) {
@@ -123,6 +153,17 @@ async function load(): Promise<FeedRecording[]> {
       const speaker = (r.speaker_name ?? "").trim() || null;
       const place = formatOrigin(r.origin_area, r.origin_locality);
       const word = e.hanzi || e.romanization || e.headword;
+      const yngping = e.romanization ? bucToYngping(e.romanization) : null;
+      const note = (r.note ?? "").trim() || null;
+      const example = r.kind === "example";
+      const sentenceText = example ? (r.sense?.example ?? "").trim() || null : null;
+      /* What stands between this take and use as text-to-speech data: the
+         words actually said must be written down, in a system that reads. */
+      const flags: string[] = [];
+      if (example && !sentenceText) flags.push("sentence_not_transcribed");
+      if (!example && !(e.romanization ?? "").trim()) flags.push("no_romanization");
+      else if (!example && !yngping) flags.push("romanization_not_standard");
+      if (!example && r.seconds != null && Number(r.seconds) > LONG_TAKE) flags.push("longer_than_word");
       return {
         id: r.id,
         kind: r.kind === "example" ? "example" : "headword",
@@ -134,15 +175,25 @@ async function load(): Promise<FeedRecording[]> {
           url: `${SITE_URL}/entry/${e.id}`,
           hanzi: e.hanzi,
           romanization: e.romanization,
-          yngping: e.romanization ? bucToYngping(e.romanization) : null,
+          yngping,
           meaning_en: first.find((s) => s.definition_en)?.definition_en ?? null,
           meaning_zh: first.find((s) => s.gloss_zh)?.gloss_zh ?? null,
         },
-        sentence:
-          r.kind === "example" && r.sense
-            ? { text: r.sense.example, translation: r.sense.example_gloss, meaning_en: r.sense.definition_en }
-            : null,
-        note: (r.note ?? "").trim() || null,
+        sentence: example
+          ? {
+              text: sentenceText,
+              translation: (r.sense?.example_gloss ?? "").trim() || (sentenceText ? null : note),
+              translation_from: (r.sense?.example_gloss ?? "").trim()
+                ? "dictionary"
+                : !sentenceText && note
+                  ? "speaker_note"
+                  : null,
+              meaning_en: r.sense?.definition_en ?? null,
+            }
+          : null,
+        tts_ready: flags.length === 0,
+        flags,
+        note,
         speaker,
         recorded_by: { name: who, url: r.contributor ? `${SITE_URL}/contributor/${r.contributor.id}` : null },
         origin: area ? { code: area.code, label: `${area.label} ${area.hanzi}`, locality: (r.origin_locality ?? "").trim() || null } : null,
@@ -168,6 +219,9 @@ const COLUMNS: [string, (r: FeedRecording) => string | number | null][] = [
   ["meaning_zh", (r) => r.word.meaning_zh],
   ["sentence", (r) => r.sentence?.text ?? null],
   ["sentence_translation", (r) => r.sentence?.translation ?? null],
+  ["sentence_translation_from", (r) => r.sentence?.translation_from ?? null],
+  ["tts_ready", (r) => (r.tts_ready ? "yes" : "no")],
+  ["flags", (r) => r.flags.join(" ")],
   ["note", (r) => r.note],
   ["speaker", (r) => r.speaker],
   ["recorded_by", (r) => r.recorded_by.name],
