@@ -7,22 +7,24 @@ import { pick } from "@/lib/i18n";
 export function generateMetadata(): Metadata {
   const L = pick(getLang());
   return {
-    title: L("Open data: recordings", "開放資料：錄音"),
+    title: L("Open data", "開放資料"),
     description: L(
-      "Every published recording on fuzhounese.org as a feed, for dictionaries and language projects to use under CC BY-SA 4.0.",
-      "fuzhounese.org 上所有已刊出的錄音，以資料源提供，供辭典與語言計畫依 CC BY-SA 4.0 使用。",
+      "Every published word and recording on fuzhounese.org as feeds, for dictionaries and language projects to use under CC BY-SA 4.0.",
+      "fuzhounese.org 上所有已刊出的詞條與錄音，以資料源提供，供辭典與語言計畫依 CC BY-SA 4.0 使用。",
     ),
     alternates: { canonical: "/data" },
   };
 }
 
-/* How to use the recordings feed (src/app/api/export/recordings). Written
-   for the developer on a partner project — SeeDict first — who will set up
-   the daily sync. */
+/* How to use the open-data feeds (src/app/api/export/recordings and
+   …/words). Written for the developer on a partner project — SeeDict
+   first — who will set up the sync. */
 
 const A = "text-lacquer hover:underline";
-const JSON_URL = "https://fuzhounese.org/api/export/recordings";
-const CSV_URL = "https://fuzhounese.org/api/export/recordings?format=csv";
+const FEEDS = {
+  recordings: "https://fuzhounese.org/api/export/recordings",
+  words: "https://fuzhounese.org/api/export/words",
+};
 const Code = ({ children }: { children: React.ReactNode }) => (
   <code className="rounded-sm bg-surface px-1.5 py-0.5 font-mono text-[0.9em] text-ink">{children}</code>
 );
@@ -34,30 +36,33 @@ export default function DataPage() {
     <article className="space-y-10">
       <section className="border-b border-rule pb-6">
         <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-          {L("Open data: recordings", "開放資料：錄音")}
+          {L("Open data", "開放資料")}
         </h1>
       </section>
 
       <div className="max-w-[68ch] space-y-8">
-        <Section n={1} title={L("The feed", "資料源")}>
+        <Section n={1} title={L("The feeds", "資料源")}>
           <Ul>
             <li>
-              JSON: <a href={JSON_URL} className={`${A} break-all`}>{JSON_URL}</a>
+              {L("Recordings: ", "錄音：")}
+              <a href={FEEDS.recordings} className={`${A} break-all`}>{FEEDS.recordings}</a>
             </li>
             <li>
-              {L("CSV, for a spreadsheet: ", "CSV（可用試算表開啟）：")}
-              <a href={CSV_URL} className={`${A} break-all`}>{CSV_URL}</a>
+              {L("Words, with all their meanings: ", "詞條及其所有意思：")}
+              <a href={FEEDS.words} className={`${A} break-all`}>{FEEDS.words}</a>
             </li>
           </Ul>
           <p>
+            {L("Both are JSON. Add ", "兩者都是 JSON。在網址後加上 ")}
+            <Code>?format=csv</Code>
             {L(
-              "Each response is the complete current list of published recordings, refreshed at most once an hour. A recording appears once an editor has listened to it.",
-              "每次回傳的都是目前所有已刊出錄音的完整清單，最多每小時更新一次。錄音經編輯聽過後才會出現在清單裡。",
+              " for a spreadsheet instead (the words file has one row per meaning). Each response is the complete current list, refreshed at most once an hour. A recording appears once an editor has listened to it. Each word lists the ids of its recordings, so the two feeds join on recording id.",
+              " 即可改為試算表格式（詞條檔每個意思一列）。每次回傳的都是目前的完整清單，最多每小時更新一次。錄音經編輯聽過後才會出現在清單裡。每個詞條都列出它的錄音 id，兩個資料源可以用錄音 id 對應。",
             )}
           </p>
         </Section>
 
-        <Section n={2} title={L("What each record holds", "每筆資料的內容")}>
+        <Section n={2} title={L("What each recording holds", "每筆錄音的內容")}>
           <Ul>
             <li><Code>id</Code>, <Code>kind</Code> {L("(the word itself, or an example sentence), ", "（詞本身或例句）、")}<Code>audio_url</Code>, <Code>format</Code>, <Code>seconds</Code></li>
             <li>
@@ -112,24 +117,54 @@ export default function DataPage() {
           </p>
         </Section>
 
-        <Section n={3} title={L("Licence and credit", "授權與署名")}>
+        <Section n={3} title={L("What each word holds", "每個詞條的內容")}>
+          <Ul>
+            <li>
+              <Code>id</Code>, <Code>url</Code>, <Code>hanzi</Code>, <Code>romanization</Code>, <Code>yngping</Code>, <Code>ipa</Code>
+              {L(": the word as the dictionary writes it, in Bàng-uâ-cê and in Yngping 榕拼 where it converts", "：辭典所寫的詞，平話字以及可轉換時的榕拼")}
+            </li>
+            <li>
+              <Code>meanings</Code>
+              {L(
+                ": each meaning in order, with its part of speech, English, Mandarin gloss and example sentence. Vulgar and sexual meanings are included and marked ",
+                "：依序列出每個意思，附詞性、英文、華語釋義與例句。粗俗或涉及性的意思也收錄，並標為 ",
+              )}
+              <Code>explicit</Code>
+              {L("; the site hides those from its lists by default", "；本站預設不在清單中顯示這些意思")}
+            </li>
+            <li>
+              <Code>origin</Code>, <Code>added_by</Code>
+              {L(": where the word's Fuzhounese is from, and the account that added it", "：這個詞的福州話來自哪裡，以及新增它的帳號")}
+            </li>
+            <li>
+              <Code>source</Code>
+              {L(
+                ": for a word imported from a published dictionary (most often Wiktionary), where it came from",
+                "：從已出版辭典（多為維基詞典）匯入的詞，其出處",
+              )}
+            </li>
+            <li><Code>notes</Code>, <Code>recording_ids</Code>, <Code>created_at</Code>, <Code>updated_at</Code></li>
+          </Ul>
+        </Section>
+
+        <Section n={4} title={L("Licence and credit", "授權與署名")}>
           <p>
-            {L("The recordings are licensed ", "錄音採用 ")}
+            {L("The words and recordings are licensed ", "詞條與錄音採用 ")}
             <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className={A}>
               CC BY-SA 4.0
             </a>
             {L(
-              ". Wherever a recording is played or published, credit the speaker and fuzhounese.org — the attribution field is written for that — and share anything you make from them under the same licence. Each contributor agreed to this licence when they recorded (",
-              " 授權。凡播放或發布錄音之處，請註明講者與 fuzhounese.org（attribution 欄位就是為此而寫），並以相同授權分享以此製作的內容。每位貢獻者錄音時都同意了這項授權（見",
+              ". Wherever they are used, credit fuzhounese.org — for a recording, the speaker too (the attribution field is written for that), and for an imported word, its source — and share anything you make from them under the same licence. Each contributor agreed to this licence when they contributed (",
+              " 授權。凡使用之處，請註明 fuzhounese.org；錄音也請註明講者（attribution 欄位就是為此而寫），匯入的詞條也請註明出處；並以相同授權分享以此製作的內容。每位貢獻者貢獻時都同意了這項授權（見",
             )}
             <Link href="/terms" className={A}>{L("terms", "服務條款")}</Link>
             {L(").", "）。")}
           </p>
         </Section>
 
-        <Section n={4} title={L("Contact", "聯絡")}>
+        <Section n={5} title={L("Contact", "聯絡")}>
           <p>
-            {L("Using the feed, or need something it does not have? Write to ", "正在使用資料源，或需要它沒有的內容？請寫信至 ")}
+            {L("Using the feeds, or need something they do not have? Write to ", "正在使用資料源，或需要其中沒有的內容？請寫信至 ")}
             <a href={`mailto:${LEGAL_CONTACT}`} className={A}>{LEGAL_CONTACT}</a>
             {L(".", "。")}
           </p>

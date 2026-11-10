@@ -1,8 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { formatOrigin, originArea } from "@/lib/origins";
 import { bucToYngping } from "@/lib/romanization";
 import { SITE_URL } from "@/lib/site";
+import { anonDb, csvFile, FEED_HEADERS, LICENSE, LICENSE_URL } from "@/lib/export";
 
 /* The recordings feed: every published recording, with what a partner
    project needs to use it — the word, the audio file, who said it and where
@@ -31,8 +31,6 @@ export const dynamic = "force-dynamic";
 // Cache-Control below).
 export const fetchCache = "force-no-store";
 
-const LICENSE = "CC BY-SA 4.0";
-const LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/";
 const PAGE = 1000;
 /* A word said on its own takes about 2 seconds (median 1.8 over 457 takes,
    Nov 2026). Every take over 8 was the word followed by a sentence. */
@@ -119,10 +117,7 @@ export interface FeedRecording {
 }
 
 async function load(): Promise<FeedRecording[]> {
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
-  });
+  const db = anonDb();
   const rows: Row[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await db
@@ -234,16 +229,6 @@ const COLUMNS: [string, (r: FeedRecording) => string | number | null][] = [
   ["checked_at", (r) => r.checked_at],
 ];
 
-/* RFC 4180, plus a guard against spreadsheet formulas: a cell a contributor
-   wrote (a note, a name) that starts with = + - @ would run as a formula when
-   the file is opened in Excel or Sheets, so it gets a leading apostrophe. */
-function cell(v: string | number | null): string {
-  if (v == null) return "";
-  let s = String(v);
-  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format") === "csv" ? "csv" : "json";
   let recordings: FeedRecording[];
@@ -257,17 +242,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const headers: Record<string, string> = {
-    // An hour at the edge; up to a day of the last good copy while a new one
-    // is fetched. Anyone may read it from a browser too.
-    "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
-    "Access-Control-Allow-Origin": "*",
-  };
+  const headers = FEED_HEADERS;
 
   if (format === "csv") {
-    const lines = [COLUMNS.map(([k]) => k).join(",")];
-    for (const r of recordings) lines.push(COLUMNS.map(([, f]) => cell(f(r))).join(","));
-    return new NextResponse("﻿" + lines.join("\r\n") + "\r\n", {
+    const body = csvFile(
+      COLUMNS.map(([k]) => k),
+      recordings.map((r) => COLUMNS.map(([, f]) => f(r)))
+    );
+    return new NextResponse(body, {
       headers: {
         ...headers,
         "Content-Type": "text/csv; charset=utf-8",
