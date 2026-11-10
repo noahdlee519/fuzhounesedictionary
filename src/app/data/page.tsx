@@ -36,18 +36,6 @@ export default function DataPage() {
         <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
           {L("Open data: recordings", "開放資料：錄音")}
         </h1>
-        <div className="mt-5 max-w-[68ch] space-y-3 text-lg leading-relaxed text-inkSoft">
-          <p>
-            {L(
-              "Every recording published on fuzhounese.org is available as a feed, so that other dictionaries and language projects can use it. It is how ",
-              "fuzhounese.org 上刊出的每一段錄音都以資料源提供，讓其他辭典和語言計畫也能使用。",
-            )}
-            <a href="https://seedict.com/" target="_blank" rel="noreferrer" className={A}>
-              {L("SeeDict (米时典)", "米时典（SeeDict）")}
-            </a>
-            {L(" keeps its copy up to date. It is free, needs no key, and the recordings are licensed CC BY-SA 4.0.", "就是用它保持資料同步。資料源免費、不需金鑰，錄音採 CC BY-SA 4.0 授權。")}
-          </p>
-        </div>
       </section>
 
       <div className="max-w-[68ch] space-y-8">
@@ -69,28 +57,7 @@ export default function DataPage() {
           </p>
         </Section>
 
-        <Section n={2} title={L("Keeping a copy in sync", "保持同步")}>
-          <p>{L("Once a day is plenty. Each time:", "每天一次就足夠。每次：")}</p>
-          <Ul>
-            <li>{L("download the audio for every id you do not have yet, from its ", "對尚未擁有的每個 id，從它的 ")}<Code>audio_url</Code>{L(";", " 下載音檔；")}</li>
-            <li>{L("update the details of the ones you have (a note or a credit can change);", "更新已有錄音的資料（附註或署名可能會改）；")}</li>
-            <li>
-              <strong className="font-semibold text-ink">{L("remove every recording that is no longer in the list.", "刪除清單裡已經沒有的錄音。")}</strong>{" "}
-              {L(
-                "Takes are sometimes withdrawn, and contributors may ask to have their voice taken down; the list is the record of what may still be used.",
-                "錄音有時會被撤回，貢獻者也可以要求移除自己的聲音；這份清單就是仍可使用的錄音的依據。",
-              )}
-            </li>
-          </Ul>
-          <p>
-            {L(
-              "The audio files are WebM (Opus), as phones and browsers record them; convert them if your player needs MP3 or AAC. The files are stored in the United States and can be slow to reach from mainland China, so keep your own copies rather than linking to ours.",
-              "音檔是手機和瀏覽器錄下的 WebM（Opus）格式；若播放器需要 MP3 或 AAC，請自行轉檔。音檔存放在美國，從中國大陸存取可能較慢，請自行保存副本，不要直接連結到我們的檔案。",
-            )}
-          </p>
-        </Section>
-
-        <Section n={3} title={L("What each record holds", "每筆資料的內容")}>
+        <Section n={2} title={L("What each record holds", "每筆資料的內容")}>
           <Ul>
             <li><Code>id</Code>, <Code>kind</Code> {L("(the word itself, or an example sentence), ", "（詞本身或例句）、")}<Code>audio_url</Code>, <Code>format</Code>, <Code>seconds</Code></li>
             <li>
@@ -145,7 +112,7 @@ export default function DataPage() {
           </p>
         </Section>
 
-        <Section n={4} title={L("Licence and credit", "授權與署名")}>
+        <Section n={3} title={L("Licence and credit", "授權與署名")}>
           <p>
             {L("The recordings are licensed ", "錄音採用 ")}
             <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className={A}>
@@ -160,7 +127,7 @@ export default function DataPage() {
           </p>
         </Section>
 
-        <Section n={5} title={L("Contact", "聯絡")}>
+        <Section n={4} title={L("Contact", "聯絡")}>
           <p>
             {L("Using the feed, or need something it does not have? Write to ", "正在使用資料源，或需要它沒有的內容？請寫信至 ")}
             <a href={`mailto:${LEGAL_CONTACT}`} className={A}>{LEGAL_CONTACT}</a>
