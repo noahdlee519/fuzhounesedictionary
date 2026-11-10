@@ -20,7 +20,7 @@ export function generateMetadata(): Metadata {
 
 /* The English text is authoritative; the Chinese is a courtesy translation
    (LegalPage says so at the top when the language is zh). Change both. */
-const UPDATED = { en: "26 September 2026", zh: "2026年9月26日" };
+const UPDATED = { en: "10 November 2026", zh: "2026年11月10日" };
 
 const A = "text-lacquer hover:underline";
 
@@ -76,8 +76,8 @@ export default function PrivacyPage() {
         <p>
           <b>{L("Your contributions:", "你的貢獻：")}</b>
           {L(
-            " the words, meanings, example sentences, pronunciations, requests and votes you submit, and any audio you record or upload. When you contribute, we also record the time and where your Fuzhounese is from, so that a recording from Changle stays labeled Changle even if you later change your profile.",
-            "你提交的詞、釋義、例句、發音、請求和投票，以及你錄製或上傳的任何音訊。你貢獻時，我們也會記錄時間和你的福州話來自哪裡，這樣即使你日後修改個人檔案，一段來自長樂的錄音仍會標示為長樂。",
+            " the words, meanings, example sentences, pronunciations, requests, votes and comments you submit, and any audio you record or upload. When you contribute, we also record the time and where your Fuzhounese is from, so that a recording from Changle stays labeled Changle even if you later change your profile.",
+            "你提交的詞、釋義、例句、發音、請求、投票和留言，以及你錄製或上傳的任何音訊。你貢獻時，我們也會記錄時間和你的福州話來自哪裡，這樣即使你日後修改個人檔案，一段來自長樂的錄音仍會標示為長樂。",
           )}
         </p>
         <p>

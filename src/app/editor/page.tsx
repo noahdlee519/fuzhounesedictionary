@@ -19,7 +19,9 @@ import {
   rejectRecording,
   approveSuggestion,
   rejectSuggestion,
+  markCommentsRead,
 } from "./actions";
+import { deleteComment } from "@/app/entry/actions";
 import type { Sense } from "@/lib/types";
 import { formatOrigin } from "@/lib/origins";
 import { one, sortSenses } from "@/lib/entries";
@@ -117,6 +119,23 @@ export default async function AdminPage() {
     ]);
   const pending = (data ?? []).map((e: any) => ({ ...e, contributor: one(e.contributor) }));
 
+  /* Comments no editor has read yet (supabase/comments.sql): already live,
+     like a recording in the trust window, so this is a read-through, not a
+     gate. Before that file has run the table is missing and this is empty. */
+  const { data: comData } = await supabase
+    .from("comments")
+    .select("id, body, created_at, entry_id, recording_id, author_id, entry:entries(hanzi, romanization, headword)")
+    .is("reviewed_at", null)
+    .order("created_at", { ascending: true })
+    .limit(200);
+  const comAuthorIds = [...new Set(((comData ?? []) as any[]).map((c) => c.author_id).filter(Boolean))];
+  const comAuthors = new Map<string, string | null>();
+  if (comAuthorIds.length) {
+    const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", comAuthorIds);
+    for (const p of (profs ?? []) as any[]) comAuthors.set(p.id, p.display_name ?? null);
+  }
+  const unreadComments = ((comData ?? []) as any[]).map((c) => ({ ...c, entry: one(c.entry), author: comAuthors.get(c.author_id) ?? null }));
+
   /* Possible duplicates (Noah, 23 Sep 2026): for each word waiting, any live
      entry with the same characters, or the same romanization ignoring case.
      The same test as the warning on the Add a word form, so anything that
@@ -180,7 +199,7 @@ export default async function AdminPage() {
         )}
       </p>
     ) : null;
-  const waiting = pending.length + pendingRecs.length + pendingSugs.length;
+  const waiting = pending.length + pendingRecs.length + pendingSugs.length + unreadComments.length;
   const anyFailed = Boolean(error || recError || sugError);
 
   return (
@@ -196,6 +215,74 @@ export default async function AdminPage() {
       {problem(L("Suggestions", "建議"), "suggestions.sql", sugError)}
       {problem(L("Recordings", "錄音"), "recordings.sql", recError)}
       {problem(L("Words", "詞條"), "schema.sql", error)}
+
+      {unreadComments.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="meta text-lacquer">
+              {unreadComments.length === 1
+                ? L("1 new comment", "1 則新留言")
+                : L("{n} new comments", "{n} 則新留言", { n: unreadComments.length })}
+            </h2>
+            {unreadComments.length > 1 && (
+              <form action={markCommentsRead}>
+                {unreadComments.map((c: any) => (
+                  <input key={c.id} type="hidden" name="id" value={c.id} />
+                ))}
+                <SubmitButton pending="…" className="meta text-lacquer hover:underline">
+                  {L("Mark all as read", "全部標為已讀")}
+                </SubmitButton>
+              </form>
+            )}
+          </div>
+          <div className="grid gap-3">
+            {unreadComments.map((c: any) => {
+              const e = c.entry;
+              return (
+                <div key={c.id} className="rounded-sm border border-rule bg-surface p-4">
+                  <div className="flex flex-wrap items-baseline gap-3">
+                    {e?.hanzi && <span className="font-display text-xl font-bold">{e.hanzi}</span>}
+                    <Link
+                      href={`/entry/${c.entry_id}#comment-${c.id}`}
+                      className="romanization font-display font-semibold text-lacquer hover:underline"
+                    >
+                      {e?.romanization || e?.headword}
+                    </Link>
+                    <span className={chip}>{c.recording_id ? L("on a recording", "關於一段錄音") : L("on the word", "關於這個詞")}</span>
+                    <span className="ml-auto meta text-inkFaint">
+                      <LocalTime iso={c.created_at} time />
+                      {c.author_id ? (
+                        <>
+                          {" · "}
+                          <Link href={`/contributor/${c.author_id}`} className="hover:text-lacquer">
+                            {c.author ?? L("unknown", "不明")}
+                          </Link>
+                        </>
+                      ) : null}
+                    </span>
+                  </div>
+                  <p className="mt-3 whitespace-pre-line border-l-2 border-lacquer pl-3 [overflow-wrap:anywhere]">{c.body}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
+                    <form action={markCommentsRead}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <SubmitButton pending="…" className={`${btn} border-lacquer bg-lacquer text-paper hover:opacity-90 disabled:opacity-60`}>
+                        {L("✓ Read", "✓ 已讀")}
+                      </SubmitButton>
+                    </form>
+                    <form action={deleteComment}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <input type="hidden" name="back" value="/editor" />
+                      <SubmitButton pending="…" className={`${btn} border-rule text-inkSoft hover:border-ink hover:text-ink disabled:opacity-60`}>
+                        {L("✕ Delete", "✕ 刪除")}
+                      </SubmitButton>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {pendingSugs.length > 0 && (
         <section className="space-y-3">

@@ -310,3 +310,21 @@ export async function deleteEntry(formData: FormData) {
   for (const p of people) revalidatePath(`/contributor/${p}`);
   redirect(back);
 }
+
+/* Comments (supabase/comments.sql) are live when posted; an editor marks
+   them read here, one at a time or all on the page at once. Deleting one
+   goes through deleteComment in the entry actions, which an editor may use
+   on anyone's. */
+export async function markCommentsRead(formData: FormData) {
+  await requireEditor();
+  const ids = formData.getAll("id").map(String).filter(Boolean);
+  if (ids.length) {
+    const { error } = await adminClient()
+      .from("comments")
+      .update({ reviewed_at: new Date().toISOString() })
+      .in("id", ids)
+      .is("reviewed_at", null);
+    if (error) throw new Error(error.message);
+  }
+  revalidatePath("/editor");
+}

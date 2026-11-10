@@ -20,6 +20,7 @@ import BackLink from "@/components/BackLink";
 import TipRow from "@/components/TipRow";
 import SignInButton from "@/components/SignInButton";
 import SuggestEdit from "@/components/SuggestEdit";
+import Comments, { type CommentRow } from "@/components/Comments";
 import EditLink from "@/components/EditLink";
 import { MAX_RECORDINGS_PER_WORD } from "@/lib/constants";
 import { getRom } from "@/lib/rom";
@@ -140,14 +141,14 @@ export default async function EntryPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { saved?: string; problem?: string; edit?: string; report?: string; notice?: string; withdrawn?: string };
+  searchParams: { saved?: string; problem?: string; edit?: string; report?: string; notice?: string; withdrawn?: string; comment?: string; on?: string };
 }) {
   const L = pick(getLang());
   const supabase = createClient();
   // None of these depend on each other, so they go out together. Recordings
   // are keyed by entry id, not by the entry row, and RLS filters them to what
   // the viewer may hear: approved ones plus their own pending ones.
-  const [{ user, profile }, entry, { data: recRows, error: recErr }] = await Promise.all([
+  const [{ user, profile }, entry, { data: recRows, error: recErr }, { data: commentRows, error: commentErr }] = await Promise.all([
     getSessionUser(),
     loadEntry(params.id),
     // The speaker is looked up separately rather than embedded. Asking
@@ -165,6 +166,14 @@ export default async function EntryPage({
       .select("*")
       .eq("entry_id", params.id)
       .order("created_at", { ascending: true }),
+    // Comments (supabase/comments.sql), oldest first. Missing table before
+    // that file has run: no comments section, nothing else affected.
+    supabase
+      .from("comments")
+      .select("id, body, created_at, recording_id, author_id")
+      .eq("entry_id", params.id)
+      .order("created_at", { ascending: true })
+      .limit(500),
   ]);
 
   if (!entry) notFound();
@@ -177,8 +186,12 @@ export default async function EntryPage({
 
   if (recErr) console.error(`entry ${params.id}: recordings query failed:`, recErr.message);
 
-  // Names for the voices on this page, in one lookup by id.
-  const speakerIds = [...new Set(((recRows ?? []) as any[]).map((r) => r.contributor_id).filter(Boolean))];
+  // Names for the voices and commenters on this page, in one lookup by id.
+  const speakerIds = [
+    ...new Set(
+      [...((recRows ?? []) as any[]).map((r) => r.contributor_id), ...((commentRows ?? []) as any[]).map((c) => c.author_id)].filter(Boolean)
+    ),
+  ];
   const speakers = new Map<string, { id: string; display_name: string | null }>();
   if (speakerIds.length) {
     const { data: profs } = await supabase
@@ -216,6 +229,31 @@ export default async function EntryPage({
       votes.set(v.recording_id, { ...cur, mine: v.value === 1 ? 1 : -1 });
     }
   }
+  const comments: CommentRow[] = ((commentRows ?? []) as any[]).map((c) => ({
+    id: c.id,
+    body: c.body,
+    created_at: c.created_at,
+    recording_id: c.recording_id,
+    author: speakers.get(c.author_id) ?? null,
+  }));
+  const commentCounts = new Map<string, number>();
+  for (const c of comments) if (c.recording_id) commentCounts.set(c.recording_id, (commentCounts.get(c.recording_id) ?? 0) + 1);
+  /* "the recording by Mei" — how a comment says which take it is about. The
+     speaker when it is someone else's voice, else whoever recorded it. */
+  const recordingLabel = (id: string): string | null => {
+    const r = recordings.find((x) => x.id === id);
+    if (!r) return null;
+    const who = (r.speaker_name ?? "").trim() || r.contributor?.display_name || null;
+    const sentence = r.kind === "example";
+    return who
+      ? sentence
+        ? L("the sentence recording by {who}", "{who}錄的例句", { who })
+        : L("the recording by {who}", "{who}的錄音", { who })
+      : sentence
+        ? L("a sentence recording", "一段例句錄音")
+        : L("a recording", "一段錄音");
+  };
+  const commentOn = (id: string) => `${here}?on=${id}#comments`;
   const headwordRecs = recordings.filter((r) => r.kind === "headword");
   // Only published takes speak for the word: the big button, the count and
   // "be the first". An editor, or the person who made them, also sees takes
@@ -404,7 +442,7 @@ export default async function EntryPage({
             )}
             {s.example && (
               <div className="mt-2 space-y-2">
-                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} fallback={s.example_gloss ?? null} />
+                <RecordingList recordings={exampleRecs(s.id)} compact canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} fallback={s.example_gloss ?? null} commentCounts={commentErr ? undefined : commentCounts} commentHref={commentErr ? undefined : commentOn} />
                 {user && !capped && (
                   <Recorder
                     userId={user.id}
@@ -433,7 +471,7 @@ export default async function EntryPage({
           </div>
         )}
 
-        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} fallback={senses[0]?.definition_en ?? null} />
+        <RecordingList recordings={headwordRecs} canDelete={canDelete} back={here} viewerId={user?.id} votes={votes} fallback={senses[0]?.definition_en ?? null} commentCounts={commentErr ? undefined : commentCounts} commentHref={commentErr ? undefined : commentOn} />
 
         {/* The recorder is for everyone. A signed-out visitor records first
             and is asked to sign in only when they choose a take; the take is
@@ -502,6 +540,18 @@ export default async function EntryPage({
           )}
         </div>
       </section>
+
+      {!commentErr && (
+        <Comments
+          entryId={entry.id}
+          comments={comments}
+          viewerId={user?.id ?? null}
+          isEditor={canDelete}
+          recordingLabel={recordingLabel}
+          on={searchParams.on ?? null}
+          status={searchParams.comment}
+        />
+      )}
 
       {/* Notes, with their label above the box like "Related words". */}
       {entry.notes && (

@@ -82,3 +82,56 @@ export async function suggestEdit(formData: FormData) {
   revalidatePath("/editor");
   redirect(`${here}?${param}=sent#${anchor}`);
 }
+
+/* A comment on a word, or on one of its recordings (supabase/comments.sql).
+   Live when posted; editors are told by the red count on Contribute and read
+   it on the Review page. Runs as the signed-in user: the row rules make it
+   theirs, on a word they can see, and the database stamps the time and caps
+   the rate. Back to the comments, with the outcome in the address. */
+export async function addComment(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const entryId = String(formData.get("entry_id") ?? "").trim();
+  const recordingId = String(formData.get("recording_id") ?? "").trim() || null;
+  const here = entryId ? `/entry/${entryId}` : "/";
+  if (!user || !entryId) redirect(here);
+
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) redirect(`${here}?comment=empty${recordingId ? `&on=${recordingId}` : ""}#comments`);
+
+  const { error } = await supabase.from("comments").insert({
+    entry_id: entryId,
+    recording_id: recordingId,
+    author_id: user.id,
+    body: body.slice(0, 1000),
+  });
+  if (error) {
+    console.error(`comment on ${entryId} failed: ${error.message}`);
+    const msg =
+      error.code === "23514" || error.code === "P0001"
+        ? error.message
+        : "Your comment could not be posted. Please try again.";
+    redirect(`${here}?comment=${encodeURIComponent(msg.slice(0, 200))}${recordingId ? `&on=${recordingId}` : ""}#comments`);
+  }
+  revalidatePath(here);
+  revalidatePath("/editor");
+  redirect(`${here}?comment=sent#comments`);
+}
+
+/* Take a comment down: its author, or an editor (the row rules decide). */
+export async function deleteComment(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const id = String(formData.get("id") ?? "").trim();
+  const back = localPath(String(formData.get("back") ?? ""), "/");
+  if (!user || !id) redirect(back);
+  const { error } = await supabase.from("comments").delete().eq("id", id);
+  if (error) console.error(`delete comment ${id} failed: ${error.message}`);
+  revalidatePath(back.split("#")[0].split("?")[0]);
+  revalidatePath("/editor");
+  redirect(back);
+}

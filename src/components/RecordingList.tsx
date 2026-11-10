@@ -36,6 +36,8 @@ export default function RecordingList({
   viewerId,
   votes,
   fallback,
+  commentCounts,
+  commentHref,
 }: {
   recordings: RecordingRow[];
   /** Shown in place of a note on a recording that has none: the word's
@@ -52,6 +54,10 @@ export default function RecordingList({
   viewerId?: string | null;
   /** Thumbs up/down counts and the viewer's own vote, by recording id. */
   votes?: Map<string, VoteState>;
+  /** Comments on each recording, by id, and where "Comment" goes for one
+   *  (the word page's comment form, set to that recording). */
+  commentCounts?: Map<string, number>;
+  commentHref?: (recordingId: string) => string;
 }) {
   if (!recordings.length) return null;
   const lang = getLang();
@@ -119,6 +125,16 @@ export default function RecordingList({
                       className="hover:text-lacquer"
                     >
                       {origin}
+                    </Link>
+                  </>
+                )}
+                {commentHref && r.status === "approved" && (
+                  <>
+                    {" · "}
+                    <Link href={commentHref(r.id)} className="hover:text-lacquer">
+                      {(commentCounts?.get(r.id) ?? 0) > 0
+                        ? L("{n} comments", "{n} 則留言", { n: commentCounts!.get(r.id)! }).replace(/^1 comments$/, "1 comment")
+                        : L("Comment", "留言")}
                     </Link>
                   </>
                 )}
