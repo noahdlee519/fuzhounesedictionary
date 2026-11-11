@@ -130,8 +130,7 @@ export default async function AboutPage() {
         <div className="min-w-0">
           <p className="eyebrow">{t("nav.about")}</p>
           <h1 className="h1 mt-2 max-w-[30ch] [text-wrap:balance]">{t("about.h")}</h1>
-          <p className="lede read mt-6 text-ink">{t("about.p1")}</p>
-          <p className="read mt-5 text-[17px] leading-relaxed text-inkSoft">{t("about.p2")}</p>
+          <p className="read mt-6 text-[17px] leading-relaxed text-inkSoft">{t("about.p2")}</p>
           <p className="read mt-4 text-[17px] leading-relaxed text-inkSoft">{t("about.p3")}</p>
         </div>
         <aside className="hidden landscape:lg:block landscape:lg:pt-2">
@@ -201,26 +200,28 @@ export default async function AboutPage() {
             <h2 className="h2">{t("about.built.h")}</h2>
             {list(["about.built.1", recordingsTrusted() ? "about.built.2.trust" : "about.built.2", "about.built.3", "about.built.4"])}
           </div>
-          <div>
-            <h2 className="h2">{t("about.help.h")}</h2>
-            {list(["about.help.2", "about.help.3", "about.help.4"], community)}
+          <div className="space-y-12">
+            {/* The partnership with SeeDict (米时典), the Fuzhou-based
+                dictionary, right above the ways to help (Noah, 11 Nov 2026).
+                A collaborator rather than only a source: it also leads the
+                Sources list on Learn. */}
+            <div>
+              <h2 className="h2">{t("about.seedict.h")}</h2>
+              <p className="mt-4 leading-relaxed text-inkSoft">{rich(t("about.seedict.p"))}</p>
+              {list(["about.seedict.1", "about.seedict.2"])}
+            </div>
+            <div>
+              <h2 className="h2">{t("about.help.h")}</h2>
+              {list(["about.help.2", "about.help.3", "about.help.4"], community)}
+            </div>
           </div>
         </div>
       </section>
       <hr className="rule-bleed" />
 
-      {/* Partner projects. SeeDict (米时典), the Fuzhou-based dictionary, is
-          a collaborator rather than only a source: it also leads the Sources
-          list on Learn. */}
-      <section className="sec">
-        <h2 className="h2">{t("about.seedict.h")}</h2>
-        <p className="read mt-4 text-[17px] leading-relaxed text-inkSoft">{rich(t("about.seedict.p"))}</p>
-        <div className="max-w-[40rem]">{list(["about.seedict.1", "about.seedict.2"])}</div>
-      </section>
-      <hr className="rule-bleed" />
-
-      {/* The developer */}
-      <section className="sec-sm">
+      {/* The people behind it: Noah, who founded and runs it, and Jon. */}
+      <section className="sec-sm space-y-8">
+        <h2 className="h2">{t("about.team")}</h2>
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -231,8 +232,8 @@ export default async function AboutPage() {
             className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
           />
           <div>
-            <p className="eyebrow">{t("about.dev")}</p>
-            <h2 className="h2 mt-2">Noah Lee</h2>
+            <p className="eyebrow">{t("about.founder")}</p>
+            <h3 className="h3 mt-2">Noah Lee</h3>
             <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.dev.p")}</p>
             <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
               <a href="mailto:noahdlee519@gmail.com" className="link">
@@ -243,6 +244,22 @@ export default async function AboutPage() {
                 noahdarwinlee.com
               </a>
             </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/jon.jpg"
+            alt="Jon Dong"
+            width={144}
+            height={144}
+            className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
+          />
+          <div>
+            <p className="eyebrow">{t("about.dev")}</p>
+            <h3 className="h3 mt-2">Jon Dong</h3>
+            <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.jon.p")}</p>
           </div>
         </div>
       </section>

@@ -176,7 +176,6 @@ const en = {
   "about.tree.central": "Central",
   "about.tree.south": "South",
   "about.tree.min": "Min",
-  "about.p1": "This project started because Fuzhounese is the dialect my grandmother natively speaks. My goal is to help preserve the language by digitizing it with an emphasis on authentic voice recordings and geographic diversity.",
   "about.p2": "The dictionary is the only one of its kind with English and Mandarin translations. Its key features also include Fuzhounese romanization (Bàng-uâ-cê) and community contribution. The site is completely free to use.",
   "about.p3": "There is an old Chinese saying that if you walk ten kilometers in Fujian, the language changes. Fuzhounese, too, varies from place to place. That's why this site encourages multiple recordings and meanings for words, each tagged by location.",
   "about.btn": "Record a word",
@@ -215,8 +214,11 @@ const en = {
   "about.seedict.p": "Fuzhounese.org collaborates with [SeeDict](https://seedict.com/) on Fuzhounese language preservation and digital resources. This collaboration includes:",
   "about.seedict.1": "Dictionary data shared by SeeDict",
   "about.seedict.2": "Text-to-speech and audio resources",
+  "about.founder": "Founder",
   "about.dev": "Developer",
-  "about.dev.p": "Noah started this dictionary in 2021 to help preserve the dialect his family speaks. Interested in collaborating or becoming an editor? Don't hesitate to reach out.",
+  "about.team": "Team",
+  "about.dev.p": "Noah started this dictionary in 2021 because Fuzhounese is the dialect his grandmother natively speaks. His goal is to help preserve the language by digitizing it with an emphasis on authentic voice recordings and geographic diversity. He runs the Fuzhounese.org projects and welcomes any and all messages about the project. Interested in collaborating or becoming an editor? Don't hesitate to reach out.",
+  "about.jon.p": "Jon is from Kennett Square, Pennsylvania and is a student attending Princeton University where he studies Computer Science. He grew up in a Fuzhounese household, hearing the language from his parents and grandparents. In his free time, he loves traveling, running, learning languages, and hanging out with his friends and family.",
 } as const;
 
 export type Key = keyof typeof en;
@@ -390,7 +392,6 @@ const zh: Record<Key, string> = {
   "about.tree.central": "中部",
   "about.tree.south": "南方",
   "about.tree.min": "閩語",
-  "about.p1": "這個計畫的起點，是因為福州話是我外婆的母語。我希望把它數位化來幫忙保存這門語言，特別著重真實的錄音和各地講法的差異。",
   "about.p2": "這部辭典是同類中唯一附英文和普通話對照的。主要特色還包括福州話羅馬字（平話字）和社群共同編寫。網站完全免費。",
   "about.p3": "中國有句老話：福建十里不同音。福州話也是如此，各地講法不一。所以這個網站鼓勵一個詞有多段錄音、多種釋義，每一筆都標明地點。",
   "about.btn": "錄一個詞",
@@ -429,8 +430,11 @@ const zh: Record<Key, string> = {
   "about.seedict.p": "Fuzhounese.org 與[米时典](https://seedict.com/)合作，共同推動福州話的保育與數位資源。合作內容包括：",
   "about.seedict.1": "米时典分享的辭典資料",
   "about.seedict.2": "語音合成（TTS）與音訊資源",
+  "about.founder": "創辦人",
   "about.dev": "開發者",
-  "about.dev.p": "Noah 在 2021 年開始編這部辭典，希望保存家人講的方言。有興趣合作或想當編輯？歡迎聯絡。",
+  "about.team": "團隊",
+  "about.dev.p": "Noah 在 2021 年開始編這部辭典，因為福州話是他外婆的母語。他希望把它數位化來幫忙保存這門語言，特別著重真實的錄音和各地講法的差異。他負責 Fuzhounese.org 的各項計畫，歡迎任何關於本計畫的來信。有興趣合作或想當編輯？歡迎聯絡。",
+  "about.jon.p": "Jon 來自賓夕法尼亞州的肯尼特廣場（Kennett Square），目前就讀普林斯頓大學，主修電腦科學。他在講福州話的家庭長大，從小聽父母和祖父母講這種語言。閒暇時，他喜歡旅行、跑步、學語言，以及和朋友家人相處。",
 };
 
 const TABLES: Record<Lang, Record<Key, string>> = { en, zh };
