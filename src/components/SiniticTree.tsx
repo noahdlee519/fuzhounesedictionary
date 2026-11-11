@@ -61,15 +61,8 @@ const TREE: Node = {
             },
           ],
         },
-        {
-          en: "Inland Min",
-          zone: "min",
-          children: [
-            { zh: "閩北", en: "Northern Min", zone: "min" },
-            { zh: "閩中", en: "Central Min", zone: "min" },
-            { zh: "邵將", en: "Shao-Jiang", zone: "min" },
-          ],
-        },
+        // Inland Min (Northern, Central, Shao-Jiang) taken out, Noah 11 Nov
+        // 2026: the tree is the way to Fuzhounese, not a survey of Min.
       ],
     },
   ],
@@ -168,7 +161,7 @@ export default function SiniticTree({
           const cx = x(p.depth);
           const cy = y(p.row);
           const c = n.zone ? COLOR[n.zone] : "var(--ink)";
-          const inner = !!n.children && n.zone === "min" && !n.path; // Inland Min
+          const inner = !!n.children && n.zone === "min" && !n.path; // an off-path Min branch (none since Inland Min went)
           return (
             <g key={`n${p.row}`}>
               {n.star ? (

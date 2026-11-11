@@ -410,35 +410,63 @@ export default async function Home({
         </div>
       </section>
 
-      {/* The dictionary in four numbers (moved from About, Noah, 21 Sep 2026),
-          on a red ribbon: words and recordings always; locations and
-          contributors once there are any. Each label has a singular form for
-          a count of one. Without the numbers, a plain rule instead. */}
+      {/* The dictionary in one sentence on a red ribbon (Noah, 11 Nov 2026;
+          before, four numbers in a row): "3,790 words and 617 recordings
+          from 23 contributors across 11 Fuzhounese-speaking regions", the
+          numbers large and bold. Words and recordings always; contributors
+          and regions once there are any. Without the numbers, a plain rule. */}
       {!tally && <hr className="rule-bleed" />}
-      {tally && (
-        <>
+      {tally && (() => {
+        const big = (n: number) => (
+          <span className="font-bold tabular-nums text-[1.35em] leading-none tracking-tight">{n.toLocaleString()}</span>
+        );
+        const word = (n: number, one: string, many: string) => (n === 1 ? one : many);
+        const contributors = people ?? 0;
+        const regions = tally.locations;
+        return (
           <section className="ribbon sec-sm">
             <p className="eyebrow text-lacquerInk opacity-90">{t("home.stats")}</p>
-            <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
-              {[
-                [tally.words, "about.stat.words", "about.stat.word"],
-                [tally.recordings, "about.stat.recs", "about.stat.rec"],
-                [tally.locations, "about.stat.locations", "about.stat.location"],
-                [people ?? 0, "about.stat.people", "about.stat.person"],
-              ]
-                .filter(([n], i) => i < 2 || (n as number) > 0)
-                .map(([n, plural, single]) => (
-                  <p key={plural as string}>
-                    <span className="block text-[32px] font-medium leading-none tracking-tight tabular-nums sm:text-[40px]">
-                      {(n as number).toLocaleString()}
-                    </span>
-                    <span className="mt-2 block text-sm opacity-90">{t((n === 1 ? single : plural) as any)}</span>
-                  </p>
-                ))}
-            </div>
+            <p className="mt-4 max-w-[30ch] font-display text-[28px] leading-[1.3] [text-wrap:balance] sm:text-[36px] md:max-w-none md:text-[40px]">
+              {/* Each number stays on a line with the word after it. */}
+              {lang === "zh" ? (
+                <>
+                  <span className="whitespace-nowrap">{big(tally.words)} 個詞</span>、
+                  <span className="whitespace-nowrap">{big(tally.recordings)} 段錄音</span>
+                  {contributors > 0 && (
+                    <>
+                      ，
+                      {regions > 0 ? (
+                        <>
+                          <span className="whitespace-nowrap">來自 {big(regions)} 個</span>福州話地區的
+                          <span className="whitespace-nowrap"> {big(contributors)} 位</span>貢獻者
+                        </>
+                      ) : (
+                        <span className="whitespace-nowrap">來自 {big(contributors)} 位貢獻者</span>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span className="whitespace-nowrap">{big(tally.words)} {word(tally.words, "word", "words")}</span> and{" "}
+                  <span className="whitespace-nowrap">{big(tally.recordings)} {word(tally.recordings, "recording", "recordings")}</span>
+                  {contributors > 0 && (
+                    <>
+                      {" "}from <span className="whitespace-nowrap">{big(contributors)} {word(contributors, "contributor", "contributors")}</span>
+                    </>
+                  )}
+                  {regions > 0 && (
+                    <>
+                      {" "}across <span className="whitespace-nowrap">{big(regions)} Fuzhounese-speaking</span>{" "}
+                      {word(regions, "region", "regions")}
+                    </>
+                  )}
+                </>
+              )}
+            </p>
           </section>
-        </>
-      )}
+        );
+      })()}
 
       {/* Two doors. The paragraphs are balanced so no line is left holding
           a single word at the widths where the column is narrow. */}
