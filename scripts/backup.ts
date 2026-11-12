@@ -59,6 +59,9 @@ const TABLES: { name: string; key: string; identity?: boolean }[] = [
   { name: "assistant_usage", key: "id", identity: true },
   // Added 11 Oct 2026 (thumbs_notices.sql): "an editor removed your word".
   { name: "contributor_notices", key: "id", identity: true },
+  // Added 12 Nov 2026 (comments.sql): comments on words and recordings.
+  // After entries, recordings and profiles, which they point at.
+  { name: "comments", key: "id" },
 ];
 const BUCKETS = ["audio", "avatars"];
 const PAGE = 1000; // PostgREST returns at most this many rows per request
