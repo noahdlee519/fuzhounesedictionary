@@ -219,10 +219,13 @@ export default async function AboutPage() {
       </section>
       <hr className="rule-bleed" />
 
-      {/* The people behind it: Noah, who founded and runs it, Jon and Owen. */}
+      {/* The people behind it: Noah, who founded and runs it, Jon and Owen.
+          On wider screens each photo starts level with the name, the role
+          sitting above the name in the text column; on phones the photo
+          comes first, then role, name and blurb. */}
       <section className="sec-sm space-y-8">
         <h2 className="h2">{t("about.team")}</h2>
-        <div className="flex flex-col items-start gap-6 sm:flex-row sm:gap-8">
+        <div className="grid items-start sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/noah.jpg"
@@ -231,11 +234,11 @@ export default async function AboutPage() {
             height={144}
             loading="lazy"
             decoding="async"
-            className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
+            className="h-36 w-36 rounded-sm object-cover ring-1 ring-rule sm:col-start-1 sm:row-start-2"
           />
-          <div>
-            <p className="eyebrow">{t("about.founder")}</p>
-            <h3 className="h3 mt-2">Noah Lee</h3>
+          <p className="eyebrow mb-2 mt-6 sm:col-start-2 sm:row-start-1 sm:mt-0">{t("about.founder")}</p>
+          <div className="sm:col-start-2 sm:row-start-2">
+            <h3 className="h3">Noah Lee</h3>
             <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.dev.p")}</p>
             <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
               <a href="mailto:noahdlee519@gmail.com" className="link">
@@ -249,7 +252,7 @@ export default async function AboutPage() {
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-6 sm:flex-row sm:gap-8">
+        <div className="grid items-start sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/jon.jpg"
@@ -258,16 +261,16 @@ export default async function AboutPage() {
             height={144}
             loading="lazy"
             decoding="async"
-            className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
+            className="h-36 w-36 rounded-sm object-cover ring-1 ring-rule sm:col-start-1 sm:row-start-2"
           />
-          <div>
-            <p className="eyebrow">{t("about.dev")}</p>
-            <h3 className="h3 mt-2">Jon Dong</h3>
+          <p className="eyebrow mb-2 mt-6 sm:col-start-2 sm:row-start-1 sm:mt-0">{t("about.dev")}</p>
+          <div className="sm:col-start-2 sm:row-start-2">
+            <h3 className="h3">Jon Dong</h3>
             <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.jon.p")}</p>
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-6 sm:flex-row sm:gap-8">
+        <div className="grid items-start sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/owen.jpg"
@@ -276,11 +279,11 @@ export default async function AboutPage() {
             height={144}
             loading="lazy"
             decoding="async"
-            className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
+            className="h-36 w-36 rounded-sm object-cover ring-1 ring-rule sm:col-start-1 sm:row-start-2"
           />
-          <div>
-            <p className="eyebrow">{t("about.editor")}</p>
-            <h3 className="h3 mt-2">Owen Yang</h3>
+          <p className="eyebrow mb-2 mt-6 sm:col-start-2 sm:row-start-1 sm:mt-0">{t("about.editor")}</p>
+          <div className="sm:col-start-2 sm:row-start-2">
+            <h3 className="h3">Owen Yang</h3>
             <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.owen.p")}</p>
           </div>
         </div>

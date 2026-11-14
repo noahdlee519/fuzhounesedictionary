@@ -207,11 +207,12 @@ export default function SiniticTree({
       </svg>
       {/* The legend is the caption. The sources sit behind the small "i" at
           its end, in the site's one tooltip (globals.css .has-info), which
-          stays open while the pointer moves onto its links. */}
+          stays open while the pointer moves onto its links. Its dots are
+          tinted as the tree's are, so Min reads pink as on the tree. */}
       <figcaption className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-inkFaint">
         {(["north", "central", "south", "min"] as Zone[]).map((z) => (
           <span key={z} className="inline-flex items-center gap-1.5">
-            <span aria-hidden className="inline-block h-2 w-2 rounded-full" style={{ background: COLOR[z] }} />
+            <span aria-hidden className="inline-block h-2 w-2 rounded-full" style={{ background: COLOR[z], opacity: z === "min" ? 0.55 : 0.9 }} />
             {legend[z]}
           </span>
         ))}
