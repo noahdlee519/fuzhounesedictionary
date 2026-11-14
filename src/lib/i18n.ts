@@ -218,7 +218,7 @@ const en = {
   "about.dev": "Developer",
   "about.team": "Team",
   "about.editor": "Editor",
-  "about.dev.p": "Noah started this dictionary in 2021 because Fuzhounese is the dialect his grandmother natively speaks. His goal is to help preserve the language by digitizing it with an emphasis on authentic voice recordings and geographic diversity. He runs the Fuzhounese.org projects and welcomes any and all messages about the project. Interested in collaborating or becoming an editor? Don't hesitate to reach out.",
+  "about.dev.p": "Noah started this dictionary in 2021 because Fuzhounese is the dialect his grandmother natively speaks. His goal is to help preserve the language by digitizing it with an emphasis on authentic voice recordings and geographic diversity. He runs the Fuzhounese.org projects and welcomes any and all messages about the project.",
   "about.jon.p": "Jon is from Kennett Square, Pennsylvania and is a student attending Princeton University where he studies Computer Science. He grew up in a Fuzhounese household, hearing the language from his parents and grandparents. In his free time, he loves traveling, running, learning languages, and hanging out with his friends and family.",
   "about.owen.p": "Owen is from Elizabethton, Tennessee, and is a freshman at Johns Hopkins University, double majoring in Public Health and Economics. His family is from 亭江镇 (Tíngjiāng Zhèn) in 台江 (Táijiāng). He runs, sings, and plays piano in his free time.",
 } as const;
@@ -436,7 +436,7 @@ const zh: Record<Key, string> = {
   "about.dev": "開發者",
   "about.team": "團隊",
   "about.editor": "編輯",
-  "about.dev.p": "Noah 在 2021 年開始編這部辭典，因為福州話是他外婆的母語。他希望把它數位化來幫忙保存這門語言，特別著重真實的錄音和各地講法的差異。他負責 Fuzhounese.org 的各項計畫，歡迎任何關於本計畫的來信。有興趣合作或想當編輯？歡迎聯絡。",
+  "about.dev.p": "Noah 在 2021 年開始編這部辭典，因為福州話是他外婆的母語。他希望把它數位化來幫忙保存這門語言，特別著重真實的錄音和各地講法的差異。他負責 Fuzhounese.org 的各項計畫，歡迎任何關於本計畫的來信。",
   "about.jon.p": "Jon 來自賓夕法尼亞州的肯尼特廣場（Kennett Square），目前就讀普林斯頓大學，主修電腦科學。他在講福州話的家庭長大，從小聽父母和祖父母講這種語言。閒暇時，他喜歡旅行、跑步、學語言，以及和朋友家人相處。",
   "about.owen.p": "Owen 來自田納西州的伊麗莎白頓（Elizabethton），目前是約翰霍普金斯大學一年級學生，雙主修公共衛生與經濟學。他的家族來自台江的亭江鎮。閒暇時，他喜歡跑步、唱歌和彈鋼琴。",
 };

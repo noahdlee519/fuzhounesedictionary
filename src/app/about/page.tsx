@@ -222,7 +222,7 @@ export default async function AboutPage() {
       {/* The people behind it: Noah, who founded and runs it, Jon and Owen. */}
       <section className="sec-sm space-y-8">
         <h2 className="h2">{t("about.team")}</h2>
-        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:gap-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/noah.jpg"
@@ -249,7 +249,7 @@ export default async function AboutPage() {
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:gap-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/jon.jpg"
@@ -267,7 +267,7 @@ export default async function AboutPage() {
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:gap-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/owen.jpg"
