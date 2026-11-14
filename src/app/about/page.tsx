@@ -219,7 +219,7 @@ export default async function AboutPage() {
       </section>
       <hr className="rule-bleed" />
 
-      {/* The people behind it: Noah, who founded and runs it, and Jon. */}
+      {/* The people behind it: Noah, who founded and runs it, Jon and Owen. */}
       <section className="sec-sm space-y-8">
         <h2 className="h2">{t("about.team")}</h2>
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
@@ -229,6 +229,8 @@ export default async function AboutPage() {
             alt="Noah Lee"
             width={144}
             height={144}
+            loading="lazy"
+            decoding="async"
             className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
           />
           <div>
@@ -254,12 +256,32 @@ export default async function AboutPage() {
             alt="Jon Dong"
             width={144}
             height={144}
+            loading="lazy"
+            decoding="async"
             className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
           />
           <div>
             <p className="eyebrow">{t("about.dev")}</p>
             <h3 className="h3 mt-2">Jon Dong</h3>
             <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.jon.p")}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/owen.jpg"
+            alt="Owen Yang"
+            width={144}
+            height={144}
+            loading="lazy"
+            decoding="async"
+            className="h-36 w-36 shrink-0 rounded-sm object-cover ring-1 ring-rule"
+          />
+          <div>
+            <p className="eyebrow">{t("about.editor")}</p>
+            <h3 className="h3 mt-2">Owen Yang</h3>
+            <p className="mt-2 max-w-[52ch] text-inkSoft">{t("about.owen.p")}</p>
           </div>
         </div>
       </section>
